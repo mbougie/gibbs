@@ -15,26 +15,9 @@ import glob
 import psycopg2
 
 
-rootdir='C:/Users/bougie/Desktop/gibbs/production/rasters/'
-
-
-
-###################  set up directory and file structure  #####################################
-class DirStructure:
-    
-    def __init__(self, dir_in, dir_out):
-        rootdir='C:/Users/bougie/Desktop/gibbs/production/rasters/'
-        
-        self.dir_in = rootdir + dir_in
-        self.dir_out = rootdir + dir_out
-    
-
-class FileStructure:
-    
-    def __init__(self, fname, ext):
-        self.fname = fname
-        self.ext = ext
-        self.file_out=fname+ext
+production_type='production_ND'
+arcpy.CheckOutExtension("Spatial")
+env.scratchWorkspace ="C:/Users/bougie/Documents/ArcGIS/scratch.gdb"
 
 
 ###################  declare functions  #######################################################
@@ -45,7 +28,7 @@ def addColorMap(inraster,template):
 
     try:
         import arcpy
-        arcpy.env.workspace = r'C:/Users/Bougie/Documents/ArcGIS/Default.gdb'
+        # arcpy.env.workspace = r'C:/Users/Bougie/Documents/ArcGIS/Default.gdb'
         
         ##Assign colormap using template image
         arcpy.AddColormap_management(inraster, "#", template)
@@ -57,48 +40,23 @@ def addColorMap(inraster,template):
 
 
 
-def subsetRasterbyVector():
+def createMTR(gdb_in):
+    gdb_in=gdb_in[0]
+    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core/'+gdb_in+'.gdb'
+    for raster in arcpy.ListDatasets('*', "Raster"): 
+        inRaster=Raster(raster)
+        print inRaster
 
-    for index, row in df.iterrows():
-    	index= str(row['gid'])
-        name=row['st_abbrev']
-
-    	task = 'gdalwarp -cutline "PG:dbname=filters host=localhost port=5432 \
-    	user=postgres password=postgres" -csql "select geom from shapefiles.shapefiles_states where gid = '+index+' " -crop_to_cutline\
-    	-tr 30.0 30.0 -of HFA C:/Users/bougie/Desktop/gibbs/rasters/trajectories/trajectories_b3_8bit.img \
-    	C:/Users/bougie/Desktop/gibbs/rasters/subset/traj/traj_'+name+'.img'
-    	print task
-    	os.system(task)
-
-
-def createMTR(index,dir_in,dir_out):
-
-    arcpy.CheckOutExtension("Spatial")
-    env.workspace = 'C:/Users/Bougie/Documents/ArcGIS/Default.gdb'
-
-    print dir_in,dir_out
-    ds = DirStructure(dir_in, dir_out)
-
-    os.chdir(ds.dir_in)
-    for file in glob.glob("*.img"):
-        print(file)
-        fnf=(os.path.splitext(file)[0]).split(".")
-        
-        #fnf=file name fragments
-        print fnf
-        
-        fs = FileStructure(fnf[0]+'_mtr', '.img')
-        print 'fs', fs 
+        raster_out = raster+'_mtr'
+        output = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core/mtr.gdb/'+raster_out
+        print output
 
         reclassArray = createReclassifyList() 
-        print 'reclassArray----->', reclassArray
-        outReclass = Reclassify(file, "Value", RemapRange(reclassArray), "NODATA")
+        outReclass = Reclassify(inRaster, "Value", RemapRange(reclassArray), "NODATA")
         
-        output = ds.dir_out+fs.file_out
-        print 'output------->', output 
         outReclass.save(output)
 
-        addColorMap(output,'C:/Users/bougie/Desktop/gibbs/production_pre/rasters/colormaps/mtr.clr')
+        addColorMap(output,'C:/Users/bougie/Desktop/gibbs/colormaps/mtr.clr')
 
 
 def createReclassifyList():
@@ -113,43 +71,39 @@ def createReclassifyList():
         templist.append(int(value))
         templist.append(int(mtr))
         fulllist.append(templist)
+    print 'fulllist: ', fulllist
     return fulllist
 
 
 
-def majorityFilter(index,dir_in,dir_out):
-    
-    arcpy.CheckOutExtension("Spatial")
-    env.workspace = 'C:/Users/Bougie/Documents/ArcGIS/Default.gdb'
-
-    print dir_in,dir_out
-    ds = DirStructure(dir_in, dir_out)
+def majorityFilter(gdb_in):
+    gdb_in=gdb_in[0]
+    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/pre/'+gdb_in+'.gdb'
 
     # filter_combos = {'n4h':["FOUR", "HALF"],'n4m':["FOUR", "MAJORITY"],'n8h':["EIGHT", "HALF"],'n8m':["EIGHT", "MAJORITY"]}
     filter_combos = {'n8h':["EIGHT", "HALF"]}
     for k, v in filter_combos.iteritems():
         print k,v
-        os.chdir(ds.dir_in)
-        for file in glob.glob("*.img"):
-            #fnf=file name fragments
-            fnf=(os.path.splitext(file)[0]).split(".")
-            
-            #create file structure
-            fs = FileStructure(fnf[0]+'_'+k, '.img')
+        for raster in arcpy.ListDatasets("*", "Raster"): 
+            print 'raster: ', raster
+    
+            raster_out=raster+'_'+k
 
             # Execute MajorityFilter
-            outMajFilt = MajorityFilter(ds.dir_in+file, v[0], v[1])
+            outMajFilt = MajorityFilter(raster, v[0], v[1])
             
-            output = ds.dir_out+fs.file_out
+            output = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core/filter.gdb/'+raster_out
+            
             #save processed raster to new file
             outMajFilt.save(output)
 
-            addColorMap(output,'C:/Users/bougie/Desktop/gibbs/production_pre/rasters/colormaps/filter_and_mmu.clr')
+            addColorMap(output,'C:/Users/bougie/Desktop/gibbs/colormaps/filter_and_mmu.clr')
 
-            del outMajFilt
 
 
 def focalStats(index,dir_in,dir_out):
+
+    #NOT CONVERTED TO GDB YET!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
     arcpy.CheckOutExtension("Spatial")
     env.workspace = 'C:/Users/Bougie/Documents/ArcGIS/Default.gdb'
@@ -185,175 +139,100 @@ def focalStats(index,dir_in,dir_out):
 
 ####################  mmu functions  ##########################################
 
-def regionGroup(index,dir_in,dir_out):
-    # Name: RegionGroup_Ex_02.py
-    # Description: Records, for each cell in the output, the
-    #              identity of the connected region to which 
-    #              it belongs within the Analysis window. A 
-    #              unique number is assigned to each region.
-    # Requirements: Spatial Analyst Extension
-    arcpy.CheckOutExtension("Spatial")
-    env.workspace = 'C:/Users/Bougie/Documents/ArcGIS/Default.gdb'
+def regionGroup(gdb_in):
+    gdb_in=gdb_in[0]
+    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core/'+gdb_in+'.gdb'
 
-    print dir_in,dir_out
-    ds = DirStructure(dir_in, dir_out)
 
     # filter_combos = {'4w':["FOUR", "WITHIN"],'4c':["FOUR", "CROSS"],'8w':["EIGHT", "WITHIN"],'8c':["EIGHT", "CROSS"]}
     filter_combos = {'8w':["EIGHT", "WITHIN"]}
     for k, v in filter_combos.iteritems():
         print k,v
-        os.chdir(ds.dir_in)
-        for file in glob.glob("*.img"):
-            #fnf=file name fragments
-            fnf=(os.path.splitext(file)[0]).split(".")
+        for raster in arcpy.ListDatasets("*", "Raster"): 
+            print 'raster: ', raster
+    
+            raster_out=raster+'_'+k
+            print raster_out
             
-            #create file structure
-            fs = FileStructure(fnf[0]+'_'+k, '.img')
-            # Check out the ArcGIS Spatial Analyst extension license
-            arcpy.CheckOutExtension("Spatial")
+            output = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core/mmu.gdb/'+raster_out
 
             # Execute RegionGroup
-            outRegionGrp = RegionGroup(ds.dir_in+file, v[0], v[1],"NO_LINK")
+            outRegionGrp = RegionGroup(raster, v[0], v[1],"NO_LINK")
 
             # Save the output 
             print 'save the output'
-            outRegionGrp.save(ds.dir_out+fs.file_out)
+            outRegionGrp.save(output)
 
 
-def mask(index,dir_in,dir_out):
-    #NOTE: DON'T have a generic env.workspace becacuse it will return a value -128 versus NODATA!!
-    arcpy.CheckOutExtension("Spatial")
 
-    print dir_in,dir_out
-    ds = DirStructure(dir_in, dir_out)
 
-    os.chdir(ds.dir_in)
-    for file in glob.glob("*.img"):
-        #fnf=file name fragments
-        fnf=(os.path.splitext(file)[0]).split(".")
 
-           #################  CONDITION  #######################################
+
+def mask(gdb_in):
+    gdb_in=gdb_in[0]
+    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core/'+gdb_in+'.gdb'
+    for raster in arcpy.ListDatasets('*8w', "Raster"): 
+        inRaster=Raster(raster)
+        print inRaster
+
+         #################  CONDITION  #######################################
         # CONVERSION: 900square miles = 0.222395 acres
-
-
-        #5 acres 
-        # count = '23'
-        # cond = "Count < " + count
-
-        #10 acres
-        count = '45'
-        cond = "Count < " + count
-
-        #15acres
-        # count = '68'
-        # cond = "Count < " + count
         
-        #create file structure
-        fs = FileStructure(fnf[0]+'_m'+ count, '.img')
- 
-        #Note Cells with NoData as their value will be nibbled in the in_raster so therefore 
-        #select all regions < 68 pixels to be defined as NULL.
-        
+        #acres   count
+         #5       23
+         #10      45
+         #15      68
 
-     
-      
-        #####################################################################
 
-        inRas1 = Raster(ds.dir_in+file)
+        # masks=['23','45','68']
+        masks=['45']
+        for count in masks:
+            cond = "Count < " + count
+            print 'cond: ',cond
+
+            raster_out = raster+'_msk'+ count
+            output = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core/mmu.gdb/'+raster_out
+            print output
+
+            outSetNull = SetNull(inRaster, 1, cond)
+
+            # Save the output 
+            outSetNull.save(output)
+
+
+
+def nibble(gdb_in):
+
+    gdb_in=gdb_in[0]
+    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core/'+gdb_in+'.gdb'
+    for mask in arcpy.ListDatasets('*_msk*', "Raster"): 
     
-        # Execute SetNull
-        outSetNull = SetNull(inRas1, 1, cond)
-
-        # Save the output 
-        outSetNull.save(ds.dir_out+fs.file_out)
-
-
-def nibble(index,dir_in,dir_out):
-
-    # The raster used as the mask.
-    # It must be of integer type.
-    # Cells with NoData as their value will be nibbled in the in_raster.
-    arcpy.CheckOutExtension("Spatial")
-    env.workspace = 'C:/Users/Bougie/Documents/ArcGIS/Default.gdb'
-
-    print index,dir_in,dir_out
-    ds = DirStructure(dir_in,dir_out)
-
-  
-
-    os.chdir(ds.dir_in)
-    for file in glob.glob("*.img"):
-        #fnf=file name fragments
-        fnf=(os.path.splitext(file)[0]).split(".")
-        print file
-
         #create file structure
-        fs = FileStructure(fnf[0]+'_nbl', '.img')
-
+        output = mask+'_nbl'
     
         ####  create the paths to the mask files  ############# 
-        inFile = None
-        chunk=file[:-11]
-        print chunk
-        inFile=rootdir+'core/mtr/'+chunk+'.img'
+        raster_in='C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core/mtr.gdb'+'/traj_n8h_mtr'
       
         ###  Execute Nibble  #####################
-        nibbleOut = Nibble(inFile, ds.dir_in+file, "DATA_ONLY")
-
-        output = ds.dir_out+fs.file_out
+        nibbleOut = Nibble(raster_in, mask, "DATA_ONLY")
 
         ###  Save the output  ################### 
         nibbleOut.save(output)
 
-        addColorMap(output,'C:/Users/bougie/Desktop/gibbs/development/rasters/colormaps/filter_and_mmu.clr')
-
-
-
-def setBackground(index,dir_in,dir_out):
-    #Attach the cdl values to the binary ytc/yfc rasters 
-    arcpy.CheckOutExtension("Spatial")
-    env.workspace = 'C:/Users/Bougie/Documents/ArcGIS/Default.gdb'
-
-    print dir_in,dir_out
-    ds = DirStructure(dir_in, dir_out)
-
-    os.chdir(ds.dir_in)
-    for file in glob.glob("*.img"):
-        print(file)
-
-        fnf=(os.path.splitext(file)[0]).split(".")
-        print 'fnf:', fnf
-        # path_out=createFileOut(dir_root,file,'bg1')
-
-        fs = FileStructure(fnf[0]+"_bg1",".img")
-        print fs.file_out
-
-        outRaster = ds.dir_out+fs.file_out
-        print 'outRaster: ', outRaster
- 
-        inRas1 = Raster(ds.dir_in+file)
-        cond = "Value = 0"
-
-        # Execute values in condition to 1
-        OutRas = Con(inRas1, 1, inRas1, cond)
-
-        # Save the output 
-        OutRas.save(outRaster)
-
-
-        addColorMap(outRaster,inRas1)
+        addColorMap(output,'C:/Users/bougie/Desktop/gibbs/colormaps/mmu.clr')
 
 
 
 
 
-######################################################################################
+
+#############################  Call Functions ######################################
 
 
 
-def fire_all(func_list,index,dir_in,dir_out):
+def fire_all(func_list,params):
     for f in func_list:
-        f(index,dir_in,dir_out)
+        f(params)
 
 
 
@@ -379,11 +258,8 @@ def runit():
         for step in route:
             print 'step-----------------', step
          
-            dir_in=df[step][i][0] 
-            print dir_in
-            dir_out=df[step][i][1]
-            print dir_out
-            fire_all(fct_list[step],i,dir_in,dir_out)
+            params=df[step][i]
+            fire_all(fct_list[step],params)
     
 
 
@@ -392,16 +268,3 @@ def runit():
 
 ##############  call functions  #####################################################
 runit()
-
-
-
-
-
-
-
-
-# {majorityFilter,createMTR,regionGroup}
-
-
-
- 

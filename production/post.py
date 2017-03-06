@@ -16,7 +16,7 @@ import psycopg2
 
 ###################  set up environment  #####################################
 
-production_type='production_pre'
+production_type='production'
 arcpy.CheckOutExtension("Spatial")
 rootdir='C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/post/'
 env.scratchWorkspace ="C:/Users/bougie/Documents/ArcGIS/scratch.gdb"
@@ -134,11 +134,10 @@ def attachCDL(index,type,params):
         print cdl
 
 
-        OutRas=Con(raster, cdl, 0, "Value = 1")
-
-
+        # OutRas=Con(raster, cdl, 0, "Value = 1")
+        outSetNull = SetNull(raster, cdl, "Value <> 1")
         # # Save the output 
-        OutRas.save(file_out)
+        outSetNull.save(file_out)
 
         #NEED TO FIX CRASHING PYHTON POSSIBLY ADD ENVIRONMENT?????????????????????????????????????????
         # addColorMap(production_type,file_out,cdl)
@@ -192,7 +191,7 @@ def mask(index,type,params):
         print 'outRaster: ', outRaster
 
         OutRas=Con((mmu == 3) & (IsNull(inRaster)), inRaster, 1)
-    
+        Con((IsNull("nibble") & (IsNull("ytc_fc_mosaic_ND_traj_n8h_mtr_8w_m45_nbl_mask"))),"ND_traj_n8h_mtr_8w_m45_nbl_noLC3","ND_traj_n8h_mtr_8w_m45_nbl")
         #Save the output 
         OutRas.save(outRaster)
 
@@ -212,6 +211,7 @@ def mask(index,type,params):
     elif params[0] == 'ndTo1': 
         # for raster in arcpy.ListDatasets('ytc_fc_mosaic_ND_traj_n8h_mtr_8w_m45_nbl', "Raster"): 
         raster='ytc_fc_mosaic_ND_traj_n8h_mtr_8w_m45_nbl'
+        # raster='ytc_fc_mosaic'
         inRaster=Raster(raster)
         print 'inRaster: ', inRaster
 
@@ -219,6 +219,7 @@ def mask(index,type,params):
         mmu=Raster(x)
         
         outRaster = raster+'_ndTo1'
+        # outRaster = raster+'_ndTo1_full'
         print 'outRaster: ', outRaster
 
         OutRas=Con((mmu == 3) & (IsNull(inRaster)), 1, inRaster)
