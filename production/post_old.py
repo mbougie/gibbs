@@ -16,10 +16,11 @@ import psycopg2
 
 ###################  set up environment  #####################################
 
-production_type='production_ND'
+production_type='production_pre'
 arcpy.CheckOutExtension("Spatial")
+rootdir='C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/post/'
 env.scratchWorkspace ="C:/Users/bougie/Documents/ArcGIS/scratch.gdb"
-mmu_gdb='C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core/mmu.gdb/'
+arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/post/ytc.gdb'
 
 
 
@@ -82,9 +83,7 @@ def addColorMap(production_type,inraster,template):
 
 
 
-def createBinaries(proc):
-    print proc
-    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/pre/pre.gdb'
+def createBinaries(index,proc,params):
     #DESCRIPTION:subset the trajectoires by year to create binary ytc or yfc raster by year that represent the conversion to/from crop between succesive years
     engine = create_engine('postgresql://postgres:postgres@localhost:5432/pre')
     df = pd.read_sql_query('select * from mtr.trajectories WHERE '+proc[0]+' IS NOT NULL',con=engine)
@@ -97,51 +96,23 @@ def createBinaries(proc):
         print type(cy)
         if cy not in {'2012','2016'}:
 
-            
-            output= 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/post/ytc.gdb/'+proc[0]+"_"+cy+"_b"
-            print output
+            print value
+            cond = "Value = "+value
+            file_out= proc[0]+"_"+cy+"_b"
+            print file_out
 
             #Get trajectories layer
-            inRas = Raster('traj')
+            inRas = Raster('D:/gibbs/'+production_type+'/rasters/pre/traj/trajectories.img')
 
-            print value
-            
-            # cond = "Value = "+value
+            OutRas = Con(inRas, 1, 0, cond)
+            OutRas.save(file_out)
 
-            # # OutRas = Con(inRas, cy[2:], 0, cond)
-            # # OutRas.save(output)
-            # OutRas = Con(inRas, cy[2:], 0, cond)
-            # OutRas.save(output)
-
-  
-
-            # print 'yyy',type(int(cy[2:]))
-
-            cond = "Value <> "+value
-            outSetNull = SetNull(inRas, cy[2:], cond)
-            outSetNull.save(output)
-
-
-            # cond = "Value <> "+value
-            # if cy == '2013':
-            # # outSetNull = SetNull(inRas, int(cy[2:]), cond)
-            #     outSetNull = SetNull(inRas, 13, cond)
-            #     outSetNull.save(output)
-            # elif cy == '2014':
-            # # outSetNull = SetNull(inRas, int(cy[2:]), cond)
-            #     outSetNull = SetNull(inRas, 14, cond)
-            #     outSetNull.save(output)
-            # elif cy == '2015':
-            # # outSetNull = SetNull(inRas, int(cy[2:]), cond)
-            #     outSetNull = SetNull(inRas, 15, cond)
-            #     outSetNull.save(output)
+            # arcpy.BuildPyramids_management(OutRas)
 
 
 
+def attachCDL(index,type,params):
 
-
-def attachCDL(params):
-    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/post/ytc.gdb'
     for raster in arcpy.ListDatasets("*_b", "Raster"): 
         print raster
 
@@ -149,7 +120,7 @@ def attachCDL(params):
         #acronym: fnf=file name fragments
         fnf=(os.path.splitext(raster)[0]).split("_")
         print 'fnf:', fnf
-        year = int(fnf[1]) - int(params[0])
+        year = int(fnf[1]) - int(params[2])
         print year
         
         #######  DEFINE OUT RASTER  #####################
@@ -159,21 +130,15 @@ def attachCDL(params):
 
         
         #######  GET APPROPRIATE CDL BY YEAR  #############
-        year=str(year)
-        # cond = "Value = "+year[2:]
-        
-
-        
-
-        ##NOTE STATIC ISSUE HERE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        cdl = Raster('D:/gibbs/production_pre/rasters/pre/cdl/'+str(year)+"_30m_cdls.img")
+        cdl = Raster('D:/gibbs/'+production_type+'/rasters/pre/cdl/'+str(year)+"_30m_cdls.img")
         print cdl
 
 
-        cond = "Value <> "+year[2:]
-        print cond
-        outSetNull = SetNull(raster, cdl, cond)
-        outSetNull.save(file_out)
+        OutRas=Con(raster, cdl, 0, "Value = 1")
+
+
+        # # Save the output 
+        OutRas.save(file_out)
 
         #NEED TO FIX CRASHING PYHTON POSSIBLY ADD ENVIRONMENT?????????????????????????????????????????
         # addColorMap(production_type,file_out,cdl)
@@ -181,76 +146,59 @@ def attachCDL(params):
 
 
 
-
-def cellStats(params):
-    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/post/ytc.gdb'
-    print 'params', params
-    wc=params[0]
-
-
-    files_list = []
-    for raster in arcpy.ListDatasets("*"+wc, "Raster"): 
-        print raster
-        files_list.append(raster)
-
-    file_out='ytc_'+wc+'_mosaic'
-    print 'file_out: ', file_out
-    
-    # Save the output 
-    outCellStatistics = CellStatistics([files_list[0],files_list[1],files_list[2]], "SUM", "DATA")
-    outCellStatistics.save(file_out)
-
-
-
-
-def mask(params):
+def mask(index,type,params):
     # params[x]:
     # 0=mask name
     # 1=wildcard
     # 2
-    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/post/ytc.gdb'
-    mmu = 'ND_traj_n8h_mtr_8w_msk23_nbl'
-    mmu_path = mmu_gdb + mmu
+
+    # rootdir='C:/Users/bougie/Desktop/gibbs/'+pproduction_type+'/rasters/'
+    # #Attach the cdl values to the binary ytc/yfc rasters 
+    # arcpy.CheckOutExtension("Spatial")
+    # env.workspace = 'C:/Users/Bougie/Documents/ArcGIS/Default.gdb'
+
+    print 'params: ', params
     
     if params[0] == 'clipByMMU':
-        # arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/post/ytc.gdb'
-        # raster='ytc_fc_mosaic'
-        # inRaster=Raster(raster)
-        # print inRaster
+        # for raster in arcpy.ListDatasets('*mosaic', "Raster"): 
+        raster='ytc_fc_mosaic'
+        inRaster=Raster(raster)
+        print inRaster
 
-        for raster in arcpy.ListDatasets(params[1], "Raster"): 
-            print raster
-
-            # mmu = 'ND_traj_n8h_mtr_8w_msk23_nbl'
-            mmu_path = mmu_gdb + mmu
-            
-            outRaster = raster+'_'+mmu
-
-            outSetNull = SetNull(mmu_path, raster,  "Value <> 3")
-            # # #Save the output 
-            outSetNull.save(outRaster)
-
-            # #msthc this to the cdl
-            # addColorMap(outRaster,'C:/Users/bougie/Desktop/gibbs/production_pre/rasters/colormaps/cdl.clr') 
-
-    
-    elif params[0] == 'ndTo1': 
-    
-        outRaster = 'ndTo1'
+        x='ND_traj_n8h_mtr_8w_m45_nbl'
+        mmu=Raster(x)
+        
+        outRaster = raster+'_'+x
         print 'outRaster: ', outRaster
 
-        OutRas=Con(((mmu_path == 3) & (IsNull('ytc_b_mosaic_ND_traj_n8h_mtr_8w_msk23_nbl'))), 1, 'ytc_b_mosaic_ND_traj_n8h_mtr_8w_msk23_nbl')
-     
+        outSetNull = SetNull(mmu, inRaster,  "Value <> 3")
+        # #Save the output 
+        outSetNull.save(outRaster)
+
+        # #msthc this to the cdl
+        # addColorMap(outRaster,'C:/Users/bougie/Desktop/gibbs/production_pre/rasters/colormaps/cdl.clr') 
+
+    
+    elif params[0] == 'prepNibble': 
+        # for raster in arcpy.ListDatasets('*mosaic', "Raster"): 
+        raster='ytc_fc_mosaic_ND_traj_n8h_mtr_8w_m45_nbl'
+        inRaster=Raster(raster)
+        print inRaster
+
+        x='ND_traj_n8h_mtr_8w_m45_nbl'
+        mmu=Raster(x)
+        
+        outRaster = raster+'_mask'
+        print 'outRaster: ', outRaster
+
+        OutRas=Con((mmu == 3) & (IsNull(inRaster)), inRaster, 1)
+    
+        #Save the output 
         OutRas.save(outRaster)
 
-        # Con((("ND_traj_n8h_mtr_8w_msk23_nbl" == 3) & (IsNull("ytc_fc_mosaic_ND_traj_n8h_mtr_8w_msk23_nbl"))), "ytc_fc_mosaic_ND_traj_n8h_mtr_8w_msk23_nbl", 1)
-        
-# Con(("ND_traj_n8h_mtr_8w_msk23_nbl" == 3) & (IsNull("ytc_b_mosaic_ND_traj_n8h_mtr_8w_msk23_nbl")),1,"ytc_b_mosaic_ND_traj_n8h_mtr_8w_msk23_nbl")
 
 
 
-
-        # Con((IsNull("ytc_fc_mosaic_ND_traj_n8h_mtr_8w_m45_nbl_fnl") & (IsNull("ytc_fc_mosaic_ND_traj_n8h_mtr_8w_m45_nbl_mask"))), "ytc_fc_mosaic_ND_traj_n8h_mtr_8w_m45_nbl_mask", 1)
 
 
         #     OutRas.save(outRaster)
@@ -261,24 +209,22 @@ def mask(params):
         # outRaster = rootdir + params[2] + 'ytc_fc_mosiac_ND_traj_n8h_mtr_8w_m45_nbl_ndTo1.img'
         # print outRaster
         # OutRas=Con((mmu == 3) & (IsNull(inRaster)), 1, inRaster)
-    # elif params[0] == 'ndTo1': 
-    #     # for raster in arcpy.ListDatasets('ytc_fc_mosaic_ND_traj_n8h_mtr_8w_m45_nbl', "Raster"): 
-    #     raster='ytc_fc_mosaic_ND_traj_n8h_mtr_8w_m45_nbl'
-    #     # raster='ytc_fc_mosaic'
-    #     inRaster=Raster(raster)
-    #     print 'inRaster: ', inRaster
+    elif params[0] == 'ndTo1': 
+        # for raster in arcpy.ListDatasets('ytc_fc_mosaic_ND_traj_n8h_mtr_8w_m45_nbl', "Raster"): 
+        raster='ytc_fc_mosaic_ND_traj_n8h_mtr_8w_m45_nbl'
+        inRaster=Raster(raster)
+        print 'inRaster: ', inRaster
 
-    #     x='ND_traj_n8h_mtr_8w_m45_nbl'
-    #     mmu=Raster(x)
+        x='ND_traj_n8h_mtr_8w_m45_nbl'
+        mmu=Raster(x)
         
-    #     outRaster = raster+'_ndTo1'
-    #     # outRaster = raster+'_ndTo1_full'
-    #     print 'outRaster: ', outRaster
+        outRaster = raster+'_ndTo1'
+        print 'outRaster: ', outRaster
 
-    #     OutRas=Con((mmu == 3) & (IsNull(inRaster)), 1, inRaster)
+        OutRas=Con((mmu == 3) & (IsNull(inRaster)), 1, inRaster)
     
-    #     #Save the output 
-    #     OutRas.save(outRaster)
+        #Save the output 
+        OutRas.save(outRaster)
 
             # msthc this to the cdl
             # addColorMap(outRaster,'C:/Users/bougie/Desktop/gibbs/production_pre/rasters/colormaps/cdl.clr')
@@ -294,22 +240,50 @@ def getRasterInGDB(wildcard):
 
 
 
+def createEmptyRaster():
+    dataset = "D:/gibbs/production/pre/cdl/2013_30m_cdls.img"
+    spatial_ref = arcpy.Describe(dataset).spatialReference
+    # arcpy.CreateRasterDataset_management(arcpy.env.workspace, "ytc_fc_mosaic", "8_BIT_UNSIGNED", "1")
+    arcpy.CreateRasterDataset_management(arcpy.env.workspace,"ytc_fc_mosaic","30","8_BIT_UNSIGNED",spatial_ref, "1")
 
-def nibble(params):
-    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/post/ytc.gdb'
-    raster = 'ndTo1'
 
-    for mask in arcpy.ListDatasets('*_nbl', "Raster"): 
-        print mask
 
-        outRaster = mask+'_fnl_python'
-        print 'outRaster: ', outRaster
+def mosiacStack(index,type,params):
 
-        ###  Execute Nibble  #####################
-        nibbleOut = Nibble(raster, mask, "DATA_ONLY")
+    createEmptyRaster()
 
-        ###  Save the output  ################### 
-        nibbleOut.save(outRaster)
+    files_list = []
+    for raster in arcpy.ListDatasets("*fc", "Raster"): 
+        print raster
+        files_list.append(raster)
+      
+  
+    files_in=';'.join(files_list)
+    print files_in
+
+    # file_out=ds.dir_out+'unsign8.img'
+    file_out='ytc_fc_mosaic'
+    print 'file_out: ', file_out
+    # Save the output 
+    arcpy.Mosaic_management(files_in,file_out,"LAST","FIRST","0", "0", "", "", "")
+
+
+
+def nibble(index,type,params):
+    inRaster=Raster(raster)
+    print inRaster
+
+    x='ND_traj_n8h_mtr_8w_m45_nbl'
+    mmu=Raster(x)
+
+    outRaster = raster+'_'+x+'nibble'
+    print 'outRaster: ', outRaster
+
+    ###  Execute Nibble  #####################
+    nibbleOut = Nibble(file_in, mask, "ALL_VALUES")
+
+    ###  Save the output  ################### 
+    nibbleOut.save(file_out)
 
 
     # os.chdir(ds.dir_in)
@@ -389,9 +363,10 @@ def nibble(params):
 ######################################################################################
 
 
-def fire_all(func_list,params):
+
+def fire_all(func_list,index,type,params):
     for f in func_list:
-        f(params)
+        f(index,type,params)
 
 
     
@@ -399,9 +374,9 @@ def runit():
 
     fct_list = {'createBinaries':[createBinaries],
                 'attachCDL': [attachCDL],
-                'cellStats': [cellStats],
+                'mosiacStack': [mosiacStack],
                 'mask':[mask],
-                'mask_clipByMMU':[mask],
+                'clipByMMU':[mask],
                 'mask_prepNibble':[mask],
                 'mask_ndTo1':[mask],
                 'nibble':[nibble]
@@ -414,14 +389,17 @@ def runit():
     routes=df['routes']
     for i, route in enumerate(routes):
         print i
-        print route
+        print 'route: ', route
         for step in route:
-            print 'step-----------------', step
+            print step
          
             params=df[step][i]
-            print 'params: ', params
-            fire_all(fct_list[step],params)
+            type=df['type'][i]
+            print type
+            fire_all(fct_list[step],i,type,params)
     
+
+
 
 
 
@@ -493,12 +471,3 @@ runit()
 
 
 # Con(("Raster1" == 20) | ("Raster1" == 24), 0, 1)
-
-
-
-
-
-
-
-
-

@@ -84,7 +84,7 @@ def majorityFilter(gdb_in):
     filter_combos = {'n8h':["EIGHT", "HALF"]}
     for k, v in filter_combos.iteritems():
         print k,v
-        for raster in arcpy.ListDatasets("*", "Raster"): 
+        for raster in arcpy.ListDatasets("traj", "Raster"): 
             print 'raster: ', raster
     
             raster_out=raster+'_'+k
