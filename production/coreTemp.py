@@ -42,13 +42,13 @@ def addColorMap(inraster,template):
 
 def createMTR(gdb_in):
     gdb_in=gdb_in[0]
-    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core/'+gdb_in+'.gdb'
+    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core2/'+gdb_in+'.gdb'
     for raster in arcpy.ListDatasets('*', "Raster"): 
         # inRaster=Raster(raster)
         # print inRaster
 
         raster_out = raster+'_mtr'
-        output = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core/mtr.gdb/'+raster_out
+        output = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core2/mtr.gdb/'+raster_out
         print output
 
         reclassArray = createReclassifyList() 
@@ -92,7 +92,7 @@ def majorityFilter(gdb_in):
             # Execute MajorityFilter
             outMajFilt = MajorityFilter(raster, v[0], v[1])
             
-            output = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core/filter.gdb/'+raster_out
+            output = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core2/filter.gdb/'+raster_out
             
             #save processed raster to new file
             outMajFilt.save(output)
@@ -141,7 +141,7 @@ def focalStats(index,dir_in,dir_out):
 
 def regionGroup(gdb_in):
     gdb_in=gdb_in[0]
-    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core/'+gdb_in+'.gdb'
+    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core2/'+gdb_in+'.gdb'
 
 
     # filter_combos = {'4w':["FOUR", "WITHIN"],'4c':["FOUR", "CROSS"],'8w':["EIGHT", "WITHIN"],'8c':["EIGHT", "CROSS"]}
@@ -154,7 +154,7 @@ def regionGroup(gdb_in):
             raster_out=raster+'_'+k
             print raster_out
             
-            output = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core/mmu.gdb/'+raster_out
+            output = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core2/mmu.gdb/'+raster_out
 
             # Execute RegionGroup
             outRegionGrp = RegionGroup(raster, v[0], v[1],"NO_LINK")
@@ -170,7 +170,7 @@ def regionGroup(gdb_in):
 
 def mask(gdb_in):
     gdb_in=gdb_in[0]
-    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core/'+gdb_in+'.gdb'
+    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core2/'+gdb_in+'.gdb'
     for raster in arcpy.ListDatasets('*8w', "Raster"): 
         # inRaster=Raster(raster)
         # print inRaster
@@ -191,7 +191,7 @@ def mask(gdb_in):
             print 'cond: ',cond
 
             raster_out = raster+'_msk'+ count
-            output = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core/mmu.gdb/'+raster_out
+            output = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core2/mmu.gdb/'+raster_out
             print output
 
             outSetNull = SetNull(raster, 1, cond)
@@ -204,14 +204,14 @@ def mask(gdb_in):
 def nibble(gdb_in):
 
     gdb_in=gdb_in[0]
-    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core/'+gdb_in+'.gdb'
+    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core2/'+gdb_in+'.gdb'
     for mask in arcpy.ListDatasets('*_msk*', "Raster"): 
     
         #create file structure
         output = mask+'_nbl'
     
         ####  create the paths to the mask files  ############# 
-        raster_in='C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core/mtr.gdb/traj_n8h_mtr'
+        raster_in='C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core2/mtr.gdb/traj_n8h_mtr'
       
         ###  Execute Nibble  #####################
         nibbleOut = Nibble(Raster(raster_in), mask, "DATA_ONLY")

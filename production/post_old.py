@@ -366,7 +366,7 @@ def nibble(index,type,params):
 
 def fire_all(func_list,index,type,params):
     for f in func_list:
-        f(index,type,params)
+        f(index,typ,params)
 
 
     
@@ -394,9 +394,9 @@ def runit():
             print step
          
             params=df[step][i]
-            type=df['type'][i]
-            print type
-            fire_all(fct_list[step],i,type,params)
+            typ=df['type'][i]
+            print typ
+            fire_all(fct_list[step],i,typ,params)
     
 
 
