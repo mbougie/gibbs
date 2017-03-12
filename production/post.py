@@ -22,7 +22,7 @@ env.scratchWorkspace ="C:/Users/bougie/Documents/ArcGIS/scratch.gdb"
 
 
 
-mmu='traj_n8h_mtr_8w_msk23_nbl'
+mmu='traj_n8h_mtr_8w_msk45_nbl'
 mmu_gdb='C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core/mmu.gdb/'
 mmu_Raster=Raster(mmu_gdb + mmu)
 
@@ -121,7 +121,8 @@ def attachCDL(typ,params):
 def cellStats(typ,params):
     arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/post/'+typ[0]+'.gdb'
     print 'params', params
-    wc=type[1]
+    wc=typ[1]
+    print wc
 
 
     files_list = []

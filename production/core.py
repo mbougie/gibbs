@@ -185,7 +185,7 @@ def mask(gdb_in):
 
 
         # masks=['23','45','68']
-        masks=['45']
+        masks=['23']
         for count in masks:
             cond = "Count < " + count
             print 'cond: ',cond
