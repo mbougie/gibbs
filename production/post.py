@@ -22,8 +22,9 @@ env.scratchWorkspace ="C:/Users/bougie/Documents/ArcGIS/scratch.gdb"
 
 
 
-mmu='traj_n8h_mtr_8w_msk45_nbl'
+
 mmu_gdb='C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core/mmu.gdb/'
+mmu='traj_n8h_mtr_8w_msk45_nbl'
 mmu_Raster=Raster(mmu_gdb + mmu)
 
 
@@ -158,7 +159,7 @@ def mask(typ,params):
             outRaster = raster+'_'+mmu
             print 'outRaster: ', outRaster
 
-            outSetNull = SetNull(mmu_path, raster,  "Value <> 3")
+            outSetNull = SetNull(mmu_Raster, raster,  "Value <> 3")
             
             #Save the output 
             outSetNull.save(outRaster)
