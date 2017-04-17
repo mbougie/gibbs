@@ -16,15 +16,16 @@ import psycopg2
 
 ###################  set up environment  #####################################
 
+rootDir='gibbs'
 production_type='production'
 arcpy.CheckOutExtension("Spatial")
 env.scratchWorkspace ="C:/Users/bougie/Documents/ArcGIS/scratch.gdb"
 
 
 
-
-mmu_gdb='C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core/mmu.gdb/'
-mmu='traj_n8h_mtr_8w_msk45_nbl'
+##  datasets from core process ##########################################################
+mmu_gdb='C:/Users/bougie/Desktop/'+rootDir+'/'+production_type+'/processes/core/mmu.gdb/'
+mmu='traj_n8h_mtr_8w_msk23_nbl'
 mmu_Raster=Raster(mmu_gdb + mmu)
 
 
@@ -48,30 +49,28 @@ def addColorMap(inraster,template):
 
 
 
-def createBinaries(typ,proc):
-    print proc
-    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/pre/pre.gdb'
+def createBinaries(typ):
+    arcpy.env.workspace = 'C:/Users/bougie/Desktop/'+rootDir+'/'+production_type+'/processes/pre/pre.gdb'
     #DESCRIPTION:subset the trajectoires by year to create binary ytc or ytc raster by year that represent the conversion to/from crop between succesive years
     engine = create_engine('postgresql://postgres:postgres@localhost:5432/pre')
-    df = pd.read_sql_query('select * from mtr.trajectories WHERE '+proc[0]+' IS NOT NULL',con=engine)
+    df = pd.read_sql_query('select * from mtr.trajectories WHERE '+typ+' IS NOT NULL',con=engine)
     print 'df--',df
 
     for index, row in df.iterrows():
         value=str(int(row['Value'])) 
+        print 'value: ', value
         #cy=conversion year
-        cy=str(int(row[proc[0]]))
-        print type(cy)
+        cy=str(int(row[typ]))
+        print 'cy:', type(cy)
         if cy not in {'2012','2016'}:
 
-            
-            output= 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/post/'+typ[0]+'.gdb/'+proc[0]+"_"+cy+"_b"
-            print output
+            output= 'C:/Users/bougie/Desktop/'+rootDir+'/'+production_type+'/processes/post/'+typ+'.gdb/'+typ+"_"+cy+"_b"
+            print 'output: ', output
 
-            #Get trajectories layer
+            # Get trajectories layer
             inRas = Raster('traj')
 
-            print value
-
+       
             cond = "Value <> "+value
             outSetNull = SetNull(inRas, cy[2:], cond)
             outSetNull.save(output)
@@ -81,8 +80,8 @@ def createBinaries(typ,proc):
 
 
 
-def attachCDL(typ,params):
-    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/post/'+ytc+'.gdb'
+def attachCDL(typ,yr_reduction):
+    arcpy.env.workspace = 'C:/Users/bougie/Desktop/'+rootDir+'/'+production_type+'/processes/post/'+typ[0]+'.gdb'
     for raster in arcpy.ListDatasets("*_b", "Raster"): 
         print raster
 
@@ -90,39 +89,39 @@ def attachCDL(typ,params):
         #acronym: fnf=file name fragments
         fnf=(os.path.splitext(raster)[0]).split("_")
         print 'fnf:', fnf
-        year = int(fnf[1]) - int(params[0])
-        print year
+        year = int(fnf[1]) - yr_reduction
+        print 'cdl year to reference: ', year
         
         #######  DEFINE OUT RASTER  #####################
         x=(os.path.splitext(raster)[0]).split(".")
-        file_out = x[0] + '_'+typ[1]
-        print 'file_out: ', file_out
+        output = x[0] + '_'+typ[1]
+        print 'output: ', output
 
         
         #######  GET APPROPRIATE CDL BY YEAR  #############
         cdl = 'D:/gibbs/'+production_type+'/rasters/pre/cdl/'+str(year)+"_30m_cdls.img"
-        print cdl
+        print "cdl raster with the appropriate year", cdl
 
 
         cond = "Value <> "+str(fnf[1])
         print cond
 
-        OutRas=Con(raster, cdl, raster, cond)
+        OutRas=Con(raster, Raster(cdl), raster, cond)
 
         # # Save the output 
-        OutRas.save(file_out)
+        OutRas.save(output)
 
         #NEED TO FIX CRASHING PYHTON POSSIBLY ADD ENVIRONMENT?????????????????????????????????????????
-        addColorMap(output,'C:/Users/bougie/Desktop/gibbs/colormaps/cdl.clr')
+        addColorMap(output,'C:/Users/bougie/Desktop/'+rootDir+'/colormaps/cdl.clr')
 
 
 
 
 
-def cellStats(typ,params):
-    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/post/'+typ[0]+'.gdb'
-    print 'params', params
-    wc=typ[1]
+def cellStats(typ,wc):
+    arcpy.env.workspace = 'C:/Users/bougie/Desktop/'+rootDir+'/'+production_type+'/processes/post/'+typ+'.gdb'
+
+    
     print wc
 
 
@@ -131,71 +130,73 @@ def cellStats(typ,params):
         print raster
         files_list.append(raster)
 
-    file_out='ytc_'+wc+'_mosaic'
-    print 'file_out: ', file_out
+    output='ytc_'+wc+'_mosaic'
+    print 'output: ', output
     
     # Save the output 
     outCellStatistics = CellStatistics([files_list[0],files_list[1],files_list[2]], "SUM", "DATA")
-    outCellStatistics.save(file_out)
+    outCellStatistics.save(output)
 
 
 
 
-def mask(typ,params):
+def mask(params,masktype):
     # params[x]:
     # 0=mask name
     # 1=wildcard
     # 2
-    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/post/'+typ[0]+'.gdb'
+    arcpy.env.workspace = 'C:/Users/bougie/Desktop/'+rootDir+'/'+production_type+'/processes/post/'+params[0]+'.gdb'
     
-    if params[0] == 'clipByMMU':
-        #create wildcard to subset rasters want to work with
-        wc='*_'+typ[1]+'_mosaic'
+    if masktype == 'clipByMMU':
+        #create wildcard to subset processes want to work with
+        wc='*_'+params[1]+'_mosaic'
         print 'wc: ', wc
 
         for raster in arcpy.ListDatasets(wc, "Raster"): 
             print 'raster: ',raster
 
-            outRaster = raster+'_'+mmu
-            print 'outRaster: ', outRaster
+            output = raster+'_'+mmu
+            print 'output: ', output
 
             outSetNull = SetNull(mmu_Raster, raster,  "Value <> 3")
             
             #Save the output 
-            outSetNull.save(outRaster)
+            outSetNull.save(output)
 
 
     
-    elif params[0] == 'ndTo1':
-        #create wildcard to subset rasters want to work with
-        wc='*_'+typ[1]+'_mosaic_'+mmu
+    elif masktype == 'ndTo1':
+        #create wildcard to subset processes want to work with
+        wc='*_'+params[1]+'_mosaic_'+mmu
         print 'wc: ', wc
 
         for raster in arcpy.ListDatasets(wc, "Raster"): 
             print 'raster: ',raster
 
             # input_Raster=Raster(raster)
-            outRaster = raster+'_ndTo1'
-            print 'outRaster: ', outRaster
+            output = raster+'_ndTo1'
+            print 'output: ', output
             
             OutRas=Con((IsNull(raster)) & (mmu_Raster == 3), 1,raster)
             
             #Save the output 
-            OutRas.save(outRaster)
+            OutRas.save(output)
 
 
 
-def nibble(typ,params):
-    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/post/'+typ[0]+'.gdb'
-    raster = Raster('ytc_fc_mosaic_traj_n8h_mtr_8w_msk23_nbl_ndTo1')
+def nibble(typ,mskSize):
+    arcpy.env.workspace = 'C:/Users/bougie/Desktop/'+rootDir+'/'+production_type+'/processes/post/'+typ[0]+'.gdb'
+    raster = Raster('ytc_'+typ[1]+'_mosaic_traj_n8h_mtr_8w_msk'+mskSize+'_nbl_ndTo1')
+    print 'raster: ', raster
     
-    wc='ytc_fc_mosaic_traj_n8h_mtr_8w_msk23_nbl'
+    wc='ytc_'+typ[1]+'_mosaic_traj_n8h_mtr_8w_msk'+mskSize+'_nbl'
+    print 'wc: ', wc
 
     for mask in arcpy.ListDatasets(wc, "Raster"): 
         print 'mask: ', mask
 
         output = mask+'_fnl'
-        print 'outRaster: ', outRaster
+        print 'output: ', output
 
         ###  Execute Nibble  #####################
         nibbleOut = Nibble(raster, mask, "DATA_ONLY")
@@ -203,53 +204,78 @@ def nibble(typ,params):
         ###  Save the output  ################### 
         nibbleOut.save(output)
 
-        addColorMap(output,'C:/Users/bougie/Desktop/gibbs/colormaps/mmu.clr')
+        addColorMap(output,'C:/Users/bougie/Desktop/'+rootDir+'/colormaps/mmu.clr')
 
 
 
 ######################################################################################
 
 
-def fire_all(func_list,typ,params):
-    for f in func_list:
-        f(typ,params)
+# def fire_all(func_list,typ,params):
+#     for f in func_list:
+#         f(typ,params)
 
 
     
-def runit():
+# def runit():
 
-    fct_list = {'createBinaries':[createBinaries],
-                'attachCDL': [attachCDL],
-                'cellStats': [cellStats],
-                'mask':[mask],
-                'mask_clipByMMU':[mask],
-                'mask_prepNibble':[mask],
-                'mask_ndTo1':[mask],
-                'nibble':[nibble]
-               }
+#     fct_list = {'createBinaries':[createBinaries],
+#                 'attachCDL': [attachCDL],
+#                 'cellStats': [cellStats],
+#                 'mask':[mask],
+#                 'mask_clipByMMU':[mask],
+#                 'mask_prepNibble':[mask],
+#                 'mask_ndTo1':[mask],
+#                 'nibble':[nibble]
+#                }
 
 
-    engine = create_engine('postgresql://postgres:postgres@localhost:5432/metadata')
-    df = pd.read_sql_query('SELECT * FROM routes_prod.routes_post ORDER BY serial',con=engine)
+#     engine = create_engine('postgresql://postgres:postgres@localhost:5432/metadata')
+#     df = pd.read_sql_query('SELECT * FROM routes_prod.routes_post ORDER BY serial',con=engine)
     
-    routes=df['routes']
-    for i, route in enumerate(routes):
-        print i
-        print route
-        for step in route:
-            print 'step-----------------', step
+#     routes=df['routes']
+#     for i, route in enumerate(routes):
+#         print i
+#         print route
+#         for step in route:
+#             print 'step-----------------', step
          
-            params=df[step][i]
-            print 'params: ', params
-            typ=df['type'][i]
-            print typ
-            fire_all(fct_list[step],typ,params)
+#             params=df[step][i]
+#             print 'params: ', params
+#             typ=df['type'][i]
+#             print typ
+#             fire_all(fct_list[step],typ,params)
     
 
 
 
 ##############  call functions  #####################################################
-runit()
+# createBinaries('ytc')
+# cellStats('ytc','b')
+# mask(['ytc','b'],'clipByMMU')
+# mask(['ytc','b'],'ndTo1')
+# nibble(['ytc','b'],'23')
+
+
+
+# attachCDL(['ytc','fc'],0)
+# cellStats('ytc','fc')
+# mask(['ytc','fc'],'clipByMMU')
+# mask(['ytc','fc'],'ndTo1')
+# nibble(['ytc','fc'],'23')
+
+
+attachCDL(['ytc','bfc'],1)
+cellStats('ytc','bfc')
+mask(['ytc','bfc'],'clipByMMU')
+mask(['ytc','bfc'],'ndTo1')
+nibble(['ytc','bfc'],'23')
+
+
+
+
+
+
 
 # {createBinaries,cellStats,mask_clipByMMU,mask_ndTo1}
 # {attachCDL,cellStats,mask_clipByMMU}

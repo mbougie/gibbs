@@ -41,14 +41,11 @@ def addColorMap(inraster,template):
 
 
 def createMTR(gdb_in):
-    gdb_in=gdb_in[0]
-    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core/'+gdb_in+'.gdb'
+    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/processes/core/'+gdb_in+'.gdb'
     for raster in arcpy.ListDatasets('*', "Raster"): 
-        # inRaster=Raster(raster)
-        # print inRaster
-
+   
         raster_out = raster+'_mtr'
-        output = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core/mtr.gdb/'+raster_out
+        output = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/processes/core/mtr.gdb/'+raster_out
         print output
 
         reclassArray = createReclassifyList() 
@@ -59,15 +56,16 @@ def createMTR(gdb_in):
         addColorMap(output,'C:/Users/bougie/Desktop/gibbs/colormaps/mmu.clr')
 
 
+
 def createReclassifyList():
     engine = create_engine('postgresql://postgres:postgres@localhost:5432/pre')
-    df = pd.read_sql_query('select "Value","MTR_2012-2015" from mtr.trajectories WHERE "Value" != 0',con=engine)
+    df = pd.read_sql_query('select "Value","mtr" from mtr.trajectories',con=engine)
     fulllist=[[0,0,"NODATA"]]
     # fulllist=[]
     for index, row in df.iterrows():
         templist=[]
         value=row['Value'] 
-        mtr=row['MTR_2012-2015']  
+        mtr=row['mtr']  
         templist.append(int(value))
         templist.append(int(mtr))
         fulllist.append(templist)
@@ -76,30 +74,49 @@ def createReclassifyList():
 
 
 
-def majorityFilter(gdb_in):
-    gdb_in=gdb_in[0]
-    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/pre/'+gdb_in+'.gdb'
+# def majorityFilter(gdb_in):
+#     arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/pre/'+gdb_in+'.gdb'
+
+#     # filter_combos = {'n4h':["FOUR", "HALF"],'n4m':["FOUR", "MAJORITY"],'n8h':["EIGHT", "HALF"],'n8m':["EIGHT", "MAJORITY"]}
+#     filter_combos = {'n8h':["EIGHT", "HALF"]}
+#     for k, v in filter_combos.iteritems():
+#         print k,v
+#         for raster in arcpy.ListDatasets("traj", "Raster"): 
+#             print 'raster: ', raster
+    
+#             raster_out=raster+'_'+k
+
+#             # Execute MajorityFilter
+#             outMajFilt = MajorityFilter(raster, v[0], v[1])
+            
+#             output = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core/filter.gdb/'+raster_out
+            
+#             #save processed raster to new file
+#             outMajFilt.save(output)
+
+#             # addColorMap(output,'C:/Users/bougie/Desktop/gibbs/colormaps/filter_and_mmu.clr')
+
+def majorityFilter():
+    dir = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/processes/pre/'
 
     # filter_combos = {'n4h':["FOUR", "HALF"],'n4m':["FOUR", "MAJORITY"],'n8h':["EIGHT", "HALF"],'n8m':["EIGHT", "MAJORITY"]}
     filter_combos = {'n8h':["EIGHT", "HALF"]}
     for k, v in filter_combos.iteritems():
         print k,v
-        for raster in arcpy.ListDatasets("traj", "Raster"): 
-            print 'raster: ', raster
+        os.chdir(dir)
+        for file in glob.glob("*.img"):
+            print(file)
     
-            raster_out=raster+'_'+k
+            raster_out=file[:-4]+'_'+k
+            print 'raster_out: ',raster_out
 
             # Execute MajorityFilter
-            outMajFilt = MajorityFilter(raster, v[0], v[1])
+            outMajFilt = MajorityFilter(Raster(file), v[0], v[1])
             
-            output = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core/filter.gdb/'+raster_out
+            output = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/processes/core/filter.gdb/'+raster_out
             
             #save processed raster to new file
             outMajFilt.save(output)
-
-            # addColorMap(output,'C:/Users/bougie/Desktop/gibbs/colormaps/filter_and_mmu.clr')
-
-
 
 def focalStats(index,dir_in,dir_out):
 
@@ -140,8 +157,7 @@ def focalStats(index,dir_in,dir_out):
 ####################  mmu functions  ##########################################
 
 def regionGroup(gdb_in):
-    gdb_in=gdb_in[0]
-    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core/'+gdb_in+'.gdb'
+    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/processes/core/'+gdb_in+'.gdb'
 
 
     # filter_combos = {'4w':["FOUR", "WITHIN"],'4c':["FOUR", "CROSS"],'8w':["EIGHT", "WITHIN"],'8c':["EIGHT", "CROSS"]}
@@ -154,7 +170,7 @@ def regionGroup(gdb_in):
             raster_out=raster+'_'+k
             print raster_out
             
-            output = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core/mmu.gdb/'+raster_out
+            output = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/processes/core/mmu.gdb/'+raster_out
 
             # Execute RegionGroup
             outRegionGrp = RegionGroup(raster, v[0], v[1],"NO_LINK")
@@ -168,12 +184,9 @@ def regionGroup(gdb_in):
 
 
 
-def mask(gdb_in):
-    gdb_in=gdb_in[0]
-    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core/'+gdb_in+'.gdb'
+def mask(masks_list):
+    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/processes/core/mmu.gdb'
     for raster in arcpy.ListDatasets('*8w', "Raster"): 
-        # inRaster=Raster(raster)
-        # print inRaster
 
          #################  CONDITION  #######################################
         # CONVERSION: 900square miles = 0.222395 acres
@@ -183,15 +196,14 @@ def mask(gdb_in):
          #10      45
          #15      68
 
-
         # masks=['23','45','68']
-        masks=['23']
-        for count in masks:
+        
+        for count in masks_list:
             cond = "Count < " + count
             print 'cond: ',cond
 
-            raster_out = raster+'_msk'+ count
-            output = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core/mmu.gdb/'+raster_out
+            output = raster+'_msk'+ count
+            # output = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/processes/core/mmu.gdb/'+raster_out
             print output
 
             outSetNull = SetNull(raster, 1, cond)
@@ -201,17 +213,17 @@ def mask(gdb_in):
 
 
 
-def nibble(gdb_in):
+def nibble(maskSize):
+    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/processes/core/mmu.gdb'
+    for mask in arcpy.ListDatasets('*_msk'+maskSize, "Raster"): 
+        print mask
 
-    gdb_in=gdb_in[0]
-    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core/'+gdb_in+'.gdb'
-    for mask in arcpy.ListDatasets('*_msk*', "Raster"): 
-    
         #create file structure
         output = mask+'_nbl'
+        print output
     
         ####  create the paths to the mask files  ############# 
-        raster_in='C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core/mtr.gdb/traj_n8h_mtr'
+        raster_in='C:/Users/bougie/Desktop/gibbs/'+production_type+'/processes/core/mtr.gdb/traj_n8h_mtr'
       
         ###  Execute Nibble  #####################
         nibbleOut = Nibble(Raster(raster_in), mask, "DATA_ONLY")
@@ -222,49 +234,11 @@ def nibble(gdb_in):
         addColorMap(output,'C:/Users/bougie/Desktop/gibbs/colormaps/mmu.clr')
 
 
-
-
-
-
 #############################  Call Functions ######################################
 
+# majorityFilter()
+# createMTR('filter')
+# regionGroup('mtr')
+mask(['68'])
+nibble('68')
 
-
-def fire_all(func_list,params):
-    for f in func_list:
-        f(params)
-
-
-
-    
-def runit():
-
-    fct_list = {'createMTR': [createMTR],
-                'majorityFilter': [majorityFilter],
-                'focalStats': [focalStats],
-                'regionGroup': [regionGroup],
-                'mask': [mask],
-                'nibble': [nibble]
-               }
-
-
-    engine = create_engine('postgresql://postgres:postgres@localhost:5432/metadata')
-    df = pd.read_sql_query('SELECT * FROM routes_prod.routes_core ORDER BY serial',con=engine)
-    
-    routes=df['routes']
-    for i, route in enumerate(routes):
-        print i
-        print route
-        for step in route:
-            print 'step-----------------', step
-         
-            params=df[step][i]
-            fire_all(fct_list[step],params)
-    
-
-
-
-
-
-##############  call functions  #####################################################
-runit()
