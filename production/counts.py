@@ -253,11 +253,10 @@ def mosiacStack(index,type,params):
     createEmptyRaster()
 
     files_list = []
-    for raster in arcpy.ListDatasets("*fc", "Raster"): 
+    for raster in arcpy.ListDatasets("*fc", "Raster"):
         print raster
-        files_list.append(raster)
-      
-  
+        files_list.append(raster) 
+
     files_in=';'.join(files_list)
     print files_in
 

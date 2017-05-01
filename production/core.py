@@ -1,13 +1,13 @@
 from sqlalchemy import create_engine
 import numpy as np, sys, os
-from osgeo import gdal
-from osgeo.gdalconst import *
+# from osgeo import gdal
+# from osgeo.gdalconst import *
 # from pandas import read_sql_query
 import pandas as pd
 # import tables
 import collections
 from collections import namedtuple
-import openpyxl
+# import openpyxl
 import arcpy
 from arcpy import env
 from arcpy.sa import *
@@ -17,7 +17,7 @@ import psycopg2
 
 production_type='production'
 arcpy.CheckOutExtension("Spatial")
-env.scratchWorkspace ="C:/Users/bougie/Documents/ArcGIS/scratch.gdb"
+# env.scratchWorkspace ="C:/Users/bougie/Documents/ArcGIS/scratch.gdb"
 
 
 ###################  declare functions  #######################################################
@@ -41,25 +41,26 @@ def addColorMap(inraster,template):
 
 
 def createMTR(gdb_in):
-    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/processes/core/'+gdb_in+'.gdb'
-    for raster in arcpy.ListDatasets('*', "Raster"): 
-   
+    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/production/processes/core/'+gdb_in+'.gdb'
+    for raster in arcpy.ListDatasets('*rfnd*', "Raster"): 
+        print 'raster:', raster
         raster_out = raster+'_mtr'
-        output = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/processes/core/mtr.gdb/'+raster_out
-        print output
+        output = 'C:/Users/bougie/Desktop/gibbs/production/processes/core/mtr.gdb/'+raster_out
+        print 'output:', output
 
         reclassArray = createReclassifyList() 
         outReclass = Reclassify(raster, "Value", RemapRange(reclassArray), "NODATA")
         
         outReclass.save(output)
 
-        addColorMap(output,'C:/Users/bougie/Desktop/gibbs/colormaps/mmu.clr')
+        # addColorMap(output,'C:/Users/bougie/Desktop/gibbs/colormaps/mmu.clr')
 
 
 
 def createReclassifyList():
-    engine = create_engine('postgresql://postgres:postgres@localhost:5432/pre')
-    df = pd.read_sql_query('select "Value","mtr" from mtr.trajectories',con=engine)
+    engine = create_engine('postgresql://postgres:postgres@localhost:5432/core')
+    df = pd.read_sql_query('SELECT "Value", mtr from pre.traj union select new_value, mtr from refinement.traj_lookup',con=engine)
+    print df
     fulllist=[[0,0,"NODATA"]]
     # fulllist=[]
     for index, row in df.iterrows():
@@ -74,46 +75,23 @@ def createReclassifyList():
 
 
 
-# def majorityFilter(gdb_in):
-#     arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/pre/'+gdb_in+'.gdb'
-
-#     # filter_combos = {'n4h':["FOUR", "HALF"],'n4m':["FOUR", "MAJORITY"],'n8h':["EIGHT", "HALF"],'n8m':["EIGHT", "MAJORITY"]}
-#     filter_combos = {'n8h':["EIGHT", "HALF"]}
-#     for k, v in filter_combos.iteritems():
-#         print k,v
-#         for raster in arcpy.ListDatasets("traj", "Raster"): 
-#             print 'raster: ', raster
-    
-#             raster_out=raster+'_'+k
-
-#             # Execute MajorityFilter
-#             outMajFilt = MajorityFilter(raster, v[0], v[1])
-            
-#             output = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/core/filter.gdb/'+raster_out
-            
-#             #save processed raster to new file
-#             outMajFilt.save(output)
-
-#             # addColorMap(output,'C:/Users/bougie/Desktop/gibbs/colormaps/filter_and_mmu.clr')
-
-def majorityFilter():
-    dir = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/processes/pre/'
+def majorityFilter(dataset):
+    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/production/processes/pre/pre.gdb'
 
     # filter_combos = {'n4h':["FOUR", "HALF"],'n4m':["FOUR", "MAJORITY"],'n8h':["EIGHT", "HALF"],'n8m':["EIGHT", "MAJORITY"]}
     filter_combos = {'n8h':["EIGHT", "HALF"]}
     for k, v in filter_combos.iteritems():
         print k,v
-        os.chdir(dir)
-        for file in glob.glob("*.img"):
-            print(file)
+        for raster in arcpy.ListDatasets(dataset, "Raster"): 
+            print 'raster: ', raster
     
-            raster_out=file[:-4]+'_'+k
-            print 'raster_out: ',raster_out
-
-            # Execute MajorityFilter
-            outMajFilt = MajorityFilter(Raster(file), v[0], v[1])
+            raster_out=raster+'_'+k
             
-            output = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/processes/core/filter.gdb/'+raster_out
+            # Execute MajorityFilter
+            outMajFilt = MajorityFilter(raster, v[0], v[1])
+            
+            output = 'C:/Users/bougie/Desktop/gibbs/production/processes/core/filter.gdb/'+raster_out
+            print 'output: ',output
             
             #save processed raster to new file
             outMajFilt.save(output)
@@ -236,9 +214,11 @@ def nibble(maskSize):
 
 #############################  Call Functions ######################################
 
-# majorityFilter()
-# createMTR('filter')
+majorityFilter("traj_rfnd")
+createMTR('filter')
 # regionGroup('mtr')
-mask(['68'])
-nibble('68')
+# mask(['23'])
+# nibble('23')
+
+
 
