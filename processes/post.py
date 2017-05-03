@@ -1,31 +1,34 @@
 from sqlalchemy import create_engine
 import numpy as np, sys, os
-from osgeo import gdal
-from osgeo.gdalconst import *
-# from pandas import read_sql_query
+# from osgeo import gdal
+# from osgeo.gdalconst import *
 import pandas as pd
-# import tables
 import collections
 from collections import namedtuple
-import openpyxl
+# import openpyxl
 import arcpy
 from arcpy import env
 from arcpy.sa import *
 import glob
 import psycopg2
 
-###################  set up environment  #####################################
 
-rootDir='gibbs'
-production_type='production'
+
+
 arcpy.CheckOutExtension("Spatial")
-env.scratchWorkspace ="C:/Users/bougie/Documents/ArcGIS/scratch.gdb"
+case=['bougie','gibbs']
 
+
+###################  declare functions  #######################################################
+def defineGDBpath(arg_list):
+    gdb_path = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/data/processes/'+arg_list[0]+'/'+arg_list[1]+'.gdb/'
+    print 'gdb path: ', gdb_path 
+    return gdb_path 
 
 
 ##  datasets from core process ##########################################################
-mmu_gdb='C:/Users/bougie/Desktop/'+rootDir+'/'+production_type+'/processes/core/mmu.gdb/'
-mmu='traj_n8h_mtr_8w_msk23_nbl'
+mmu_gdb=defineGDBpath(['core','mmu'])
+mmu='traj_rfnd_n8h_mtr_8w_msk23_nbl'
 mmu_Raster=Raster(mmu_gdb + mmu)
 
 
@@ -49,11 +52,12 @@ def addColorMap(inraster,template):
 
 
 
-def createBinaries(typ):
-    arcpy.env.workspace = 'C:/Users/bougie/Desktop/'+rootDir+'/'+production_type+'/processes/pre/pre.gdb'
+def createYTCbinaries(typ):
+    arcpy.env.workspace=defineGDBpath(['pre','pre'])
+    # arcpy.env.workspace = 'C:/Users/bougie/Desktop/'+rootDir+'/'+production_type+'/processes/pre/pre.gdb'
     #DESCRIPTION:subset the trajectoires by year to create binary ytc or ytc raster by year that represent the conversion to/from crop between succesive years
-    engine = create_engine('postgresql://postgres:postgres@localhost:5432/pre')
-    df = pd.read_sql_query('select * from mtr.trajectories WHERE '+typ+' IS NOT NULL',con=engine)
+    engine = create_engine('postgresql://postgres:postgres@localhost:5432/core')
+    df = pd.read_sql_query('select * from pre.traj WHERE '+typ+' IS NOT NULL',con=engine)
     print 'df--',df
 
     for index, row in df.iterrows():
@@ -64,7 +68,11 @@ def createBinaries(typ):
         print 'cy:', type(cy)
         if cy not in {'2012','2016'}:
 
-            output= 'C:/Users/bougie/Desktop/'+rootDir+'/'+production_type+'/processes/post/'+typ+'.gdb/'+typ+"_"+cy+"_b"
+            out_raster=typ+"_"+cy+"_b"
+
+            # output= 'C:/Users/bougie/Desktop/'+rootDir+'/'+production_type+'/processes/post/'+typ+'.gdb/'+typ+"_"+cy+"_b"
+
+            output= defineGDBpath(['post','ytc'])+out_raster
             print 'output: ', output
 
             # Get trajectories layer
@@ -81,7 +89,9 @@ def createBinaries(typ):
 
 
 def attachCDL(typ,yr_reduction):
-    arcpy.env.workspace = 'C:/Users/bougie/Desktop/'+rootDir+'/'+production_type+'/processes/post/'+typ[0]+'.gdb'
+    arcpy.env.workspace=defineGDBpath(arg_list)
+
+    # arcpy.env.workspace = 'C:/Users/bougie/Desktop/'+rootDir+'/'+production_type+'/processes/post/'+typ[0]+'.gdb'
     for raster in arcpy.ListDatasets("*_b", "Raster"): 
         print raster
 
@@ -99,7 +109,7 @@ def attachCDL(typ,yr_reduction):
 
         
         #######  GET APPROPRIATE CDL BY YEAR  #############
-        cdl = 'D:/gibbs/'+production_type+'/rasters/pre/cdl/'+str(year)+"_30m_cdls.img"
+        cdl = 'D:/cdl/'+str(year)+"_30m_cdls.img"
         print "cdl raster with the appropriate year", cdl
 
 
@@ -118,46 +128,48 @@ def attachCDL(typ,yr_reduction):
 
 
 
-def cellStats(typ,wc):
-    arcpy.env.workspace = 'C:/Users/bougie/Desktop/'+rootDir+'/'+production_type+'/processes/post/'+typ+'.gdb'
-
+def mosiacRasters(wc):
+    #define gdb workspace
+    arcpy.env.workspace=defineGDBpath(['post','ytc'])
     
-    print wc
-
-
+    #create list to store all raster that meet condition below
     files_list = []
     for raster in arcpy.ListDatasets("*"+wc, "Raster"): 
         print raster
         files_list.append(raster)
-
+    
+    #create output file 
     output='ytc_'+wc+'_mosaic'
     print 'output: ', output
     
-    # Save the output 
+    #perform cellstatistics function to mosiac rasters
     outCellStatistics = CellStatistics([files_list[0],files_list[1],files_list[2]], "SUM", "DATA")
+
+    # Save the output 
     outCellStatistics.save(output)
 
 
 
 
-def mask(params,masktype):
-    # params[x]:
-    # 0=mask name
-    # 1=wildcard
-    # 2
-    arcpy.env.workspace = 'C:/Users/bougie/Desktop/'+rootDir+'/'+production_type+'/processes/post/'+params[0]+'.gdb'
+def mask(wc,masktype):
+    #define gdb workspace
+    arcpy.env.workspace=defineGDBpath(['post','ytc'])
     
     if masktype == 'clipByMMU':
+        
         #create wildcard to subset processes want to work with
-        wc='*_'+params[1]+'_mosaic'
+        wc='*_'+wc+'_mosaic'
         print 'wc: ', wc
-
+        
+        #loop through rasters in gdb that match cond.
         for raster in arcpy.ListDatasets(wc, "Raster"): 
             print 'raster: ',raster
-
+            
+            #create output file 
             output = raster+'_'+mmu
             print 'output: ', output
-
+            
+            #perform setNull function to convert raster to null except where mtr value = 3
             outSetNull = SetNull(mmu_Raster, raster,  "Value <> 3")
             
             #Save the output 
@@ -166,17 +178,20 @@ def mask(params,masktype):
 
     
     elif masktype == 'ndTo1':
+       
         #create wildcard to subset processes want to work with
         wc='*_'+params[1]+'_mosaic_'+mmu
         print 'wc: ', wc
 
+        #loop through rasters in gdb that match cond.
         for raster in arcpy.ListDatasets(wc, "Raster"): 
             print 'raster: ',raster
 
-            # input_Raster=Raster(raster)
+            #create output file 
             output = raster+'_ndTo1'
             print 'output: ', output
             
+            #perform CON function to............................
             OutRas=Con((IsNull(raster)) & (mmu_Raster == 3), 1,raster)
             
             #Save the output 
@@ -208,68 +223,29 @@ def nibble(typ,mskSize):
 
 
 
-######################################################################################
-
-
-# def fire_all(func_list,typ,params):
-#     for f in func_list:
-#         f(typ,params)
-
-
-    
-# def runit():
-
-#     fct_list = {'createBinaries':[createBinaries],
-#                 'attachCDL': [attachCDL],
-#                 'cellStats': [cellStats],
-#                 'mask':[mask],
-#                 'mask_clipByMMU':[mask],
-#                 'mask_prepNibble':[mask],
-#                 'mask_ndTo1':[mask],
-#                 'nibble':[nibble]
-#                }
-
-
-#     engine = create_engine('postgresql://postgres:postgres@localhost:5432/metadata')
-#     df = pd.read_sql_query('SELECT * FROM routes_prod.routes_post ORDER BY serial',con=engine)
-    
-#     routes=df['routes']
-#     for i, route in enumerate(routes):
-#         print i
-#         print route
-#         for step in route:
-#             print 'step-----------------', step
-         
-#             params=df[step][i]
-#             print 'params: ', params
-#             typ=df['type'][i]
-#             print typ
-#             fire_all(fct_list[step],typ,params)
-    
-
 
 
 ##############  call functions  #####################################################
-# createBinaries('ytc')
-# cellStats('ytc','b')
-# mask(['ytc','b'],'clipByMMU')
-# mask(['ytc','b'],'ndTo1')
+# createYTCbinaries('ytc')
+# mosiacRasters('b')
+mask('b','clipByMMU')
+mask('b','ndTo1')
 # nibble(['ytc','b'],'23')
 
 
 
 # attachCDL(['ytc','fc'],0)
-# cellStats('ytc','fc')
-# mask(['ytc','fc'],'clipByMMU')
-# mask(['ytc','fc'],'ndTo1')
+# mosiacRasters('fc')
+# mask('fc','clipByMMU')
+# mask('fc','ndTo1')
 # nibble(['ytc','fc'],'23')
 
 
-attachCDL(['ytc','bfc'],1)
-cellStats('ytc','bfc')
-mask(['ytc','bfc'],'clipByMMU')
-mask(['ytc','bfc'],'ndTo1')
-nibble(['ytc','bfc'],'23')
+# attachCDL(['ytc','bfc'],1)
+# mosiacRasters('bfc')
+# mask('bfc','clipByMMU')
+# mask('bfc','ndTo1')
+# nibble(['ytc','bfc'],'23')
 
 
 

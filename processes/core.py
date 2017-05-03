@@ -15,12 +15,18 @@ import glob
 import psycopg2
 
 
-production_type='production'
 arcpy.CheckOutExtension("Spatial")
-# env.scratchWorkspace ="C:/Users/bougie/Documents/ArcGIS/scratch.gdb"
+case=['bougie','gibbs']
 
 
 ###################  declare functions  #######################################################
+def defineGDBpath(arg_list):
+    gdb_path = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/data/processes/'+arg_list[0]+'/'+arg_list[1]+'.gdb/'
+    print 'gdb path: ', gdb_path 
+    return gdb_path 
+
+
+
 
 def addColorMap(inraster,template):
     ##Add Colormap
@@ -41,11 +47,11 @@ def addColorMap(inraster,template):
 
 
 def createMTR(gdb_in):
-    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/production/processes/core/'+gdb_in+'.gdb'
+    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/data/processes/core/'+gdb_in+'.gdb'
     for raster in arcpy.ListDatasets('*rfnd*', "Raster"): 
         print 'raster:', raster
         raster_out = raster+'_mtr'
-        output = 'C:/Users/bougie/Desktop/gibbs/production/processes/core/mtr.gdb/'+raster_out
+        output = 'C:/Users/bougie/Desktop/gibbs/data/processes/core/mtr.gdb/'+raster_out
         print 'output:', output
 
         reclassArray = createReclassifyList() 
@@ -76,7 +82,7 @@ def createReclassifyList():
 
 
 def majorityFilter(dataset):
-    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/production/processes/pre/pre.gdb'
+    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/data/processes/pre/pre.gdb'
 
     # filter_combos = {'n4h':["FOUR", "HALF"],'n4m':["FOUR", "MAJORITY"],'n8h':["EIGHT", "HALF"],'n8m':["EIGHT", "MAJORITY"]}
     filter_combos = {'n8h':["EIGHT", "HALF"]}
@@ -90,11 +96,14 @@ def majorityFilter(dataset):
             # Execute MajorityFilter
             outMajFilt = MajorityFilter(raster, v[0], v[1])
             
-            output = 'C:/Users/bougie/Desktop/gibbs/production/processes/core/filter.gdb/'+raster_out
+            output = 'C:/Users/bougie/Desktop/gibbs/data/processes/core/filter.gdb/'+raster_out
             print 'output: ',output
             
             #save processed raster to new file
             outMajFilt.save(output)
+
+
+
 
 def focalStats(index,dir_in,dir_out):
 
@@ -132,11 +141,16 @@ def focalStats(index,dir_in,dir_out):
 
             # addColorMap(output,'C:/Users/bougie/Desktop/gibbs/production_pre/rasters/colormaps/filter_and_mmu.clr')
 
+
+
+
+
+
 ####################  mmu functions  ##########################################
 
-def regionGroup(gdb_in):
-    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/processes/core/'+gdb_in+'.gdb'
-
+def regionGroup(arg_list):
+    #define workspace
+    arcpy.env.workspace=defineGDBpath(arg_list)
 
     # filter_combos = {'4w':["FOUR", "WITHIN"],'4c':["FOUR", "CROSS"],'8w':["EIGHT", "WITHIN"],'8c':["EIGHT", "CROSS"]}
     filter_combos = {'8w':["EIGHT", "WITHIN"]}
@@ -146,10 +160,10 @@ def regionGroup(gdb_in):
             print 'raster: ', raster
     
             raster_out=raster+'_'+k
-            print raster_out
+            print 'raster_out', raster_out
+            output=defineGDBpath(['core','mmu'])+raster_out
             
-            output = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/processes/core/mmu.gdb/'+raster_out
-
+            print 'output: ',output
             # Execute RegionGroup
             outRegionGrp = RegionGroup(raster, v[0], v[1],"NO_LINK")
 
@@ -162,26 +176,34 @@ def regionGroup(gdb_in):
 
 
 
-def mask(masks_list):
-    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/processes/core/mmu.gdb'
+def mask(masks_list,arg_list):
+    #define workspace
+    arcpy.env.workspace=defineGDBpath(arg_list)
+
+
     for raster in arcpy.ListDatasets('*8w', "Raster"): 
 
-         #################  CONDITION  #######################################
-        # CONVERSION: 900square miles = 0.222395 acres
+        print 'raster: ', raster
+        '''
+        -------------------- CONDITION  ------------------------------------------
+        CONVERSION: 900square miles = 0.222395 acres
         
-        #acres   count
-         #5       23
-         #10      45
-         #15      68
+        acres   count
+        5       23
+        10      45
+        15      68
 
-        # masks=['23','45','68']
-        
+        example: masks=['23','45','68']
+
+        --------------------------------------------------------------------------
+        '''
+
         for count in masks_list:
             cond = "Count < " + count
             print 'cond: ',cond
 
             output = raster+'_msk'+ count
-            # output = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/processes/core/mmu.gdb/'+raster_out
+    
             print output
 
             outSetNull = SetNull(raster, 1, cond)
@@ -191,17 +213,21 @@ def mask(masks_list):
 
 
 
-def nibble(maskSize):
-    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/processes/core/mmu.gdb'
+def nibble(maskSize,arg_list1,arg_list2,filename):
+    #define workspace
+    arcpy.env.workspace=defineGDBpath(arg_list1)
+
+    #find mask raster in gdb
     for mask in arcpy.ListDatasets('*_msk'+maskSize, "Raster"): 
-        print mask
+        print 'mask: ',  mask
 
         #create file structure
         output = mask+'_nbl'
-        print output
+        print 'output: ', output
     
         ####  create the paths to the mask files  ############# 
-        raster_in='C:/Users/bougie/Desktop/gibbs/'+production_type+'/processes/core/mtr.gdb/traj_n8h_mtr'
+        raster_in=defineGDBpath(arg_list2)+filename
+        print 'raster_in: ', raster_in
       
         ###  Execute Nibble  #####################
         nibbleOut = Nibble(Raster(raster_in), mask, "DATA_ONLY")
@@ -209,16 +235,24 @@ def nibble(maskSize):
         ###  Save the output  ################### 
         nibbleOut.save(output)
 
-        addColorMap(output,'C:/Users/bougie/Desktop/gibbs/colormaps/mmu.clr')
+    #     addColorMap(output,'C:/Users/bougie/Desktop/gibbs/colormaps/mmu.clr')
+
+
+
+
 
 
 #############################  Call Functions ######################################
+#------filter gdb--------------
+# majorityFilter("traj_rfnd")
 
-majorityFilter("traj_rfnd")
-createMTR('filter')
-# regionGroup('mtr')
-# mask(['23'])
-# nibble('23')
+#------mtr gdb-----------------
+# createMTR('filter')
+
+#------mmu gdb-----------------
+# regionGroup(['core','mtr'])
+# mask(['23'],['core','mmu'])
+nibble('23',['core','mmu'],['core','mtr'],'traj_rfnd_n8h_mtr')
 
 
 
