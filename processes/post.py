@@ -229,7 +229,7 @@ def nibble(typ,mskSize):
 # createYTCbinaries('ytc')
 # mosiacRasters('b')
 # mask('b','clipByMMU')
-mask('b','ndTo1')
+# mask('b','ndTo1')
 # nibble(['ytc','b'],'23')
 
 
