@@ -16,7 +16,7 @@ import psycopg2
 
 
 arcpy.CheckOutExtension("Spatial")
-case=['bougie','gibbs']
+case=['Bougie','Gibbs']
 
 
 ###################  declare functions  #######################################################
@@ -200,26 +200,38 @@ def mask(wc,masktype):
 
 
 def nibble(typ,mskSize):
-    arcpy.env.workspace = 'C:/Users/bougie/Desktop/'+rootDir+'/'+production_type+'/processes/post/'+typ[0]+'.gdb'
-    raster = Raster('ytc_'+typ[1]+'_mosaic_traj_n8h_mtr_8w_msk'+mskSize+'_nbl_ndTo1')
-    print 'raster: ', raster
+    arcpy.env.workspace=defineGDBpath(['post','ytc'])
+    # raster = Raster('ytc_'+typ[1]+'_mosaic_traj_n8h_mtr_8w_msk'+mskSize+'_nbl_ndTo1')
+    # print 'raster: ', raster
     
-    wc='ytc_'+typ[1]+'_mosaic_traj_n8h_mtr_8w_msk'+mskSize+'_nbl'
-    print 'wc: ', wc
+    # wc='ytc_'+typ[1]+'_mosaic_traj_n8h_mtr_8w_msk'+mskSize+'_nbl'
+    # print 'wc: ', wc
+    
+    #declare variables but dont intialize them
+    clipByMMU = None
+    ndTo1 = None
 
-    for mask in arcpy.ListDatasets(wc, "Raster"): 
-        print 'mask: ', mask
+    for raster in arcpy.ListDatasets('*_ndTo1', "Raster"): 
+        ndTo1=raster
 
-        output = mask+'_fnl'
-        print 'output: ', output
+    for raster in arcpy.ListDatasets('*_nbl', "Raster"): 
+        clipByMMU=raster
 
-        ###  Execute Nibble  #####################
-        nibbleOut = Nibble(raster, mask, "DATA_ONLY")
+    print 'clipByMMU: ', clipByMMU
+    print 'ndTo1: ', ndTo1
 
-        ###  Save the output  ################### 
-        nibbleOut.save(output)
+    #define output
+    output = clipByMMU+'_fnl'
+    print 'output: ', output
 
-        addColorMap(output,'C:/Users/bougie/Desktop/'+rootDir+'/colormaps/mmu.clr')
+
+    ###  Execute Nibble  #####################
+    nibbleOut = Nibble(ndTo1, clipByMMU, "DATA_ONLY")
+
+    ###  Save the output  ################### 
+    nibbleOut.save(output)
+
+    # addColorMap(output,'C:/Users/bougie/Desktop/'+rootDir+'/colormaps/mmu.clr')
 
 
 
@@ -230,7 +242,9 @@ def nibble(typ,mskSize):
 # mosiacRasters('b')
 # mask('b','clipByMMU')
 # mask('b','ndTo1')
+
 # nibble(['ytc','b'],'23')
+
 
 
 
