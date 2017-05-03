@@ -180,7 +180,7 @@ def mask(wc,masktype):
     elif masktype == 'ndTo1':
        
         #create wildcard to subset processes want to work with
-        wc='*_'+params[1]+'_mosaic_'+mmu
+        wc='*_'+wc+'_mosaic_'+mmu
         print 'wc: ', wc
 
         #loop through rasters in gdb that match cond.
@@ -228,7 +228,7 @@ def nibble(typ,mskSize):
 ##############  call functions  #####################################################
 # createYTCbinaries('ytc')
 # mosiacRasters('b')
-mask('b','clipByMMU')
+# mask('b','clipByMMU')
 mask('b','ndTo1')
 # nibble(['ytc','b'],'23')
 
