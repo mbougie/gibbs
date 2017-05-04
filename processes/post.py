@@ -16,7 +16,7 @@ import psycopg2
 
 
 arcpy.CheckOutExtension("Spatial")
-case=['Bougie','Gibbs']
+case=['bougie','gibbs']
 
 
 ###################  declare functions  #######################################################
@@ -53,9 +53,9 @@ def addColorMap(inraster,template):
 
 
 def createYTCbinaries(typ):
-    arcpy.env.workspace=defineGDBpath(['pre','pre'])
-    # arcpy.env.workspace = 'C:/Users/bougie/Desktop/'+rootDir+'/'+production_type+'/processes/pre/pre.gdb'
     #DESCRIPTION:subset the trajectoires by year to create binary ytc or ytc raster by year that represent the conversion to/from crop between succesive years
+    arcpy.env.workspace=defineGDBpath(['pre','pre'])
+    
     engine = create_engine('postgresql://postgres:postgres@localhost:5432/core')
     df = pd.read_sql_query('select * from pre.traj WHERE '+typ+' IS NOT NULL',con=engine)
     print 'df--',df
@@ -69,8 +69,6 @@ def createYTCbinaries(typ):
         if cy not in {'2012','2016'}:
 
             out_raster=typ+"_"+cy+"_b"
-
-            # output= 'C:/Users/bougie/Desktop/'+rootDir+'/'+production_type+'/processes/post/'+typ+'.gdb/'+typ+"_"+cy+"_b"
 
             output= defineGDBpath(['post','ytc'])+out_raster
             print 'output: ', output
@@ -89,40 +87,38 @@ def createYTCbinaries(typ):
 
 
 def attachCDL(typ,yr_reduction):
-    arcpy.env.workspace=defineGDBpath(arg_list)
+    arcpy.env.workspace=defineGDBpath(['post','ytc'])
 
     # arcpy.env.workspace = 'C:/Users/bougie/Desktop/'+rootDir+'/'+production_type+'/processes/post/'+typ[0]+'.gdb'
     for raster in arcpy.ListDatasets("*_b", "Raster"): 
-        print raster
+        print 'raster: ', raster
 
         #######  GET YEAR  #############################
         #acronym: fnf=file name fragments
         fnf=(os.path.splitext(raster)[0]).split("_")
-        print 'fnf:', fnf
+        # print 'fnf:', fnf
         year = int(fnf[1]) - yr_reduction
         print 'cdl year to reference: ', year
         
         #######  DEFINE OUT RASTER  #####################
-        x=(os.path.splitext(raster)[0]).split(".")
-        output = x[0] + '_'+typ[1]
+        output = raster + '_'+typ
         print 'output: ', output
 
         
         #######  GET APPROPRIATE CDL BY YEAR  #############
         cdl = 'D:/cdl/'+str(year)+"_30m_cdls.img"
-        print "cdl raster with the appropriate year", cdl
+        print "cdl raster with the appropriate year: ", cdl
 
 
-        cond = "Value <> "+str(fnf[1])
-        print cond
+        cond = "Value <> "+str(fnf[1][2:])
+        print 'cond: ', cond
 
         OutRas=Con(raster, Raster(cdl), raster, cond)
 
         # # Save the output 
         OutRas.save(output)
 
-        #NEED TO FIX CRASHING PYHTON POSSIBLY ADD ENVIRONMENT?????????????????????????????????????????
-        addColorMap(output,'C:/Users/bougie/Desktop/'+rootDir+'/colormaps/cdl.clr')
+
 
 
 
@@ -199,41 +195,30 @@ def mask(wc,masktype):
 
 
 
-def nibble(typ,mskSize):
+def nibble(wc):
+    #define gdb workspace
     arcpy.env.workspace=defineGDBpath(['post','ytc'])
-    # raster = Raster('ytc_'+typ[1]+'_mosaic_traj_n8h_mtr_8w_msk'+mskSize+'_nbl_ndTo1')
-    # print 'raster: ', raster
-    
-    # wc='ytc_'+typ[1]+'_mosaic_traj_n8h_mtr_8w_msk'+mskSize+'_nbl'
-    # print 'wc: ', wc
     
     #declare variables but dont intialize them
     clipByMMU = None
     ndTo1 = None
-
-    for raster in arcpy.ListDatasets('*_ndTo1', "Raster"): 
+    
+    #initialize the above variables giving it the name of the raster with specific condtion
+    for raster in arcpy.ListDatasets('*'+'_'+wc+'*_ndTo1', "Raster"): 
         ndTo1=raster
 
-    for raster in arcpy.ListDatasets('*_nbl', "Raster"): 
+    for raster in arcpy.ListDatasets('*'+'_'+wc+'*_nbl', "Raster"): 
         clipByMMU=raster
-
-    print 'clipByMMU: ', clipByMMU
-    print 'ndTo1: ', ndTo1
 
     #define output
     output = clipByMMU+'_fnl'
     print 'output: ', output
-
 
     ###  Execute Nibble  #####################
     nibbleOut = Nibble(ndTo1, clipByMMU, "DATA_ONLY")
 
     ###  Save the output  ################### 
     nibbleOut.save(output)
-
-    # addColorMap(output,'C:/Users/bougie/Desktop/'+rootDir+'/colormaps/mmu.clr')
-
-
 
 
 
@@ -242,24 +227,23 @@ def nibble(typ,mskSize):
 # mosiacRasters('b')
 # mask('b','clipByMMU')
 # mask('b','ndTo1')
-
-# nibble(['ytc','b'],'23')
-
+# nibble('b')
 
 
 
-# attachCDL(['ytc','fc'],0)
+
+# attachCDL('fc',0)
 # mosiacRasters('fc')
 # mask('fc','clipByMMU')
 # mask('fc','ndTo1')
-# nibble(['ytc','fc'],'23')
+nibble('fc')
 
 
-# attachCDL(['ytc','bfc'],1)
+# attachCDL('bfc',1)
 # mosiacRasters('bfc')
 # mask('bfc','clipByMMU')
 # mask('bfc','ndTo1')
-# nibble(['ytc','bfc'],'23')
+# nibble('bfc')
 
 
 
