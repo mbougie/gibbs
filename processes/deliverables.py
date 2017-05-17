@@ -17,18 +17,22 @@ import psycopg2
 
 
 
-try:
-    conn = psycopg2.connect("dbname='delivery' user='postgres' host='localhost' password='postgres'")
-except:
-    print "I am unable to connect to the database"
+# try:
+#     conn = psycopg2.connect("dbname='delivery' user='postgres' host='localhost' password='postgres'")
+# except:
+#     print "I am unable to connect to the database"
 
 
 
-rootDir='gibbs'
-production_type='production'
 arcpy.CheckOutExtension("Spatial")
+case=['bougie','gibbs']
 
-gdb='b.gdb'
+
+###################  declare functions  #######################################################
+def defineGDBpath(arg_list):
+    gdb_path = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/data/processes/'+arg_list[0]+'/'+arg_list[1]+'.gdb/'
+    print 'gdb path: ', gdb_path 
+    return gdb_path 
 
 # env.scratchWorkspace ="C:/Users/bougie/Documents/ArcGIS/scratch.gdb"
 
@@ -365,7 +369,7 @@ def createTables_ta2(wc,year):
 # tabArea("gs2012_lcc")
 
 ###########  create/populate tables in postgres  ###################################################################
-createTables_ta1('*_lcc_ta1')
+# createTables_ta1('*_lcc_ta1')
 # createTables_ta2('*2015_ta2','2015')
 
 
