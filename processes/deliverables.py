@@ -25,8 +25,15 @@ except:
 
 
 arcpy.CheckOutExtension("Spatial")
+
+
+
+####  global variables   ################
+#acccount for different machines having different cases in path
 case=['Bougie','Gibbs']
 
+# 1 square meter = 0.000247105 acres
+conv_coef=0.000247105
 
 ###################  declare functions  #######################################################
 def defineGDBpath(arg_list):
@@ -129,8 +136,6 @@ def createGSconv(gdb_path,wc,outfile):
 		attExtract.save(output)
 
 
-
-
 def createGSconvBylcc(wc):
 	# DESCRIPTION: replace the gsconv value with lcc value
 
@@ -160,8 +165,6 @@ def createGSconvBylcc(wc):
 
         # # Save the output 
         OutRas.save(output)
-
-
 
 
 def createGSconvByYearANDlcc(wc,years):
@@ -199,43 +202,41 @@ def createGSconvByYearANDlcc(wc,years):
 			OutRas.save(output)
 
 	     
-
-
-
-def tabAreaByCounty(wc):
+def tabAreaByCounty(gdb_path,filename):
 	# Set environment settings
 	arcpy.env.workspace = defineGDBpath(['deliverables','deliverables_refined'])
     
 	# Set local variables
-	for raster in arcpy.ListDatasets(wc, "Raster"): 
-		print 'raster: ', raster
+	raster=defineGDBpath(gdb_path)+filename
+	print 'raster: ', raster
 
-		# Set the cell size environment using a raster dataset.
-		arcpy.env.cellSize = raster
+	# Set the cell size environment using a raster dataset.
+	arcpy.env.cellSize = raster
 
-		# Set Snap Raster environment
-		arcpy.env.snapRaster = raster
-
-
-		inZoneData = defineGDBpath(['ancillary','shapefiles'])+'counties'
-		zoneField = "atlas_stco"
-		inClassData = raster
-		classField = "Value"
-		outTable = inClassData + '_counties'
-
-		#get the resolution of each raster to get the coorect size to process
-		res = arcpy.GetRasterProperties_management(raster, "CELLSIZEX")
-		print 'res: ', res
-		processingCellSize = res
-
-		# Check out the ArcGIS Spatial Analyst extension license
-		arcpy.CheckOutExtension("Spatial")
-
-		# Execute TabulateArea
-		TabulateArea(inZoneData, zoneField, inClassData, classField, outTable,processingCellSize)
+	# Set Snap Raster environment
+	arcpy.env.snapRaster = raster
 
 
-def createPGTables_lcc(wc):
+	inZoneData = defineGDBpath(['ancillary','shapefiles'])+'counties'
+	zoneField = "atlas_stco"
+	inClassData = raster
+	classField = "Value"
+	outTable = filename + '_counties'
+	print 'outTable: ', outTable
+
+	#get the resolution of each raster to get the coorect size to process
+	res = arcpy.GetRasterProperties_management(raster, "CELLSIZEX")
+	print 'res: ', res
+	processingCellSize = res
+
+	# Check out the ArcGIS Spatial Analyst extension license
+	arcpy.CheckOutExtension("Spatial")
+
+	# Execute TabulateArea
+	TabulateArea(inZoneData, zoneField, inClassData, classField, outTable,processingCellSize)
+
+
+def createPGTables_lcc(wc,year):
 	arcpy.env.workspace = defineGDBpath(['deliverables','deliverables_refined'])
 
 	for table in arcpy.ListTables(wc): 
@@ -272,85 +273,48 @@ def createPGTables_lcc(wc):
 			conn.commit()
       
 
-def createPGTables_mtr(year):
-	arcpy.env.workspace = defineGDBpath(['pre','binaries'])
-    wc='*'+year+'*'
-	for table in arcpy.ListTables(wc): 
-		print 'table: ', table
+def createPGTables_mtr(filename,year):
+	table = defineGDBpath(['deliverables','deliverables_refined'])+filename
+	print 'table: ', table
 
-		#define table and column names
-		tablename = 'deliverables.totalcrop_'+year+'_counties'
-		print 'tablename: ', tablename
-		columnname = 'totalcrop_'+year
-		print 'columnname: ', columnname
-        
-        #execute quesry to postgres db
+	#define table and column names
+	tablename = 'deliverables.totalcrop_'+year+'_counties'
+	print 'tablename: ', tablename
+	columnname = 'totalcrop_'+year
+	print 'columnname: ', columnname
+    
+    #execute quesry to postgres db
+	cur = conn.cursor()
+	query='CREATE TABLE '+tablename+'(atlas_stco text, ' + columnname + ' integer)'
+	print 'query: ', query
+	cur.execute(query)
+	conn.commit()
+
+
+    #loop through each row and get the value for specified columns
+	rows = arcpy.SearchCursor(table)
+	for row in rows:
+
+		atlas_stco=row.getValue("ATLAS_STCO")
+		count = getCount(year,row)
+
 		cur = conn.cursor()
-		query='CREATE TABLE '+tablename+'(atlas_stco text, ' + columnname + ' integer)'
-		print 'query: ', query
+		query="INSERT INTO "+tablename+" VALUES ('" + atlas_stco + "' , " + count + ")"
+		print query
 		cur.execute(query)
 		conn.commit()
 
 
-        #loop through each row and get the value for specified columns
-		rows = arcpy.SearchCursor(table)
-		for row in rows:
+def getCount(year,row):
 
-			atlas_stco=row.getValue("ATLAS_STCO")
-			count = getCount(year,row)
-
-			cur = conn.cursor()
-			query="INSERT INTO "+tablename+" VALUES ('" + atlas_stco + "' , " + count + ")"
-			print query
-			cur.execute(query)
-			conn.commit()
-
-
-       
-   #      if year == '2012':
-			# with arcpy.da.SearchCursor(table, "*") as cur:
-			# 	for row in cur:
-   #                  #OBJECTID, ATLAS_STCO, VALUE_1, VALUE_2, VALUE_3, VALUE_4, VALUE_5
-
-			# 		atlas_stco = row[1]
-			# 		print (row[3]+row[6])*(0.000247105)
-				
-
-			# 		count = str((row[3]+row[6])*(0.000247105))
-			
-			# 		cur = conn.cursor()
-			# 		query="INSERT INTO "+tablename+" VALUES ('" + atlas_stco + "' , " + count + ")"
-			# 		print query
-			# 		cur.execute(query)
-			# 		conn.commit()
-
-   #      elif year == '2015':
-			# with arcpy.da.SearchCursor(table, "*") as cur:
-			# 	for row in cur:
-			# 		#OBJECTID, ATLAS_STCO, VALUE_1, VALUE_2, VALUE_3, VALUE_4, VALUE_5
-
-			# 		atlas_stco = row[1]
-			# 		print ((row[3]+row[6])+(row[4]-row[5]))*(0.000247105)
-
-
-			# 		count = getCount(year,row)
-
-			# 		cur = conn.cursor()
-			# 		query="INSERT INTO "+tablename+" VALUES ('" + atlas_stco + "' , " + count + ")"
-			# 		print query
-			# 		cur.execute(query)
-			# 		conn.commit()
-
-
-def getCount(year):
 	if year == '2012':
 		# count = str((row[3]+row[6])*(0.000247105))
-		count = str((row.getValue()+row.getValue())*(0.000247105))
+		count = str((row.getValue('VALUE_2')+row.getValue('VALUE_5'))*(conv_coef))
 		return count
 
 	elif year == '2015':
 		# count = str(((row[3]+row[6])+(row[4]-row[5]))*(0.000247105))
-		count = str(((row.getValue()+row.getValue())+(row.getValue()-row.getValue()))*(0.000247105))
+		count = str(((row.getValue('VALUE_2')+row.getValue('VALUE_5'))+(row.getValue('VALUE_3')-row.getValue('VALUE_4')))*(conv_coef))
 		return count
 
 
@@ -371,12 +335,19 @@ def getCount(year):
 ###########  Execute TabulateArea  ###################################################################
 # tabAreaByCounty("*lcc")
 
-###########  create/populate tables in postgres  ###################################################################
-createPGTables_lcc('*_lcc_counties')
 
-naive_years=['2012','2015']
-for year in naive_years:
-	createPGTables_mtr(year)
+
+###########  create/populate tables in postgres  ###################################################################
+# createPGTables_lcc('*_lcc_counties')
+
+
+
+
+###########  create naive change  ########### 
+# tabAreaByCounty(['ancillary','data_2008_2012'], 'Multitemporal_Results_FF2')
+# createPGTables_mtr('Multitemporal_Results_FF2_counties','2012')
+# tabAreaByCounty(['deliverables','xp_update_refined'], 'mtr')
+createPGTables_mtr('mtr_counties','2015')
 
 
 
