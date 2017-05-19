@@ -1,17 +1,15 @@
 from sqlalchemy import create_engine
 import numpy as np, sys, os
-from osgeo import gdal
-from osgeo.gdalconst import *
-# from pandas import read_sql_query
+# from osgeo import gdal
+# from osgeo.gdalconst import *
 import pandas as pd
-# import tables
 import collections
 from collections import namedtuple
 import openpyxl
 import arcpy
 from arcpy import env
 from arcpy.sa import *
-import glob
+# import glob
 import psycopg2
 
 
@@ -28,12 +26,17 @@ arcpy.CheckOutExtension("Spatial")
 
 
 
-####  global variables   ################
-#acccount for different machines having different cases in path
+#########  global variables   ################
+#acccounts for different machines having different cases in path
 case=['Bougie','Gibbs']
 
-# 1 square meter = 0.000247105 acres
+#conversion coefficent: 1 square meter = 0.000247105 acres
 conv_coef=0.000247105
+
+
+
+
+
 
 ###################  declare functions  #######################################################
 def defineGDBpath(arg_list):
@@ -41,10 +44,7 @@ def defineGDBpath(arg_list):
     print 'gdb path: ', gdb_path 
     return gdb_path 
 
-# env.scratchWorkspace ="C:/Users/bougie/Documents/ArcGIS/scratch.gdb"
-
-
-
+########  Part B Questions  #################################################
 def question_a1():
 	arcpy.env.workspace = 'C:/Users/bougie/Desktop/'+rootDir+'/'+production_type+'/rasters/core/mmu.gdb'
 	wc='traj_n8h_mtr_8w_msk45_nbl'
@@ -99,16 +99,7 @@ def question_a4():
 
 
 
-
-
-
-
-
-
 ########  Part B Questions  #################################################
-
-
-
 
 def createGSconv(gdb_path,wc,outfile):
 	#DESCRIPTION: subset bfc datasets to grass and shrub
@@ -308,46 +299,67 @@ def createPGTables_mtr(filename,year):
 def getCount(year,row):
 
 	if year == '2012':
-		# count = str((row[3]+row[6])*(0.000247105))
 		count = str((row.getValue('VALUE_2')+row.getValue('VALUE_5'))*(conv_coef))
 		return count
 
 	elif year == '2015':
-		# count = str(((row[3]+row[6])+(row[4]-row[5]))*(0.000247105))
 		count = str(((row.getValue('VALUE_2')+row.getValue('VALUE_5'))+(row.getValue('VALUE_3')-row.getValue('VALUE_4')))*(conv_coef))
 		return count
 
 
 
+###################  CALL FUNCTIONS  #######################################################
+'''###################  SECTION A QUESTIONS  ##########################################################'''
 
 
-###########  subset bfc datasets to grass and shrub  ################################################
+
+
+'''###################  SECTION B QUESTIONS  ##########################################################'''
+
+'''SUBSET BFC DATASETS FOR GRASS & SUBLAND  ______________________________________
+description: add it here 
+'''
+
+'''createGSconv  ------------------------------------'''
 # createGSconv(['post','xp_update_refined'], 'bfc', 'gsConv_new')
 # createGSconv(['ancillary','data_2008_2012'], 'class_before_crop', 'gsConv_old')
 # createGSconv(['ancillary','cdl'], '2012_30m_cdls', 'gs2012')
-# erase this if above code works!!!!!!!       createGSconv('D:/gibbs/production/rasters/pre/cdl/2012_30m_cdls.img','gs2012')
 
-###########  subset the gsConv datasets by year and then attach lcc value  ###########################
+
+
+
+
+
+'''LCC CODE  ______________________________________
+description: Subset the gsConv datasets by year and then attach lcc value   
+''' 
+
+'''createGSconvByYearANDlcc  ------------------------------------'''
 # createGSconvByYearANDlcc('gsConv_new',['2013','2014','2015'])
 # createGSconvByYearANDlcc('gsConv_old','D:/gibbs/control/raster/2008_2012_data/ytc_ff2.tif',['2009','2010','2011','2012'])
 # createGSconvBylcc('gs2012')
 
-###########  Execute TabulateArea  ###################################################################
+'''tabAreaByCounty-------tabulate the area per county of each gsConv_[year]_lcc dataset  ------------------------------------'''
 # tabAreaByCounty("*lcc")
 
-
-
-###########  create/populate tables in postgres  ###################################################################
+'''createPGTables_lcc-------create/populate "*_lcc_counties" tables in postgres ------'''
 # createPGTables_lcc('*_lcc_counties')
 
 
 
 
-###########  create naive change  ########### 
+
+'''NAIVE CHANGE CODE  ______________________________________
+description: add description here
+'''
+
+'''expalian stuff here  ------------------------------------'''
 # tabAreaByCounty(['ancillary','data_2008_2012'], 'Multitemporal_Results_FF2')
-# createPGTables_mtr('Multitemporal_Results_FF2_counties','2012')
 # tabAreaByCounty(['deliverables','xp_update_refined'], 'mtr')
-createPGTables_mtr('mtr_counties','2015')
+
+'''expalian stuff here  ------------------------------------'''
+# createPGTables_mtr('Multitemporal_Results_FF2_counties','2012')
+# createPGTables_mtr('mtr_counties','2015')
 
 
 

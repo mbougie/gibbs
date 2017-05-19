@@ -11,48 +11,67 @@ import psycopg2
 from itertools import groupby
 
 
-#check-out extensions
 arcpy.CheckOutExtension("Spatial")
 
 
-def reclassifyRaster(t_lc):
+
+#########  global variables   ################
+#acccounts for different machines having different cases in path
+case=['Bougie','Gibbs']
+
+
+
+
+def defineGDBpath(arg_list):
+    gdb_path = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/arcgis/geodatabases/'+arg_list[0]+'/'+arg_list[1]+'.gdb/'
+    print 'gdb path: ', gdb_path 
+    return gdb_path 
+
+
+
+def reclassifyRaster(gdb_args, wc, reclasstable):
+    # Description: reclass cdl rasters based on the specific arc_reclassify_table 
 
     # Set environment settings
-    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/reclass/ternary.gdb'
+    arcpy.env.workspace = defineGDBpath(gdb_args)
 
-    dir = 'D:/cdl'
-    os.chdir(dir)
-    for file in glob.glob("*cdls.img"):
-        fnf=(os.path.splitext(file)[0]).split("_")
-        if int(fnf[0]) >= 2012:
-            print file
-            inRaster = Raster(file)
-            inRemapTable = 'C:/Users/bougie/Desktop/gibbs/arc_reclassify_table/cdl/'+t_lc
-            outRaster = 'rc_'+t_lc+'_'+fnf[0]
-            print 'outRaster: ', outRaster
-
-            # Execute Reclassify
-            arcpy.gp.ReclassByTable_sa(inRaster,inRemapTable,"FROM","TO","OUT",outRaster,"NODATA")
-
-
-
-
-def combineRasters(degree_lc):
-
-    # Set environment settings
-    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/reclass/ternary.gdb'
-    wc='*'+degree_lc+'*'
-    #make a list to hold the rasters so can use the list as argument list
-    rasterList = []
+    #loop through each of the cdl rasters
     for raster in arcpy.ListDatasets(wc, "Raster"): 
+        
         print 'raster: ',raster
-        rasterList.append(raster)
+        outraster = raster.replace("_", "_"+reclasstable+"_")
+        # #get the arc_reclassify table
+        inRemapTable = 'C:/Users/Bougie/Desktop/Gibbs/arcgis/arc_reclassify_table/'+reclasstable
+        print 'inRemapTable: ', inRemapTable
 
-    print rasterList
+        # #define the output
+        output = defineGDBpath(['pre','binaries'])+outraster
+        print 'output: ', output
+
+        #Execute Reclassify
+        arcpy.gp.ReclassByTable_sa(raster,inRemapTable,"FROM","TO","OUT",output,"NODATA")
+
+
+
+
+
+def createTrajectories(gdb_args,wc):
+
+    # Set environment settings
+    arcpy.env.workspace = defineGDBpath(gdb_args)
+    
+    #get a lsit of all rasters in sepcified database
+    rasterList = arcpy.ListDatasets('*'+wc+'*', "Raster")
+    
+    #sort the rasterlist by accending years
+    rasterList.sort(reverse=False)
+    print 'rasterList: ',rasterList
 
     #Execute Combine
     outCombine = Combine(rasterList)
-    output = 'C:/Users/bougie/Desktop/gibbs/refinement/trajectories.gdb/traj_'+degree_lc
+    print 'outCombine: ', outCombine
+    
+    output = defineGDBpath(['pre', 'trajectories'])+'traj_'+wc
     #Save the output 
     outCombine.save(output)
 
@@ -237,14 +256,14 @@ def tryit(x,row):
 
 
 ######  call functions  #############################
-
-# reclassifyRaster('t61')
-# combineRasters('t61')
+#-----reclassifyRaster(geodatabase path arguments, wildcard, arcgis reclass table)------------------
+# reclassifyRaster(['ancillary','cdl'], "*", 'cdl_b')
+createTrajectories(['pre','binaries'],"b")
 # gdbTable2postgres('traj')
 # PG_DDLandDML('b')
 # createReclassifyList('tdev')
 #mosaicRasters()
 
-trylist = [1,2,3,4,5]
-for x in trylist:
-    mtrAlgorithms(x)
+# trylist = [1,2,3,4,5]
+# for x in trylist:
+#     mtrAlgorithms(x)
