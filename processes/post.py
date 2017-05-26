@@ -133,11 +133,12 @@ def clipByMMUmask(wc, gdb_args_in):
         #create output file 
         output = raster+'_'+mmu
         print 'output: ', output
-
+        
+        #condition value is dependent of yxc (i.e. ytc = 3 and yfc = 4)
         cond = "Value <> " + yxc_mtr[yxc]
         print 'cond: ', cond
         
-        #perform setNull function to convert raster to null except where mtr value = yxc_mtr[yxc]
+        #perform setNull function to convert raster to null except where mtr value = cond
         outSetNull = SetNull(mmu_Raster, raster,  cond)
         
         #Save the output 
@@ -163,7 +164,7 @@ def ndTo1mask(wc, gdb_args_in):
         print 'output: ', output
         
         #perform CON function to............................
-        OutRas=Con((IsNull(raster)) & (mmu_Raster == int(yxc_mtr[yxc]), 1,raster)
+        OutRas=Con((IsNull(raster)) & (mmu_Raster == int(yxc_mtr[yxc])), 1,raster)
         
         #Save the output 
         OutRas.save(output)
@@ -244,8 +245,8 @@ def nibble(wc, gdb_args_in):
 
 ##############  call functions  #####################################################
 # createYearbinaries('yfc', ['post','yfc'])
-mosiacRasters('b', ['post',yxc])
-clipByMMUmask('b', ['post',yxc])
+# mosiacRasters('b', ['post',yxc])
+# clipByMMUmask('b', ['post',yxc])
 ndTo1mask('b', ['post',yxc])
 nibble('b', ['post',yxc])
 
