@@ -47,6 +47,7 @@ def addColorMap(inraster,template):
 
 
 def createMTR(gdb_in):
+    
     arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/data/processes/core/'+gdb_in+'.gdb'
     for raster in arcpy.ListDatasets('*rfnd*', "Raster"): 
         print 'raster:', raster

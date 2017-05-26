@@ -13,15 +13,23 @@ import glob
 import psycopg2
 
 
+'''######## DEFINE THESE EACH TIME ##########'''
+#NOTE: need to declare if want to process ytc or yfc
+yxc = 'yfc'
+
+#the associated mtr value qwith the yxc
+yxc_mtr = {'ytc':'3', 'yfc':'4'}
+
+#Note: need to change this each time on different machine
+case=['Bougie','Gibbs']
 
 
+#import extension
 arcpy.CheckOutExtension("Spatial")
-case=['bougie','gibbs']
-
 
 ###################  declare functions  #######################################################
 def defineGDBpath(arg_list):
-    gdb_path = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/data/processes/'+arg_list[0]+'/'+arg_list[1]+'.gdb/'
+    gdb_path = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/arcgis/geodatabases/'+arg_list[0]+'/'+arg_list[1]+'.gdb/'
     print 'gdb path: ', gdb_path 
     return gdb_path 
 
@@ -51,13 +59,13 @@ def addColorMap(inraster,template):
         print arcpy.GetMessages()
 
 
-
-def createYTCbinaries(typ):
+def createYearbinaries(typ, gdb_args_out):
     #DESCRIPTION:subset the trajectoires by year to create binary ytc or ytc raster by year that represent the conversion to/from crop between succesive years
-    arcpy.env.workspace=defineGDBpath(['pre','pre'])
+    arcpy.env.workspace=defineGDBpath(['pre','trajectories'])
     
-    engine = create_engine('postgresql://postgres:postgres@localhost:5432/core')
-    df = pd.read_sql_query('select * from pre.traj WHERE '+typ+' IS NOT NULL',con=engine)
+    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
+    # df = pd.read_sql_query("select \"Value\",new_value from refinement.traj_"+degree_lc+" as a JOIN refinement.traj_lookup as b ON a.traj_array = b.traj_array WHERE b.name='"+degree_lc+"'",con=engine)
+    df = pd.read_sql_query('select * from pre.traj_b as a JOIN pre.traj_b_lookup as b ON a.traj_array = b.traj_array WHERE '+typ+' IS NOT NULL',con=engine)
     print 'df--',df
 
     for index, row in df.iterrows():
@@ -70,11 +78,11 @@ def createYTCbinaries(typ):
 
             out_raster=typ+"_"+cy+"_b"
 
-            output= defineGDBpath(['post','ytc'])+out_raster
+            output= defineGDBpath(gdb_args_out)+out_raster
             print 'output: ', output
 
             # Get trajectories layer
-            inRas = Raster('traj')
+            inRas = Raster('traj_b')
 
        
             cond = "Value <> "+value
@@ -83,10 +91,89 @@ def createYTCbinaries(typ):
 
 
 
+def mosiacRasters(wc, gdb_args_in):
+    #DESCRIPTION:merge the seperate binary year rasters into on raster so to represent the entire conversion/abandon dataset
+    
+    #define gdb workspace
+    arcpy.env.workspace=defineGDBpath(gdb_args_in)
+    
+    #create list to store all raster that meet condition below
+    files_list = []
+    for raster in arcpy.ListDatasets("*"+wc, "Raster"): 
+        print raster
+        files_list.append(raster)
+    
+    #create output file 
+    output = yxc+'_'+wc+'_mosaic'
+    print 'output: ', output
+    
+    #perform cellstatistics function to mosiac rasters
+    outCellStatistics = CellStatistics([files_list[0],files_list[1],files_list[2]], "SUM", "DATA")
+
+    # Save the output 
+    outCellStatistics.save(output)
+
+
+
+
+def clipByMMUmask(wc, gdb_args_in):
+    #DESCRIPTION: clip the year mosiac raster by the mmu raster to only get the patches > 5 acres
+
+    #define gdb workspace
+    arcpy.env.workspace=defineGDBpath(gdb_args_in)
+    
+    #create wildcard to subset processes want to work with
+    wc='*_'+wc+'_mosaic'
+    print 'wc: ', wc
+    
+    #loop through rasters in gdb that match cond.
+    for raster in arcpy.ListDatasets(wc, "Raster"): 
+        print 'raster: ',raster
+        
+        #create output file 
+        output = raster+'_'+mmu
+        print 'output: ', output
+
+        cond = "Value <> " + yxc_mtr[yxc]
+        print 'cond: ', cond
+        
+        #perform setNull function to convert raster to null except where mtr value = yxc_mtr[yxc]
+        outSetNull = SetNull(mmu_Raster, raster,  cond)
+        
+        #Save the output 
+        outSetNull.save(output)
+
+
+def ndTo1mask(wc, gdb_args_in):
+    #DESCRIPTION: Function converts nondata values to value 1. Output raster used as an input mask for nibble() function.
+
+    #define gdb workspace
+    arcpy.env.workspace=defineGDBpath(gdb_args_in)
+      
+    #create wildcard to subset processes want to work with
+    wc='*_'+wc+'_mosaic_'+mmu
+    print 'wc: ', wc
+
+    #loop through rasters in gdb that match cond.
+    for raster in arcpy.ListDatasets(wc, "Raster"): 
+        print 'raster: ',raster
+
+        #create output file 
+        output = raster+'_ndTo1'
+        print 'output: ', output
+        
+        #perform CON function to............................
+        OutRas=Con((IsNull(raster)) & (mmu_Raster == int(yxc_mtr[yxc]), 1,raster)
+        
+        #Save the output 
+        OutRas.save(output)
+
+
 
 
 
 def attachCDL(typ,yr_reduction):
+    #DESCRIPTION:attach the appropriate cdl value to each year binary dataset
     arcpy.env.workspace=defineGDBpath(['post','ytc'])
 
     # arcpy.env.workspace = 'C:/Users/bougie/Desktop/'+rootDir+'/'+production_type+'/processes/post/'+typ[0]+'.gdb'
@@ -124,80 +211,13 @@ def attachCDL(typ,yr_reduction):
 
 
 
-def mosiacRasters(wc):
+
+def nibble(wc, gdb_args_in):
+    #DESCRIPTION:The Nibble tool allows selected areas of a raster to be assigned the value of their nearest neighbor.  In our case there are gaps a conversion patch that we fill 
+    #Note: Cells in the input raster containing NoData are not nibbled. To nibble NoData, first convert it to another value (see ndTo1mask(wc) function above)
+
     #define gdb workspace
-    arcpy.env.workspace=defineGDBpath(['post','ytc'])
-    
-    #create list to store all raster that meet condition below
-    files_list = []
-    for raster in arcpy.ListDatasets("*"+wc, "Raster"): 
-        print raster
-        files_list.append(raster)
-    
-    #create output file 
-    output='ytc_'+wc+'_mosaic'
-    print 'output: ', output
-    
-    #perform cellstatistics function to mosiac rasters
-    outCellStatistics = CellStatistics([files_list[0],files_list[1],files_list[2]], "SUM", "DATA")
-
-    # Save the output 
-    outCellStatistics.save(output)
-
-
-
-
-def mask(wc,masktype):
-    #define gdb workspace
-    arcpy.env.workspace=defineGDBpath(['post','ytc'])
-    
-    if masktype == 'clipByMMU':
-        
-        #create wildcard to subset processes want to work with
-        wc='*_'+wc+'_mosaic'
-        print 'wc: ', wc
-        
-        #loop through rasters in gdb that match cond.
-        for raster in arcpy.ListDatasets(wc, "Raster"): 
-            print 'raster: ',raster
-            
-            #create output file 
-            output = raster+'_'+mmu
-            print 'output: ', output
-            
-            #perform setNull function to convert raster to null except where mtr value = 3
-            outSetNull = SetNull(mmu_Raster, raster,  "Value <> 3")
-            
-            #Save the output 
-            outSetNull.save(output)
-
-
-    
-    elif masktype == 'ndTo1':
-       
-        #create wildcard to subset processes want to work with
-        wc='*_'+wc+'_mosaic_'+mmu
-        print 'wc: ', wc
-
-        #loop through rasters in gdb that match cond.
-        for raster in arcpy.ListDatasets(wc, "Raster"): 
-            print 'raster: ',raster
-
-            #create output file 
-            output = raster+'_ndTo1'
-            print 'output: ', output
-            
-            #perform CON function to............................
-            OutRas=Con((IsNull(raster)) & (mmu_Raster == 3), 1,raster)
-            
-            #Save the output 
-            OutRas.save(output)
-
-
-
-def nibble(wc):
-    #define gdb workspace
-    arcpy.env.workspace=defineGDBpath(['post','ytc'])
+    arcpy.env.workspace=defineGDBpath(gdb_args_in)
     
     #declare variables but dont intialize them
     clipByMMU = None
@@ -223,11 +243,11 @@ def nibble(wc):
 
 
 ##############  call functions  #####################################################
-# createYTCbinaries('ytc')
-# mosiacRasters('b')
-# mask('b','clipByMMU')
-# mask('b','ndTo1')
-# nibble('b')
+# createYearbinaries('yfc', ['post','yfc'])
+mosiacRasters('b', ['post',yxc])
+clipByMMUmask('b', ['post',yxc])
+ndTo1mask('b', ['post',yxc])
+nibble('b', ['post',yxc])
 
 
 
@@ -236,7 +256,7 @@ def nibble(wc):
 # mosiacRasters('fc')
 # mask('fc','clipByMMU')
 # mask('fc','ndTo1')
-nibble('fc')
+# nibble('fc')
 
 
 # attachCDL('bfc',1)

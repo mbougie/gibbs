@@ -33,18 +33,18 @@ case=['Bougie','Gibbs']
 #conversion coefficent: 1 square meter = 0.000247105 acres
 conv_coef=0.000247105
 
-
-
-
-
-
-###################  declare functions  #######################################################
+#function to establish path to geodatabase
 def defineGDBpath(arg_list):
-    gdb_path = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/data/processes/'+arg_list[0]+'/'+arg_list[1]+'.gdb/'
+    gdb_path = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/arcgis/geodatabases/'+arg_list[0]+'/'+arg_list[1]+'.gdb/'
     print 'gdb path: ', gdb_path 
     return gdb_path 
 
-########  Part B Questions  #################################################
+
+
+
+
+
+########  Part A Questions  #################################################
 def question_a1():
 	arcpy.env.workspace = 'C:/Users/bougie/Desktop/'+rootDir+'/'+production_type+'/rasters/core/mmu.gdb'
 	wc='traj_n8h_mtr_8w_msk45_nbl'
@@ -66,10 +66,10 @@ def question_a1():
 
 ####NOTE: RESET THE YEARS ARRAY !!!!!!!!!!!!!!!!!!!!!!!
 def question_a4():
-	arcpy.env.workspace = 'C:/Users/bougie/Desktop/'+rootDir+'/'+production_type+'/rasters/post/ytc.gdb'
-	wc='ytc_b_mosaic_traj_n8h_mtr_8w_msk45_nbl_fnl'
-	print 'wc: ', wc
+	arcpy.env.workspace = defineGDBpath(['deliverables','xp_update_refined'])
 
+	wc='ytc'
+	print 'wc: ', wc
 
 	for raster in arcpy.ListDatasets(wc, "Raster"): 
 
@@ -81,15 +81,14 @@ def question_a4():
 		# Set Snap Raster environment
 		arcpy.env.snapRaster = wc
 
-		lcc='C:/Users/bougie/Desktop/'+rootDir+'/usxp/ancillary.gdb/lcc_100m_reproject'
+		lcc=defineGDBpath(['ancillary','misc'])+'LCC_100m'
 
-		# years=['13', '14', '15']
-		years=['13']
+		years=['13', '14', '15']
 		for year in years:
-			output = 'C:/Users/bougie/Desktop/'+rootDir+'/usxp/a.gdb/ytc_'+year+'_lcc'
+			output = defineGDBpath(['deliverables','xp_update_refined'])+'ytc_'+year+'_lcc'
 			print 'output: ', output
 
-			cond="Value <> " + year
+			cond="Value = " + year
 			print 'cond', cond
 
 			outSetNull = SetNull(raster, Raster(lcc), cond)
@@ -115,7 +114,7 @@ def createGSconv(gdb_path,wc,outfile):
 		# Set Snap Raster environment
 		arcpy.env.snapRaster = raster
 
-		output = defineGDBpath(['deliverables','deliverables'])+outfile
+		output = defineGDBpath(['deliverables','deliverables_refined'])+outfile
 		print 'output: ', output
 
 		cond='Value = 37 OR Value =62 OR Value = 64 OR Value =152 OR Value =171 OR Value =181 OR Value =176'
@@ -127,10 +126,12 @@ def createGSconv(gdb_path,wc,outfile):
 		attExtract.save(output)
 
 
+
+
 def createGSconvBylcc(wc):
 	# DESCRIPTION: replace the gsconv value with lcc value
 
-	arcpy.env.workspace = defineGDBpath(['deliverables','deliverables'])
+	arcpy.env.workspace =  defineGDBpath(['deliverables','deliverables_refined'])
 
 	print 'wc: ', wc
 
@@ -158,7 +159,7 @@ def createGSconvBylcc(wc):
         OutRas.save(output)
 
 
-def createGSconvByYearANDlcc(wc,years):
+def createGSconvByYearANDlcc(wc, gdb_path, filename, years):
 
 	arcpy.env.workspace = defineGDBpath(['deliverables','deliverables_refined'])
 
@@ -175,8 +176,8 @@ def createGSconvByYearANDlcc(wc,years):
 		arcpy.env.snapRaster = raster
 
         #set up the 2 datasets that will be used in the Con() function below
-		yr_dset=defineGDBpath(['deliverables','xp_update_refined'])+'ytc'
-		lcc=defineGDBpath(['ancillary','other'])+'LCC_100m'
+		yr_dset=defineGDBpath(gdb_path)+filename
+		lcc=defineGDBpath(['ancillary','misc'])+'LCC_100m'
 
 		
 		for year in years:
@@ -193,38 +194,38 @@ def createGSconvByYearANDlcc(wc,years):
 			OutRas.save(output)
 
 	     
-def tabAreaByCounty(gdb_path,filename):
+def tabAreaByCounty(wc):
 	# Set environment settings
 	arcpy.env.workspace = defineGDBpath(['deliverables','deliverables_refined'])
     
 	# Set local variables
-	raster=defineGDBpath(gdb_path)+filename
-	print 'raster: ', raster
+	for raster in arcpy.ListDatasets('*'+wc+'*', "Raster"): 
+		print 'raster: ', raster
 
-	# Set the cell size environment using a raster dataset.
-	arcpy.env.cellSize = raster
+		# Set the cell size environment using a raster dataset.
+		arcpy.env.cellSize = raster
 
-	# Set Snap Raster environment
-	arcpy.env.snapRaster = raster
+		# Set Snap Raster environment
+		arcpy.env.snapRaster = raster
 
 
-	inZoneData = defineGDBpath(['ancillary','shapefiles'])+'counties'
-	zoneField = "atlas_stco"
-	inClassData = raster
-	classField = "Value"
-	outTable = filename + '_counties'
-	print 'outTable: ', outTable
+		inZoneData = defineGDBpath(['ancillary','shapefiles'])+'counties'
+		zoneField = "atlas_stco"
+		inClassData = raster
+		classField = "Value"
+		outTable = raster + '_counties'
+		print 'outTable: ', outTable
 
-	#get the resolution of each raster to get the coorect size to process
-	res = arcpy.GetRasterProperties_management(raster, "CELLSIZEX")
-	print 'res: ', res
-	processingCellSize = res
+		#get the resolution of each raster to get the coorect size to process
+		res = arcpy.GetRasterProperties_management(raster, "CELLSIZEX")
+		print 'res: ', res
+		processingCellSize = res
 
-	# Check out the ArcGIS Spatial Analyst extension license
-	arcpy.CheckOutExtension("Spatial")
+		# Check out the ArcGIS Spatial Analyst extension license
+		arcpy.CheckOutExtension("Spatial")
 
-	# Execute TabulateArea
-	TabulateArea(inZoneData, zoneField, inClassData, classField, outTable,processingCellSize)
+		# Execute TabulateArea
+		TabulateArea(inZoneData, zoneField, inClassData, classField, outTable,processingCellSize)
 
 
 def createPGTables_lcc(wc,year):
@@ -305,51 +306,64 @@ def getCount(year,row):
 	elif year == '2015':
 		count = str(((row.getValue('VALUE_2')+row.getValue('VALUE_5'))+(row.getValue('VALUE_3')-row.getValue('VALUE_4')))*(conv_coef))
 		return count
+	else:
+		count = str((row.getValue('VALUE_1')+row.getValue('VALUE_3'))*(conv_coef))
+		return count
 
 
 
 ###################  CALL FUNCTIONS  #######################################################
 '''###################  SECTION A QUESTIONS  ##########################################################'''
-
+# question_a4()
 
 
 
 '''###################  SECTION B QUESTIONS  ##########################################################'''
 
-'''SUBSET BFC DATASETS FOR GRASS & SUBLAND  ______________________________________
+'''description: subset bfc and old mtr datasets for grassland and shrubland  ===============================================
 description: add it here 
 '''
 
+
+'''LCC CODE  =============== prep step ====================================================='''
 '''createGSconv  ------------------------------------'''
 # createGSconv(['post','xp_update_refined'], 'bfc', 'gsConv_new')
 # createGSconv(['ancillary','data_2008_2012'], 'class_before_crop', 'gsConv_old')
-# createGSconv(['ancillary','cdl'], '2012_30m_cdls', 'gs2012')
+# createGSconv(['ancillary','data_2008_2012'], 'Multitemporal_Results_FF2',  'gsConv_mtr2012')
 
 
 
 
+'''Q1 ==============================================================================='''
+# tabAreaByCounty(['deliverables','deliverables_refined'], "gsConv_mtr2012")
+# createPGTables_mtr('mtr_counties','null')#-----not optimal!!!!!!!!!!!!!!!!!
 
 
-'''LCC CODE  ______________________________________
+
+'''Q2 and Q3  ===============================================================================
 description: Subset the gsConv datasets by year and then attach lcc value   
 ''' 
 
 '''createGSconvByYearANDlcc  ------------------------------------'''
 # createGSconvByYearANDlcc('gsConv_new',['2013','2014','2015'])
-# createGSconvByYearANDlcc('gsConv_old','D:/gibbs/control/raster/2008_2012_data/ytc_ff2.tif',['2009','2010','2011','2012'])
-# createGSconvBylcc('gs2012')
+createGSconvByYearANDlcc('gsConv_old',['ancillary','data_2008_2012'], 'ytc_ff2_modified', ['2009','2010','2011','2012'])
+
 
 '''tabAreaByCounty-------tabulate the area per county of each gsConv_[year]_lcc dataset  ------------------------------------'''
-# tabAreaByCounty("*lcc")
+# tabAreaByCounty("*gsConv_20*")#-----not optimal!!!!!!!!!!!!!!!!!
+
 
 '''createPGTables_lcc-------create/populate "*_lcc_counties" tables in postgres ------'''
-# createPGTables_lcc('*_lcc_counties')
+
+# year_list=['2009','2010','2011','2012']
+# for year in year_list: 
+# 	createPGTables_lcc('*'+ year+ '_lcc_counties',year)
 
 
 
 
 
-'''NAIVE CHANGE CODE  ______________________________________
+'''Q$ abd Q5 (NAIVE CHANGE CODE)  ======================================================================
 description: add description here
 '''
 
@@ -357,13 +371,9 @@ description: add description here
 # tabAreaByCounty(['ancillary','data_2008_2012'], 'Multitemporal_Results_FF2')
 # tabAreaByCounty(['deliverables','xp_update_refined'], 'mtr')
 
-'''expalian stuff here  ------------------------------------'''
-# createPGTables_mtr('Multitemporal_Results_FF2_counties','2012')
+'''expalian stuff here  ------------------------------------'''#----------------------->done!!!
+#createPGTables_mtr('Multitemporal_Results_FF2_counties','2012')
 # createPGTables_mtr('mtr_counties','2015')
-
-
-
-
 
 
 
