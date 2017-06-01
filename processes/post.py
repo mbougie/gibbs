@@ -23,9 +23,17 @@ yxc_mtr = {'ytc':'3', 'yfc':'4'}
 #Note: need to change this each time on different machine
 case=['Bougie','Gibbs']
 
+conversion_years = ['2013','2014','2015']
 
 #import extension
 arcpy.CheckOutExtension("Spatial")
+
+
+# print arcpy.env.overwriteOutput 
+
+# arcpy.env.overwriteOutput = True
+
+# print arcpy.env.overwriteOutput 
 
 ###################  declare functions  #######################################################
 def defineGDBpath(arg_list):
@@ -59,35 +67,46 @@ def addColorMap(inraster,template):
         print arcpy.GetMessages()
 
 
-def createYearbinaries(typ, gdb_args_out):
+def createYearbinaries(typ, gdb_args_in):
+
     #DESCRIPTION:subset the trajectoires by year to create binary ytc or ytc raster by year that represent the conversion to/from crop between succesive years
-    arcpy.env.workspace=defineGDBpath(['pre','trajectories'])
+    arcpy.env.workspace=defineGDBpath(gdb_args_in)
+    
+    #define file names
+    traj = defineGDBpath(['pre','trajectories'])+"traj_b"
+    traj_years = typ+"_years"
+
+    # copy raster
+    arcpy.CopyRaster_management(traj, traj_years)
     
     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
     # df = pd.read_sql_query("select \"Value\",new_value from refinement.traj_"+degree_lc+" as a JOIN refinement.traj_lookup as b ON a.traj_array = b.traj_array WHERE b.name='"+degree_lc+"'",con=engine)
-    df = pd.read_sql_query('select * from pre.traj_b as a JOIN pre.traj_b_lookup as b ON a.traj_array = b.traj_array WHERE '+typ+' IS NOT NULL',con=engine)
+    df = pd.read_sql_query('select * from pre.traj_b as a JOIN pre.traj_b_lookup as b ON a.traj_array = b.traj_array WHERE b.'+typ+' IS NOT NULL',con=engine)
     print 'df--',df
-
+    
+    # loop through rowes in the dataframe
     for index, row in df.iterrows():
-        value=str(int(row['Value'])) 
+        # value=str(int(row['Value'])) 
+        value=row['Value']
         print 'value: ', value
-        #cy=conversion year
-        cy=str(int(row[typ]))
-        print 'cy:', type(cy)
-        if cy not in {'2012','2016'}:
 
-            out_raster=typ+"_"+cy+"_b"
+        #cy is acrronym for conversion year
+        # cy=str(int(row[typ]))
+        cy=row[typ]
+        print 'cy:', cy
+        
+        # allow raster to be overwritten
+        arcpy.env.overwriteOutput = True
+        print "overwrite on? ", arcpy.env.overwriteOutput
+    
+        #establish the condtion
+        cond = "Value <> "+value
+        print 'cond: ', cond
+        
+        # set everthing not equal to the unique trajectory value to null label this abitray value equal to cy
+        outSetNull = SetNull(traj, cy, cond)
+        outSetNull.save(traj_years)
 
-            output= defineGDBpath(gdb_args_out)+out_raster
-            print 'output: ', output
-
-            # Get trajectories layer
-            inRas = Raster('traj_b')
-
-       
-            cond = "Value <> "+value
-            outSetNull = SetNull(inRas, cy[2:], cond)
-            outSetNull.save(output)
 
 
 
@@ -138,7 +157,7 @@ def clipByMMUmask(wc, gdb_args_in):
         cond = "Value <> " + yxc_mtr[yxc]
         print 'cond: ', cond
         
-        #perform setNull function to convert raster to null except where mtr value = cond
+        # perform setNull function to convert raster to null except where mtr value = cond
         outSetNull = SetNull(mmu_Raster, raster,  cond)
         
         #Save the output 
@@ -173,38 +192,77 @@ def ndTo1mask(wc, gdb_args_in):
 
 
 
-def attachCDL(typ,yr_reduction):
+# def attachCDL(gdb_args_in,typ,yr_reduction):
+#     #DESCRIPTION:attach the appropriate cdl value to each year binary dataset
+#     arcpy.env.workspace=defineGDBpath(gdb_args_in)
+
+#     # arcpy.env.workspace = 'C:/Users/bougie/Desktop/'+rootDir+'/'+production_type+'/processes/post/'+typ[0]+'.gdb'
+#     for raster in arcpy.ListDatasets("*_b", "Raster"): 
+#         print 'raster: ', raster
+
+#         #######  GET YEAR  #############################
+#         #acronym: fnf=file name fragments
+#         fnf=(os.path.splitext(raster)[0]).split("_")
+#         # print 'fnf:', fnf
+#         year = int(fnf[1]) - yr_reduction
+#         print 'cdl year to reference: ', year
+        
+#         #######  DEFINE OUT RASTER  #####################
+#         output = raster + '_'+typ
+#         print 'output: ', output
+
+        
+#         #######  GET APPROPRIATE CDL BY YEAR  #############
+#         cdl = defineGDBpath(['ancillary','cdl'])+'cdl_'+str(year)
+#         print "cdl raster with the appropriate year: ", cdl
+
+
+#         cond = "Value <> "+str(fnf[1][2:])
+#         print 'cond: ', cond
+
+#         OutRas=Con(raster, Raster(cdl), raster, cond)
+
+#         # # Save the output 
+#         OutRas.save(output)
+
+
+
+def attachCDL(gdb_args_in,typ,years, yr_reduction):
+
+
+    
+   
+
     #DESCRIPTION:attach the appropriate cdl value to each year binary dataset
-    arcpy.env.workspace=defineGDBpath(['post','ytc'])
+    arcpy.env.workspace=defineGDBpath(gdb_args_in)
 
-    # arcpy.env.workspace = 'C:/Users/bougie/Desktop/'+rootDir+'/'+production_type+'/processes/post/'+typ[0]+'.gdb'
-    for raster in arcpy.ListDatasets("*_b", "Raster"): 
+    #get mosiac raster
+    for raster in arcpy.ListDatasets("*_b_mosaic_traj_rfnd_n8h_mtr_8w_msk23_nbl", "Raster"): 
         print 'raster: ', raster
-
-        #######  GET YEAR  #############################
-        #acronym: fnf=file name fragments
-        fnf=(os.path.splitext(raster)[0]).split("_")
-        # print 'fnf:', fnf
-        year = int(fnf[1]) - yr_reduction
-        print 'cdl year to reference: ', year
         
-        #######  DEFINE OUT RASTER  #####################
-        output = raster + '_'+typ
-        print 'output: ', output
-
-        
-        #######  GET APPROPRIATE CDL BY YEAR  #############
-        cdl = 'D:/cdl/'+str(year)+"_30m_cdls.img"
-        print "cdl raster with the appropriate year: ", cdl
 
 
-        cond = "Value <> "+str(fnf[1][2:])
-        print 'cond: ', cond
+        for year in conversion_years:
+            print year
+            print 'cdl year to reference: ', year
 
-        OutRas=Con(raster, Raster(cdl), raster, cond)
+            #allow the mosaic raster to be overwritten
+            arcpy.env.overwriteOutput = True
+            print "overwrite on? ", arcpy.env.overwriteOutput 
+            
+            # #######  GET APPROPRIATE CDL BY YEAR  #############
+            cdl = defineGDBpath(['ancillary','cdl'])+'cdl_'+year
+            print "cdl raster with the appropriate year: ", cdl
 
-        # # Save the output 
-        OutRas.save(output)
+            #establish the condition
+            cond = "Value = "+year
+            print 'cond: ', cond
+            
+            #if mosiac raster equals year get the corresponding year of cdl and replace year value with corresponding cdl value
+            OutRas=Con(raster, Raster(cdl), raster, cond)
+
+            # # Save the output 
+            OutRas.save(raster)
 
 
 
@@ -214,7 +272,7 @@ def attachCDL(typ,yr_reduction):
 
 
 def nibble(wc, gdb_args_in):
-    #DESCRIPTION:The Nibble tool allows selected areas of a raster to be assigned the value of their nearest neighbor.  In our case there are gaps a conversion patch that we fill 
+    #DESCRIPTION:The Nibble tool allows selected areas of a raster to be assigned the value of their nearest neighbor.  In our case there are gaps in the conversion patch that we fill 
     #Note: Cells in the input raster containing NoData are not nibbled. To nibble NoData, first convert it to another value (see ndTo1mask(wc) function above)
 
     #define gdb workspace
@@ -244,33 +302,34 @@ def nibble(wc, gdb_args_in):
 
 
 ##############  call functions  #####################################################
-# createYearbinaries('yfc', ['post','yfc'])
+createYearbinaries('yfc', ['post','yfc'])
 # mosiacRasters('b', ['post',yxc])
 # clipByMMUmask('b', ['post',yxc])
-ndTo1mask('b', ['post',yxc])
-nibble('b', ['post',yxc])
+# ndTo1mask('b', ['post',yxc])
+# nibble('b', ['post',yxc])
 
 
 
 
-# attachCDL('fc',0)
-# mosiacRasters('fc')
-# mask('fc','clipByMMU')
-# mask('fc','ndTo1')
-# nibble('fc')
+# attachCDL(['post',yxc],'fnc',0)
+# mosiacRasters('fnc', ['post',yxc])
+# clipByMMUmask('fnc', ['post',yxc])
+# ndTo1mask('fnc', ['post',yxc])
+# nibble('fnc', ['post',yxc])
 
 
-# attachCDL('bfc',1)
-# mosiacRasters('bfc')
-# mask('bfc','clipByMMU')
-# mask('bfc','ndTo1')
-# nibble('bfc')
+
+# attachCDL(['post',yxc],'bfc', conversion_years, 0)
 
 
 
 
 
 
+# mosiacRasters('bfnc', ['post',yxc])
+# clipByMMUmask('bfnc', ['post',yxc])
+# ndTo1mask('bfnc', ['post',yxc])
+# nibble('bfnc', ['post',yxc])
 
-# {createBinaries,cellStats,mask_clipByMMU,mask_ndTo1}
-# {attachCDL,cellStats,mask_clipByMMU}
+
+

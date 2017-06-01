@@ -177,7 +177,7 @@ def regionGroup(arg_list):
 
 
 
-def mask(masks_list,arg_list):
+def clipByMMUmask(masks_list,arg_list):
     #define workspace
     arcpy.env.workspace=defineGDBpath(arg_list)
 
@@ -252,7 +252,7 @@ def nibble(maskSize,arg_list1,arg_list2,filename):
 
 #------mmu gdb-----------------
 # regionGroup(['core','mtr'])
-# mask(['23'],['core','mmu'])
+# clipByMMUmask(['23'],['core','mmu'])
 nibble('23',['core','mmu'],['core','mtr'],'traj_rfnd_n8h_mtr')
 
 
