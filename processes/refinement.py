@@ -301,7 +301,7 @@ def addGDBTable2postgres(gdb_args,tablename,pg_shema):
 
 ######  call functions  #############################
 #-----reclassifyRaster(gdb_args_in, wc, reclass_degree, gdb_args_out)------------------
-reclassifyRaster(['ancillary','cdl'], "cdl", "b", ['pre','binaries'])
+# reclassifyRaster(['ancillary','cdl'], "cdl", "b", ['pre','binaries'])
 # reclassifyRaster(['ancillary','misc'], "nlcd", "b", ['pre','binaries'])
 
 #-----use arcgis combine() function to create permuations 
@@ -318,3 +318,8 @@ reclassifyRaster(['ancillary','cdl'], "cdl", "b", ['pre','binaries'])
 
 #-----describe
 #mosaicRasters()
+
+
+
+
+

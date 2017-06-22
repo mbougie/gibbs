@@ -225,7 +225,7 @@ def mosaicRasters():
 # addGDBTable2postgres(['pre','trajectories'],'traj_b','pre')
 
 #-----add field to PG table
-addTrajArrayField('b')
+# addTrajArrayField('b')
 
 #-----describe
 # createReclassifyList('tdev')
