@@ -45,6 +45,8 @@ coef={'acres':1,'msq':0.000247105,'30m':0.222395,'56m':0.774922476}
 
 
 
+# str( !VAT_cdl_2010.Class_Name! ) +' ('+ str(!VAT_bfc.acres!) + ')'
+
 
 
 
@@ -137,7 +139,8 @@ def getRasterCount(gdb_path, wc):
             
            
 
-
+        query3="DELETE FROM qaqc.counts_rasters WHERE dataset = '" + raster + "'"
+        g.commitPG(query3)
 
         cur = conn.cursor()
         query="INSERT INTO qaqc.counts_rasters VALUES ('" + str(raster) + "' , " + str(sum(list_count)) + " , " + str(res) + " , " + str(sum(list_acres))+ ")"
@@ -146,32 +149,42 @@ def getRasterCount(gdb_path, wc):
         conn.commit()
 
 
+    #call updateLookupTable() function to update table
+    updateLookupTable()
 
 
 
 
-def countDiff(table):
-    query=  """ SELECT 
-                  b.child,
-                  a.acres, 
-                  b.parent,
-                  c.acres,
-                  c.acres - a.acres,
-                  (1 - (a.acres / c.acres)) * 100
-                FROM 
-                  qaqc."""+ table + """ as a, 
-                  qaqc.lookup_inheritance as b, 
-                  qaqc.counts_rasters as c
-                WHERE 
-                  b.child = a.dataset AND
-                  b.parent = c.dataset AND 
-                  b.process = TRUE"""
+
+
+def countDiff():
+    query=  """  SELECT a.dataset,
+                    b.acres AS acres_child,
+                    a.parent,
+                    c.acres AS acres_parent,
+                    c.acres - b.acres AS diff_acres,
+                    (1::double precision - b.acres / c.acres) * 100::double precision AS diff_percent
+                   FROM qaqc.lookup_inheritance a,
+                    qaqc.counts_tables b,
+                    qaqc.counts_rasters c
+                  WHERE a.dataset = b.dataset AND a.parent = c.dataset AND a.process = true
+                UNION
+                 SELECT a.dataset,
+                    b.acres AS acres_child,
+                    a.parent,
+                    c.acres AS acres_parent,
+                    c.acres - b.acres AS diff_acres,
+                    (1::double precision - b.acres / c.acres) * 100::double precision AS diff_percent
+                   FROM qaqc.lookup_inheritance a,
+                    qaqc.counts_rasters b,
+                    qaqc.counts_rasters c
+                  WHERE a.dataset = b.dataset AND a.parent = c.dataset AND a.process = true;"""
     print query
     rows=g.fetchPG(query)
     for row in rows:
         print row
         cur = conn.cursor()
-        query = "UPDATE qaqc.counts_diff2 SET (child, acres_child, parent, acres_parent, diff_acres, diff_perc) = "+str(row)+" WHERE child = '"+ str(row[0]) + "'"
+        query = "UPDATE qaqc.counts_diff SET (dataset, acres, parent, acres_parent, diff_acres, diff_perc) = "+str(row)+" WHERE dataset = '"+ str(row[0]) + "'"
         
         print query
         cur.execute(query)
@@ -180,7 +193,18 @@ def countDiff(table):
 
 
 
-######################   NEW     ####################################################################################
+
+
+
+
+
+
+
+
+
+
+
+
 
 def getTableCount(dataset):
 
@@ -197,7 +221,7 @@ def getTableCount(dataset):
         query1='SELECT sum('+columnlist+') FROM deliverables.'+table
         print query1
         
-        query2="SELECT units FROM qaqc.lookup_inheritance where child = "+table_w_qoutes
+        query2="SELECT units FROM qaqc.lookup_inheritance where dataset = "+table_w_qoutes
         print query2
         count = g.fetchPG(query1)
         print count
@@ -206,13 +230,15 @@ def getTableCount(dataset):
         coefficient=coef.get(unit[0][0])
         print coefficient
         
-
-        query3="INSERT INTO qaqc.counts_tables VALUES (" + table_w_qoutes + " , " + str(count[0][0]*coefficient)+ ")"
+        query3="DELETE FROM qaqc.counts_tables WHERE dataset = " + table_w_qoutes
+        print query3
         g.commitPG(query3)
 
-
-
-
+        query4="INSERT INTO qaqc.counts_tables VALUES (" + table_w_qoutes + " , " + str(count[0][0]*coefficient)+ ")"
+        print query4
+        g.commitPG(query4)
+        
+       
 
 
 def getDerivedTableCounts(parent):
@@ -235,10 +261,90 @@ def getDerivedTableCounts(parent):
     query3="INSERT INTO qaqc.counts_tables VALUES (" + out_table +" , " + str(result[0][1]) + ")"
     g.commitPG(query3)
 
-    
+  
 
 
+
+
+def updateLookupTable():
+    #used as a function inside getRasterCount() function
+    query = """
+            INSERT INTO qaqc.lookup_inheritance (dataset)(
+            SELECT b.dataset
+            FROM qaqc.lookup_inheritance as a RIGHT OUTER JOIN
+            (SELECT 
+            counts_rasters.dataset
+            FROM 
+            qaqc.counts_rasters
+            UNION
+
+            SELECT
+            counts_tables.dataset
+            FROM
+            qaqc.counts_tables) as b
+
+            on a.dataset = b.dataset
+
+            WHERE a.dataset is null 
+            );
+            """
+    g.commitPG(query)
+
+# def addFIeldtoRaster(gdb_path, wc):
+#     arcpy.env.workspace = defineGDBpath(gdb_path)
     
+#     fieldnames=['acres']
+    
+#     for attributetable in arcpy.ListDatasets(wc, "Raster"): 
+#         print 'raster: ',attributetable
+#         for field in fieldnames:
+#             in_table = attributetable
+#             field_name = field
+#             field_type = "DOUBLE"
+#             # fieldName1 = "acres"
+
+         
+#             # # Execute AddField twice for two new fields
+#             # arcpy.AddField_management(in_table=attributetable, field_name=field, field_type="DOUBLE")
+  
+
+#             fieldCalculator(attributetable, field)
+
+
+# def fieldCalculator(attributetable, field):
+
+#     #convert the result object into and integer
+#     res = arcpy.GetRasterProperties_management(attributetable, "CELLSIZEX")
+
+#     #convert the result object into and integer
+#     res = res.getOutput(0)
+#     print res
+#     print type(res)
+#     coefficient=coef.get(int(res))
+
+#     # acreage = g.getAcres(int(count), int(res))
+#     expression = "getCoef(!Count!,int(res))"
+
+#     codeblock = """def getCoef(count,res):
+#         return 3
+    
+#     """
+
+#     # expression = "getClass(!Count!,int(res))"
+#     # codeblock = """g.getAcres"""
+
+     
+     
+#     # Execute CalculateField 
+#     arcpy.CalculateField_management(attributetable, field, expression, "PYTHON_9.3", codeblock)
+
+
+# getlookup(shema,dataset)
+
+
+
+
+
 
 
 
@@ -252,11 +358,12 @@ def getDerivedTableCounts(parent):
 # getRasterCount(['deliverables','deliverables_refined'],'*')
 # getRasterCount(['deliverables','xp_update_refined'],'*')
 # getRasterCount(['ancillary','cdl'],'*cdl_2012*')
-
+# getRasterCount(['ancillary','xp_initial'],'*')
+# getRasterCount(['post','yfc_test'],"*fnl")
 
 
 ######  call getTableCounts() function  ##############################
-# getTableCount("'mtr_%_counties'","'%value%'")
+# getTableCount("'%'")
 # getTableCount("'gsconv_%_lcc_counties'")
 
 
@@ -274,7 +381,7 @@ def getDerivedTableCounts(parent):
 
 
 
-countDiff('counts_rasters')
+# countDiff()
 
 
 
@@ -283,8 +390,6 @@ countDiff('counts_rasters')
 
 
 
-
-
-
+# addFIeldtoRaster(['post','yfc_test'],"*fnc_fnl")
 
 

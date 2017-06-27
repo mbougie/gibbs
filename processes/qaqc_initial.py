@@ -283,6 +283,8 @@ def addGDBTable2postgres(gdb_args,wc,pg_shema):
 
 
 
+
+
 ##########  call addGDBTable2postgres  #########################################
 # addGDBTable2postgres(['deliverables','deliverables_refined'],'gsConv_*_lcc_counties','deliverables')
 
@@ -293,7 +295,7 @@ def addGDBTable2postgres(gdb_args,wc,pg_shema):
 
 
 ######  call getTableCount() function  ##############################
-getTableCount()
+# getTableCount()
 
 
 ##########  call countDiff() function  #######################################

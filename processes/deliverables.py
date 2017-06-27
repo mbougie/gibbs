@@ -325,7 +325,7 @@ def createPGTables_lcc(wc):
 			conn.commit()
       
 
-def createPGTables_mtr(filename,year):
+def createPGTables_totalcrop(filename,year):
 	#description: create a postgres table that calculates the different mtr comboninations depending on year parameter
 
 	table = defineGDBpath(['deliverables','deliverables_refined'])+filename
@@ -421,14 +421,14 @@ description: tabulate the values of the gsConv_gs_2012_lcc_mtr by county
 output dataset: gs_2012_lcc_mtr_counties 
 '''
 # tabAreaByCounty(['deliverables','deliverables_refined'], 'gs_2012_lcc_mtr', ['deliverables','deliverables_refined'])
-
+# tabAreaByCounty(['deliverables','deliverables_refined'], 'gs_2012_lcc', ['deliverables','deliverables_refined'])
 '''
 function: createPGTables_mtr()
 description: create a postgres table that contains lcc combinations
 output postgres table: gs_2012_lcc_mtr_counties
 ''' 
 # createPGTables_lcc('gs_2012_lcc_mtr_counties')
-
+# createPGTables_lcc('gs_2012_lcc_counties')
 
 
 '''
@@ -443,7 +443,7 @@ description: subset input raster by grassland and shrubland
 output datasets: gsConv_[x]
 '''
 # createGSdataset(['deliverables','xp_update_refined'], 'bfc', 'gsconv_new')
-# createGSdataset(['ancillary','data_2008_2012'], 'class_before_crop', 'gsconv_old')
+# createGSdataset(['ancillary','xp_initial'], 'bfc_v1', 'gsconv_old')
 
 
 
@@ -452,7 +452,7 @@ function: createGSconvByYearANDlcc()---------------------------------------
 description: subset the gsConv datasets by year and then attach lcc value
 output datasets: gsConv_[year]_lcc
 '''
-# createGSconvByYearANDlcc('gsconv_old',['ancillary','data_2008_2012'], 'ytc_ff2_modified', ['2009','2010','2011','2012'])
+# createGSconvByYearANDlcc('gsconv_old',['ancillary','xp_initial'], 'ytc_v1', ['2009','2010','2011','2012'])
 # createGSconvByYearANDlcc('gsconv_new', ['deliverables','xp_update_refined'], 'ytc', ['2013', '2014', '2015'])
 
 
@@ -486,7 +486,7 @@ function: tabAreaByCounty() -------------------------------------------
 description: tabulate the area per county for both mtr2012 and mtr2015
 output tables: [mtr]_counties
 '''
-# tabAreaByCounty(['ancillary','data_2008_2012'], 'Multitemporal_Results_FF2', ['deliverables','deliverables_refined'])
+# tabAreaByCounty(['ancillary','xp_initial'], 'mtr_v1', ['deliverables','deliverables_refined'])
 # tabAreaByCounty(['deliverables','xp_update_refined'], 'mtr', ['deliverables','deliverables_refined'])
 
 '''
@@ -494,8 +494,8 @@ function: createPGTables_mtr() -------------------------------------------
 description: create a postgres table that calculates the different mtr comboninations depending on year parameter
 output postgres tables: totalcrop_[year]_counties
 '''
-# createPGTables_mtr('Multitemporal_Results_FF2_counties','2012')
-createPGTables_mtr('mtr_counties','2015')
+# createPGTables_totalcrop('mtr_v1_counties','2012')
+# createPGTables_totalcrop('mtr_counties','2015')
 
 
 
@@ -508,10 +508,10 @@ SELECT
   s.atlas_name as state,
   c.atlas_stco,
   c.atlas_name as county,
-  ts.gs_2012_lcc_mtr12 as suitability_lcc12,
-  ts.gs_2012_lcc_mtr34 as suitability_lcc34,
-  ts.gs_2012_lcc_mtr56 as suitability_lcc56,
-  ts.gs_2012_lcc_mtr78 as suitability_lcc78,
+  ts.gs_2012_lcc12 as suitability_lcc12,
+  ts.gs_2012_lcc34 as suitability_lcc34,
+  ts.gs_2012_lcc56 as suitability_lcc56,
+  ts.gs_2012_lcc78 as suitability_lcc78,
   gs9.gsconv_2009_lcc12, 
   gs9.gsconv_2009_lcc34, 
   gs9.gsconv_2009_lcc56, 
@@ -554,11 +554,10 @@ FROM
   FULL JOIN deliverables.gsconv_2015_lcc_counties as gs15 ON gs15.atlas_stco = c.atlas_stco
   FULL JOIN deliverables.totalcrop_2012_counties as tc12 ON tc12.atlas_stco = c.atlas_stco
   FULL JOIN deliverables.totalcrop_2015_counties as tc15 ON tc15.atlas_stco = c.atlas_stco
-  FULL JOIN deliverables.gs_2012_lcc_mtr_counties as ts ON ts.atlas_stco = c.atlas_stco
+  FULL JOIN deliverables.gs_2012_lcc_counties as ts ON ts.atlas_stco = c.atlas_stco
 
 
 ORDER BY atlas_stco
-
 
 
 '''
