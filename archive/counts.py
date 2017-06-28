@@ -22,7 +22,7 @@ rootdir='C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/post/'
 env.scratchWorkspace ="C:/Users/bougie/Documents/ArcGIS/scratch.gdb"
 arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/post/ytc.gdb'
 
-
+###test for github
 
 
 
