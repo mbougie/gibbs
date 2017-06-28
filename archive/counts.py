@@ -22,7 +22,7 @@ rootdir='C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/post/'
 env.scratchWorkspace ="C:/Users/bougie/Documents/ArcGIS/scratch.gdb"
 arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/'+production_type+'/rasters/post/ytc.gdb'
 
-###test for github
+
 
 
 
@@ -469,4 +469,8 @@ runit()
 # SetNull(("step1_t2.img" == 1)  &  ("yo.img" == 'NODATA'), 1)
 
 
+<<<<<<< HEAD
 # Con(("Raster1" == 20) | ("Raster1" == 24), 0, 1)
+=======
+# Con(("Raster1" == 20) | ("Raster1" == 24), 0, 1)
+>>>>>>> 120c87c1693308ac6c0acd61ebf4b1d70a5430bc
