@@ -253,7 +253,7 @@ def nibble(maskSize,arg_list1,arg_list2,filename):
 #------mmu gdb-----------------
 # regionGroup(['core','mtr'])
 # clipByMMUmask(['23'],['core','mmu'])
-nibble('23',['core','mmu'],['core','mtr'],'traj_rfnd_n8h_mtr')
+# nibble('23',['core','mmu'],['core','mtr'],'traj_rfnd_n8h_mtr')
 
 
 

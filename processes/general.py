@@ -163,6 +163,55 @@ def addRasterAttributeTable(gdb_path, wc):
 
 
 
+def addRasterAttributeTableByRow(gdb_path, wc, tablename):
+
+    arcpy.env.workspace = defineGDBpath(gdb_path)
+
+    for raster in arcpy.ListDatasets(wc, "Raster"): 
+        print 'raster: ',raster
+
+        # list_count=[]
+        # list_acres=[]
+
+
+        
+        #loop through each row and get the value for specified columns
+        rows = arcpy.SearchCursor(raster)
+        for row in rows:
+            value = row.getValue('value')
+            print value
+            count = row.getValue('Count')
+            print count
+            acres = row.getValue('acres')
+            print acres
+            percent = row.getValue('percent')
+            print percent
+
+
+
+            
+            # print type(count)
+            # list_count.append(count)
+            
+            # res = arcpy.GetRasterProperties_management(raster, "CELLSIZEX")
+
+            # #convert the result object into and integer
+            # res = res.getOutput(0)
+            # print res
+            # print type(res)
+            # acreage = getAcres(int(count), int(res))
+            # # list_acres.append(acreage)
+            # percent = ()
+
+
+            # cur = conn.cursor()
+            # query="INSERT INTO "+tablename+" VALUES ('" + str(raster) + "' , " + str(value) + " , "str(count) + " , " + str(acres) + " , " + str(percent)+ ")"
+            # print query
+            # cur.execute(query)
+            # conn.commit()
+
+
+
 def getPGTablesList(schema,wc):
     query = """SELECT table_name
     FROM information_schema.tables
@@ -484,9 +533,48 @@ def fieldCalculator2(gdb_path, wc):
     # arcpy.CalculateField_management(inFeatures, fieldName, expression, "PYTHON_9.3")
     arcpy.CalculateField_management(attributetable, field, expression, "PYTHON")
 
+
+
+
+def createPGtableFromRaster():
+    arcpy.env.workspace = defineGDBpath(['deliverables','xp_update_refined'])
+
+    for raster in arcpy.ListDatasets('*', "Raster"): 
+        print 'table: ', raster
+        
+        #define table and column names
+        tablename = 'xp_update.'+raster
+        print 'tablename', tablename
+
+        cur = conn.cursor()
+        query='CREATE TABLE '+tablename+'(dataset text, value integer, count integer, acres double precision, percent double precision)'
+
+        # print query
+        # cur.execute(query)
+        # conn.commit()
+
+
+        addRasterAttributeTableByRow(['deliverables','xp_update_refined_cartography'], '*', tablename)
+
+
+
+
+
+
+
+
+
+
+
+############   CALL FUNCTIONS   #######################################
+
 # addFIeldtoRaster(['deliverables','xp_update_refined'], 'bfc')
-fieldCalculator2(['deliverables','xp_update_refined'], 'bfc')
+# fieldCalculator2(['deliverables','xp_update_refined'], 'bfc')
 # update(attributetable,wc,newvalue)
 
+# addRasterAttributeTable(['deliverables','xp_update_refined_cartography'], '*')
+
+
+createPGtableFromRaster()
 
 
