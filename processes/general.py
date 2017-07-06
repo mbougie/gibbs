@@ -34,11 +34,12 @@ arcpy.CheckOutExtension("Spatial")
 
 
 
-
-try:
-    conn = psycopg2.connect("dbname='usxp' user='mbougie' host='144.92.235.105' password='Mend0ta!'")
-except:
-    print "I am unable to connect to the database"
+def establishConn(db):
+    try:
+        conn = psycopg2.connect("dbname="+db+" user='mbougie' host='144.92.235.105' password='Mend0ta!'")
+        return conn
+    except:
+        print "I am unable to connect to the database"
 
 
 
@@ -64,12 +65,14 @@ arcpy.CheckOutExtension("Spatial")
 
 
 
-def fetchPG(query):
+def fetchPG(db, query):
+    conn=establishConn(db)
     print query
     cur = conn.cursor()
     cur.execute(query)
-    count = cur.fetchall()
-    return count
+    the_tuple = cur.fetchall()
+    the_list = [i[0] for i in the_tuple]
+    return the_list
 
 
 def commitPG(query):
@@ -575,6 +578,6 @@ def createPGtableFromRaster():
 # addRasterAttributeTable(['deliverables','xp_update_refined_cartography'], '*')
 
 
-createPGtableFromRaster()
+# createPGtableFromRaster()
 
 
