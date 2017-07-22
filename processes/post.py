@@ -139,30 +139,9 @@ def attachCDL(gdb_args_in, yr_reduction):
 
 
     raster_reference = Raster('yfc_years_traj_rfnd_n8h_mtr_8w_msk23_nbl')
-    # raster_input = 'yfc_years_traj_rfnd_n8h_mtr_8w_msk23_nbl_clean_bfnc'
-        
-    #     #loop through
-    # cursor = arcpy.SearchCursor(raster_reference)
-    # for row in cursor:
-    # year = row.getValue('Value')
-    # print "outside of if:", year
-    # # if year >= 2013:
-        
-    # print 'year:', year
 
-    #allow the mosaic raster to be overwritten
-    # arcpy.env.overwriteOutput = True
-    # print "overwrite on? ", arcpy.env.overwriteOutput 
     outraster='yfc_years_traj_rfnd_n8h_mtr_8w_msk23_nbl_bfnc'
         
-    # # #######  GET APPROPRIATE CDL BY YEAR  #############
-    # cdl = defineGDBpath(['ancillary','cdl'])+'cdl_'+str(year)
-    # print "cdl raster with the appropriate year:", cdl
-
-    # #establish the condition
-    # year_mod=year+yr_reduction
-    # cond = "Value = "+str(year_mod)
-    # print 'cond: ', cond
     cdl2012=Raster(defineGDBpath(['ancillary','cdl'])+'cdl_2012')
     cdl2013=Raster(defineGDBpath(['ancillary','cdl'])+'cdl_2013')
     cdl2014=Raster(defineGDBpath(['ancillary','cdl'])+'cdl_2014')
@@ -170,7 +149,6 @@ def attachCDL(gdb_args_in, yr_reduction):
 
     # if raster_reference equals 2013 apply cdl value of that year ELSE if false check if raster_reference equals 2014 or 2015 and apply the corresponding cdl year
     OutRas = Con((raster_reference == 2013),cdl2012, Con((raster_reference == 2014),cdl2013, Con((raster_reference == 2015),cdl2014, Con((raster_reference < 2013),raster_reference))))
-    # OutRas = Con((raster_reference == 2013),cdl2013, Con((raster_reference == 2014),cdl2014, Con((raster_reference == 2015),cdl2015, Con((raster_reference < 2013),raster_reference))))
 
     # # Save the output 
     OutRas.save(outraster)

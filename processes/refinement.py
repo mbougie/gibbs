@@ -14,110 +14,42 @@ Description---
 This script is meant to refine the intial trajectory by removing false change from each landcover defined.
 '''
 
+# set the engine for psndas
+engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
 
-#check-out extensions
+# set con for psycopg2
+try:
+    conn = psycopg2.connect("dbname='usxp' user='mbougie' host='144.92.235.105' password='Mend0ta!'")
+except:
+    print "I am unable to connect to the database"
+
+
+
+#Note: need to change this each time on different machine
+case=['Bougie','Gibbs']
+
+#import extension
 arcpy.CheckOutExtension("Spatial")
 
+
+
 def defineGDBpath(arg_list):
-    gdb_path = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/data/processes/'+arg_list[0]+'/'+arg_list[1]+'.gdb/'
+    gdb_path = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/arcgis/geodatabases/'+arg_list[0]+'/'+arg_list[1]+'.gdb/'
     print 'gdb path: ', gdb_path 
-    return gdb_path 
-
-
-def reclassifyRaster(raster_type,t_lc):
-	# Description: reclass cdl rasters based on the specific arc_reclassify_table 
-
-	# Set environment settings
-	arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/reclass/ternary.gdb'
-
-    #change the active directory to the directory containing the cdl's
-	dir = 'D:/'+raster_type
-	os.chdir(dir)
-
-	#loop through each of the cdl rasters
-	for file in glob.glob("*cdls.img"):
-		#fnf=file name fragments
-		fnf=(os.path.splitext(file)[0]).split("_")
-
-		#get the arc_reclassify table
-		inRemapTable = 'C:/Users/bougie/Desktop/gibbs/arc_reclassify_table/'+raster_type+'/'+t_lc
-
-		#define the output
-		outRaster = 'rc_'+t_lc+'_'+fnf[0]
-		print 'outRaster: ', outRaster
-
-		# Execute Reclassify
-		arcpy.gp.ReclassByTable_sa(Raster(file),inRemapTable,"FROM","TO","OUT",outRaster,"NODATA")
-
-
-
-
-def createTraj(degree_lc):
-	#combine the reclassified cdl raster to create trajectory for the specific lc of interest
-
-	# Set environment settings
-	arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/reclass/ternary.gdb'
-    
-    
-	nlcd_binary='D:/d/reclass/rc_b_nlcd2011.img'
-
-	# wc='*'+degree_lc+'*'
-	#make a list to hold the rasters so can use the list as argument list
-	rasterList = [Raster(nlcd_binary),'rc_'+degree_lc+'_2010','rc_'+degree_lc+'_2011','rc_'+degree_lc+'_2012','rc_'+degree_lc+'_2013','rc_'+degree_lc+'_2014','rc_'+degree_lc+'_2015','rc_'+degree_lc+'_2016']
-	# for raster in arcpy.ListDatasets(wc, "Raster"): 
-	# 	print 'raster: ',raster
-	# 	rasterList.append(raster)
-    
-	print rasterList
-
-	#Execute Combine
-	outCombine = Combine(rasterList)
-	output = 'C:/Users/bougie/Desktop/gibbs/refinement/trajectories.gdb/traj_'+degree_lc
-	#Save the output 
-	outCombine.save(output)
-
-
-
-def gdbTable2postgres(dataset):
-    #set the engine.....
-	engine = create_engine('postgresql://postgres:postgres@localhost:5432/core')
-
-	#path to the table you want to import into postgres
-	# input = 'C:/Users/bougie/Desktop/gibbs/refinement/trajectories.gdb/traj_'+ dataset
-    input = defineGDBpath(['refinement','trajectories'])+'traj_'+ dataset
-
-	#populate the fields from the atribute table into argument variable
-	fields = [f.name for f in arcpy.ListFields(input)]
-
-    #convert the gdb tattribute table into a numpy array
-	arr = arcpy.da.TableToNumPyArray(input,fields)
-	print arr
-    
-    #convert numpy array into a panda dataframe
-	df = pd.DataFrame(data=arr)
-	print df
-
-	#import numpy array into postgres
-	df.to_sql('traj_'+dataset, engine, schema='refinement')
-
-
-
+    return gdb_path
 
 
 
 def PG_DDLandDML(degree_lc):
-	#make connection to the postgres database you want to access 
-	conn = psycopg2.connect(database = "core", user = "postgres", password = "postgres", host = "localhost", port = "5432")
-	print "Opened database successfully"
-    
+
     #define cursor
 	cur = conn.cursor()
     
     # add column to table to hold arrays
-	cur.execute('ALTER TABLE refinement.traj_' + degree_lc + ' ADD COLUMN traj_array integer[];');
+	cur.execute('ALTER TABLE pre.traj_' + degree_lc + ' ADD COLUMN traj_array integer[];');
     
     # insert values into array column
-	cur.execute('UPDATE refinement.traj_' + degree_lc + ' SET traj_array = ARRAY[rc_b_nlcd2011,rc_' + degree_lc + '_2010,rc_' + degree_lc + '_2011,rc_' + degree_lc + '_2012,rc_' + degree_lc + '_2013,rc_' + degree_lc + '_2014,rc_' + degree_lc + '_2015,rc_' + degree_lc + '_2016];');
+	cur.execute('UPDATE pre.traj_' + degree_lc + ' SET traj_array = ARRAY[nlcd_b_2011,cdl_' + degree_lc + '_2010,cdl_' + degree_lc + '_2011,cdl_' + degree_lc + '_2012,cdl_' + degree_lc + '_2013,cdl_' + degree_lc + '_2014,cdl_' + degree_lc + '_2015,cdl_' + degree_lc + '_2016];');
     
     #commit the changes
 	conn.commit()
@@ -129,11 +61,9 @@ def PG_DDLandDML(degree_lc):
 
 
 def createTrajMask(degree_lc):
+    arcpy.env.workspace = defineGDBpath(['pre','trajectories'])
 
-
-    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/refinement/trajectories.gdb/'
-    engine = create_engine('postgresql://postgres:postgres@localhost:5432/core')
-    df = pd.read_sql_query("select \"Value\",new_value from refinement.traj_"+degree_lc+" as a JOIN refinement.traj_lookup as b ON a.traj_array = b.traj_array WHERE b.name='"+degree_lc+"'",con=engine)
+    df = pd.read_sql_query("select a.\"Value\",b.mtr from pre.traj_"+degree_lc+" as a JOIN pre.traj_r_lookup as b ON a.traj_array = b.traj_array",con=engine)
     
     print df
     a = df.values
@@ -156,73 +86,47 @@ def createTrajMask(degree_lc):
 
 def mosaicRasters():
 
-	##STILL NEED TO DEVLOP
-	arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/refinement/trajectories.gdb'
+    ##STILL NEED TO DEVLOP
+    arcpy.env.workspace = defineGDBpath(['pre','trajectories'])
 
-	pre_gdb = "C:/Users/bougie/Desktop/gibbs/production/processes/pre/pre.gdb"
-	traj = "C:/Users/bougie/Desktop/gibbs/production/processes/pre/pre.gdb/traj"
+    # Execute Con
+    outCon = Con(IsNull('traj_r_msk'), 'traj_b', 'traj_r_msk')
 
-	# Process: Mosaic To New Raster
-	arcpy.MosaicToNewRaster_management("C:/Users/bougie/Desktop/gibbs/refinement/trajectories.gdb/traj;traj_q36_msk;traj_t61_msk;traj_tdev_msk", pre_gdb, "traj_refined50", "", "16_BIT_UNSIGNED", "", "1", "LAST", "LAST")
-
-
-######  call functions  #############################
-# reclassifyRaster('cdl','tdev')
-# createTraj('tdev')
-# gdbTable2postgres('tdev')
-# PG_DDLandDML('tdev')
-# createTrajMask('tdev')
-
-
-# mosaicRasters()
+    outCon.save("traj")
 
 
 
 
-
-def defineGDBpath(arg_list):
-    gdb_path = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/arcgis/geodatabases/'+arg_list[0]+'/'+arg_list[1]+'.gdb/'
-    print 'gdb path: ', gdb_path 
-    return gdb_path 
-
-
-
-def reclassifyRaster(gdb_args_in, wc, reclass_degree, gdb_args_out):
+def reclassifyRaster():
     # Description: reclass cdl rasters based on the specific arc_reclassify_table 
 
     # Set environment settings
-    arcpy.env.workspace = defineGDBpath(gdb_args_in)
+    arcpy.env.workspace = defineGDBpath(['ancillary','cdl'])
 
-    #loop through each of the cdl rasters
-    for raster in arcpy.ListDatasets('*'+wc+'*', "Raster"): 
-        
-        print 'raster: ',raster
+    for raster in arcpy.ListDatasets('*', "Raster"): 
+        print 'raster:', raster
 
-        # outraster = raster.replace("_", "_"+reclasstable+"_")
-        outraster = wc + '_' + reclass_degree + raster[-5:]
-        print 'outraster: ', outraster
-       
-        #get the arc_reclassify table
-        # inRemapTable = 'C:/Users/Bougie/Desktop/Gibbs/arcgis/arc_reclassify_table/'+reclasstable
-        # print 'inRemapTable: ', inRemapTable
+        outraster = raster.replace("_", "_r_")
+
+        print outraster 
 
         #define the output
-        output = defineGDBpath(gdb_args_out)+outraster
+        output = defineGDBpath(['pre','reclass'])+outraster
         print 'output: ', output
 
-        return_string=getReclassifyValuesString(wc, reclass_degree)
+        return_string=getReclassifyValuesString()
 
         # Execute Reclassify
         arcpy.gp.Reclassify_sa(raster, "Value", return_string, output, "NODATA")
 
 
 
-def getReclassifyValuesString(wc, reclass_degree):
+def getReclassifyValuesString():
     #Note: this is a aux function that the reclassifyRaster() function references
     cur = conn.cursor()
 
     #DDL: add column to hold arrays
-    cur.execute('SELECT value::text,'+reclass_degree+' FROM misc.lookup_'+wc+' WHERE '+reclass_degree+' IS NOT NULL ORDER BY value');
+    cur.execute('SELECT value::text,test FROM misc.lookup_cdl WHERE test IS NOT NULL ORDER BY value');
     
     #create empty list
     reclassifylist=[]
@@ -234,7 +138,7 @@ def getReclassifyValuesString(wc, reclass_degree):
     for row in rows:
         ww = [row[0] + ' ' + row[1]]
         reclassifylist.append(ww)
-    
+
     #flatten the nested array and then convert it to a string with a ";" separator to match arcgis format 
     columnList = ';'.join(sum(reclassifylist, []))
     print columnList
@@ -244,28 +148,26 @@ def getReclassifyValuesString(wc, reclass_degree):
 
 
 
-def createTrajectories(gdb_args_in,wc,gdb_args_out):
+def createTrajectories(wc):
 
     # Set environment settings
-    arcpy.env.workspace = defineGDBpath(gdb_args)
+    arcpy.env.workspace = defineGDBpath(['pre','reclass'])
     
     #get a lsit of all rasters in sepcified database
-    rasterList = arcpy.ListDatasets('*'+wc+'*', "Raster")
+    rasterList = arcpy.ListDatasets('cdl_'+wc+'*', "Raster")
     
     #sort the rasterlist by accending years
     rasterList.sort(reverse=False)
     
-    if wc == 'b':
-        #for the binary trajectories, moves the last element in the list (i.e. nlcd_b_2011) to the first element position in the list.
-        rasterList.insert(0, rasterList.pop())
-    
+    #prepend nlcd raster name 
+    rasterList.insert(0, 'nlcd_b_2011')
     print 'rasterList: ',rasterList
 
     #Execute Combine
     outCombine = Combine(rasterList)
     print 'outCombine: ', outCombine
     
-    output = defineGDBpath(gdb_args_out)+'traj_'+wc
+    output = defineGDBpath(['pre','trajectories'])+'traj_'+wc
     
     #Save the output 
     outCombine.save(output)
@@ -273,8 +175,7 @@ def createTrajectories(gdb_args_in,wc,gdb_args_out):
 
 
 def addGDBTable2postgres(gdb_args,tablename,pg_shema):
-    # set the engine.....
-    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
+
 
     # path to the table you want to import into postgres
     input = defineGDBpath(gdb_args)+tablename
@@ -299,25 +200,14 @@ def addGDBTable2postgres(gdb_args,tablename,pg_shema):
 
 
 
+
 ######  call functions  #############################
-#-----reclassifyRaster(gdb_args_in, wc, reclass_degree, gdb_args_out)------------------
-# reclassifyRaster(['ancillary','cdl'], "cdl", "b", ['pre','binaries'])
-# reclassifyRaster(['ancillary','misc'], "nlcd", "b", ['pre','binaries'])
-
-#-----use arcgis combine() function to create permuations 
-# createTrajectories(['pre','binaries'], "b", ['pre','trajectories'])
-
-#-----add the trajectories atribute table 
-# addGDBTable2postgres(['pre','trajectories'],'traj_b','pre')
-
-#-----add field to PG table
-# addTrajArrayField('b')
-
-#-----describe
-# createReclassifyList('tdev')
-
-#-----describe
-#mosaicRasters()
+# reclassifyRaster()
+# createTrajectories("r")
+# addGDBTable2postgres(['pre','trajectories'],'traj_r','pre')
+# PG_DDLandDML('r')
+# createTrajMask('r')
+mosaicRasters()
 
 
 

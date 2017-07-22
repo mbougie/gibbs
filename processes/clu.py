@@ -107,8 +107,18 @@ mmu='traj_rfnd_n8h_mtr_8w_msk23_nbl'
 mmu_Raster=Raster(mmu_gdb + mmu)
 
 
+#============  metadata functions  =========================================
 
 def createMetaTable():
+    query1="DELETE FROM metadata.corrupt"
+    print query1
+    executeQuery(query1)
+
+    query2="DELETE FROM metadata.clu_t3"
+    print query2
+    executeQuery(query2)
+
+
     states = getDirectories()
     for state in states:
         if len(state) == 2:
@@ -118,52 +128,59 @@ def createMetaTable():
             os.chdir('C:/Users/Bougie/Desktop/Gibbs/Intact_land/SDSU_CLU_project/CLU Data/'+ state)
             
 
-            for file in glob.glob("*.shp"):
-                # print file
-                fnf=(os.path.splitext(file)[0]).split("_")
-                print fnf
+            for sf in glob.glob("*.shp"):
+                print sf
+                try:
+                    result = arcpy.GetCount_management(sf)
+                    count = int(result.getOutput(0))
+                    print(count)
 
-                cur = conn.cursor()
-                query="INSERT INTO metadata.metatable VALUES ('" + state + "' , '" + str(fnf[2])  + "' , '" + str(fnf[4]) + "' , '" + str(fnf[5])+ "' , '" + str(file)+ "')"
-                print query
-                cur.execute(query)
-                conn.commit()
+                    fnf=(os.path.splitext(sf)[0]).split("_")
+                    print fnf
 
-
-
-
-def mergeFC(gdb_path, wc, state, year):
-    arcpy.env.workspace = defineGDBpath(gdb_path)
-    featureclasses = arcpy.ListFeatureClasses(wc)
-    print type(featureclasses)
-  
-    if len(featureclasses) >= 1:
- 
-        arcpy.Merge_management(featureclasses, defineGDBpath(['intact_land',state+'_merged'])+state+'_'+str(year))
+                    cur = conn.cursor()
+                    query="INSERT INTO metadata.clu_t3 VALUES ('" + state + "' , '" + str(fnf[2])  + "' , '" + str(fnf[4]) + "' , '" + str(fnf[5])+ "' , " + str(count)+ " , '" + str(file)+ "')"
+                    print query
+                    cur.execute(query)
+                    conn.commit()
 
 
-def addFields(gdb_path, state, year): 
-    print gdb_path
-    print year
-    arcpy.env.workspace = defineGDBpath(gdb_path)
+                except:
+                    print 'corupted---------------', sf
+                    e = sys.exc_info()[1]
+                    
+                    query="INSERT INTO metadata.corrupt VALUES ('" + str(sf) + "','"+str(fnf[2])  + "','"+str(e.args[0]) + "')"
+                    print query
+                    executeQuery(query)
 
-    featureclasses = arcpy.ListFeatureClasses(wild_card = '*'+str(year))
+# NOTE: incorportate this !!!!
+# update
+#   metadata.metatable set year = EXTRACT(YEAR FROM pub_start)
 
-    # Copy shapefiles to a file geodatabase
-    for fc in featureclasses:
 
-        print fc
+
+#============  processing functions  =======================================
+
+def popCounts_years():
+    years = range(2003,2016)
+
+    query="SELECT state FROM metadata.counts GROUP BY state"
+    print query
+    states = g.fetchPG('intact_lands', query)
      
-        # Execute AddField twice for two new fields
-        # arcpy.AddField_management(fc, 'state', "TEXT")
-        
-        #fill column with uniform value
-        addValuetoColumn(fc, 'state', state)
-        
-        # arcpy.AddField_management(fc, 'year', "SHORT", field_length=5)
 
-        #fill column with uniform value
-        addValuetoColumn(fc, 'year', year)
+    for year in years:
+        for state in states:
+            vwq = "'" + state + "'"
+            query = "UPDATE metadata.counties_years SET clu_"+str(year)+" = (SELECT count FROM metadata.counts WHERE state = "+vwq+" and year = "+str(year)+") WHERE state = "+vwq
+            print query
+            executeQuery(query)
+
+
+
+
+
+
 
 def addValuetoColumn(fc, column_name, value):  
     cur = arcpy.UpdateCursor(fc)
@@ -193,10 +210,10 @@ def executeQuery(query):
 
 
 def mainProjectSF():
-
+    # reproject to projection acea and determine the max date sf for a given year and state and store as fc in geodatabase
     states = getDirectories()
     for state in states:
-        if len(state) == 2 and state == 'mn':
+        if len(state) == 2:
 
             #variable with quotes
             vwq = "'" + state + "'"
@@ -233,7 +250,7 @@ def mainProjectSF():
 
 
 def applyCond2FC(gdb_path, fc, expression, fc_out):
- 
+    # apply the condtion created based on if the column exists to the arcpy.FeatureClassToFeatureClass_conversion() function
     fc_in = defineGDBpath(gdb_path) + fc
     print fc_in
     out_path = defineGDBpath(gdb_path)
@@ -242,7 +259,8 @@ def applyCond2FC(gdb_path, fc, expression, fc_out):
 
 
 
-def FieldExist(gdb_path, fc, fieldname):
+def createCond(gdb_path, fc, fieldname):
+    #create the condition for the arcpy.FeatureClassToFeatureClass_conversion() function based on if the column exists
     arcpy.env.workspace = defineGDBpath(gdb_path)
     fieldList = arcpy.ListFields(fc, fieldname)
 
@@ -267,19 +285,18 @@ def FieldExist(gdb_path, fc, fieldname):
 
 
 
-
-
 def mainSubsetFC():
+    #description:subset the merged year by state by using the fileds: 'CLUCLSCD','CROPLND3CM'  
     states = getDirectories()
     for state in states:
-        if len(state) == 2 and state == 'mn':
-            arcpy.env.workspace = defineGDBpath(['intact_land',state+'_merged'])
+        if len(state) == 2:
+            arcpy.env.workspace = defineGDBpath(['intact_land', 'merged'])
             featureclasses = arcpy.ListFeatureClasses()
             for fc in featureclasses:
                 print fc
                 fieldnames = ['CLUCLSCD','CROPLND3CM']
                 for field in fieldnames:
-                    FieldExist(['intact_land',state+'_merged'], fc, field)
+                    createCond(['intact_land', 'merged'], fc, field)
 
 
 
@@ -290,6 +307,36 @@ def getDirectories():
 
 
 
+def mergeFC(gdb_path, wc, state, year):
+    #description:merge the same year of a state's feature classes together
+    arcpy.env.workspace = defineGDBpath(gdb_path)
+    featureclasses = arcpy.ListFeatureClasses(wc)
+    print featureclasses
+  
+    if len(featureclasses) >= 1:
+ 
+        arcpy.Merge_management(featureclasses, defineGDBpath(['intact_land','merged'])+state+'_'+str(year))
+
+
+
+def addFields(gdb_path, state, year):
+#description: added the year field to all records so can destinguish when merge allyears and allstates_allyears 
+    print gdb_path
+    print year
+    arcpy.env.workspace = defineGDBpath(gdb_path)
+
+    featureclasses = arcpy.ListFeatureClasses(wild_card = state+'_'+str(year))
+    print 'featureclasses to add year field to:', featureclasses
+
+    # Copy shapefiles to a file geodatabase
+    for fc in featureclasses:
+
+        print 'fc:', fc
+        arcpy.AddField_management(fc, 'YEAR', "SHORT", field_length=5)
+
+        #fill column with uniform value
+        addValuetoColumn(fc, 'YEAR', year)
+
 
 
 def mainMergeFC():
@@ -297,13 +344,14 @@ def mainMergeFC():
     years = range(2003,2016)
     states = getDirectories()
     for state in states:
-        if len(state) == 2 and state == 'mn':
+        if len(state) == 2:
             #only want to process the main directories with 2 letters that represnt the to letters of a state
-            print state
+            print state, '----------------------------------------------------------------------------------'
 
             for year in years:
-                # mergeFC(['intact_land',state], '*_acea_'+str(year)+'*', state, year)
-                addFields(['intact_land',state+'_merged'], state, year)
+                print year
+                mergeFC(['intact_land',state], '*_acea_'+str(year)+'*', state, year)
+                addFields(['intact_land','merged'], state, year)
     
 
 
@@ -311,44 +359,127 @@ def mainMergeFC():
 
 
 
-def mergeSubsetsbyState():
-    subsetlist = ['_clscd_2','_clscd_not2','_3cm_1','_3cm_not1']
+def mergeAllyearsByState():
+    subsetlist = ['clscd_2','clscd_not2','3cm_1','3cm_not1']
+    # subsetlist = ['clscd_2','clscd_not2']
     states = getDirectories()
+    # states = ['mt']
     for state in states:
-        if len(state) == 2 and state == 'mn':
+        #only want to process the main directories with 2 letters that represnt the to letters of a state
+        if len(state) == 2:
             for subset in subsetlist:
                 wc = state + '*' + subset
-                #only want to process the main directories with 2 letters that represnt the to letters of a state
+                
                 print wc  
                 arcpy.env.workspace = defineGDBpath(['intact_land','merged'])
                 featureclasses = arcpy.ListFeatureClasses(wc)
                 print featureclasses
-                arcpy.Merge_management(featureclasses, state+subset)
+                arcpy.Merge_management(featureclasses, state+'_allyears_'+subset)
+
+
+
+
+def changeCRPvaluesMT():
+    #description: change the datatype of the crp column in early years in MT to integer so can merge this column with other states
+    arcpy.env.workspace = defineGDBpath(['intact_land','merged'])
+    wc = 'mt_allyears_clscd_*'
+    featureclasses = arcpy.ListFeatureClasses(wc)
+    print featureclasses
+
+    for fc in featureclasses:
+        # step1---Change name of crp field
+        arcpy.AlterField_management(fc, "CRP", new_field_name="CRP_TEXT")
+
+        #step2---add new field with datatpe integer 
+        arcpy.AddField_management(fc, 'CRP', "SHORT")
+
+        #step3---populate the new crp field by referencing the intial crp column
+        cur = arcpy.UpdateCursor(fc)
+
+        for row in cur:
+            if row.getValue("CRP_TEXT") == 'CRP':
+                row.setValue("CRP", 1)
+                cur.updateRow(row)
+            else:
+                row.setValue("CRP", 0)
+                cur.updateRow(row)
+
+
+
+
+
+def mergeAllyearsAllstates():
+    subsetlist = ['clscd_2','clscd_not2','3cm_1','3cm_not1']
+    for subset in subsetlist:
+        wc = '*allyears_' + subset
+        print wc  
+        arcpy.env.workspace = defineGDBpath(['intact_land','merged'])
+        featureclasses = arcpy.ListFeatureClasses(wc)
+        print featureclasses
+        arcpy.Merge_management(featureclasses, 'allstates_allyears_'+subset)
+
+
+
+
+
+
+
 
 
 
 ######################  call functions  ###############################################################
 
-
+#============  metadata functions  =========================================
 #__________create the metatable for all states
 # createMetaTable()
 
+#_________  fill out  ____________________________________
+# popCounts_years()
 
-#__________reproject sf and store as fc in geodatabase
+#============  processing functions  =======================================
+
+#__________reproject the max date sf for a given year and state and store as fc in geodatabase
 # mainProjectSF()
 
 
-
-#________  create the base merged dataset by state and year _____________________________________________________________
-mainMergeFC()
-
+#________  merge datasets by state and year _____________________________________________________________
+# mainMergeFC()
 
 
 #_________  create the merged subset feature classes  ____________________________________
 # mainSubsetFC()
 
 
-# mergeSubsetsbyState()
+#_________  fill out  ____________________________________
+# mergeAllyearsByState()
+
+
+#_________  fill out  ____________________________________
+# changeCRPvaluesMT()
+
+
+#_________  fill out  ____________________________________
+mergeAllyearsAllstates()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
