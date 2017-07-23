@@ -27,6 +27,8 @@ out_fc = defineGDBpath(['ancillary','shapefiles'])+'fishnet_7'
 
 
 def create_fishnet(in_raster, out_fc):
+	#delete previous feature class
+	arcpy.Delete_management(out_fc)
 
 	ras1 = arcpy.Raster(in_raster)
 	XMin = ras1.extent.XMin
@@ -49,11 +51,37 @@ def create_fishnet(in_raster, out_fc):
 	arcpy.env.outputCoordinateSystem = ras1.spatialReference
 	print ras1.spatialReference.name
 
+    #create fishnet feature class
 	arcpy.CreateFishnet_management(out_fc, origCord, YAxisCord, cellSizeW, cellSizeH, numRows, numCols, cornerCord, "NO_LABELS", "", geotype)
 
+    #create list of tiles from zonal stats that have pixel values in them
+	fields = arcpy.ListFields("c:/users/bougie/desktop/gibbs/temp/zonal_stats","OID*")
+	list_zonal = []
+	for field in fields:
+		fnf=(os.path.splitext(field.name)[0]).split("_")
+		print int(fnf[1])
+		list_zonal.append(int(fnf[1]))
+	print list_zonal 
 
+    #create list of all the tiles from the fishnet
+	fishnet_list = []
+	field = "OID"
+	cursor = arcpy.SearchCursor(out_fc)
+	for row in cursor:
+	    fishnet_list.append(row.getValue(field))
+	print fishnet_list
 
+    #find the difference between the 2 lsit that represent tiles with no pixels of value
+	null_tiles = set(fishnet_list).difference(list_zonal)
+	print null_tiles
 
+    #delete null tiles from fishnet feature class
+	with arcpy.da.UpdateCursor(out_fc, "OID") as cursor:
+	    for row in cursor:
+	        if row[0] in null_tiles:
+	            cursor.deleteRow()
+    
+        
 
 
 
