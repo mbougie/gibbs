@@ -22,10 +22,39 @@ def defineGDBpath(arg_list):
     print 'gdb path: ', gdb_path 
     return gdb_path 
 
-in_raster_path = defineGDBpath(['pre','trajectories'])+'traj'
-out_fishnet_path = defineGDBpath(['ancillary','misc'])+'fishnet'
+in_raster = defineGDBpath(['post','yfc'])+'yfc_years_traj_rfnd_n8h_mtr_8w_msk23_nbl_fnc'
+out_fc = defineGDBpath(['ancillary','shapefiles'])+'fishnet_7'
 
-# def create_fishnet(in_raster_path, out_fishnet_path)	
+
+def create_fishnet(in_raster, out_fc):
+
+	ras1 = arcpy.Raster(in_raster)
+	XMin = ras1.extent.XMin
+	YMin = ras1.extent.YMin
+	XMax = ras1.extent.XMax
+	YMax = ras1.extent.YMax
+
+	origCord = "{} {}".format(XMin, YMin)
+	YAxisCord = "{} {}".format(XMin, YMax)
+	cornerCord = "{} {}".format(XMax, YMax)
+
+	cellSizeW = "0"
+	cellSizeH = "0"
+
+	numRows = 7
+	numCols = 7
+
+	geotype = "POLYGON"
+
+	arcpy.env.outputCoordinateSystem = ras1.spatialReference
+	print ras1.spatialReference.name
+
+	arcpy.CreateFishnet_management(out_fc, origCord, YAxisCord, cellSizeW, cellSizeH, numRows, numCols, cornerCord, "NO_LABELS", "", geotype)
+
+
+
+
+
 
 
 def execute_task(in_extentDict):
@@ -60,8 +89,8 @@ def execute_task(in_extentDict):
 	# arcpy.env.workspace=defineGDBpath(gdb_args_in)
 
 	#declare variables but dont intialize them
-	in_raster = defineGDBpath(['post','yfc'])+'yfc_years_traj_rfnd_n8h_mtr_8w_msk23_nbl_fnc'
-	print 'in_raster: ', in_raster
+	# in_raster = defineGDBpath(['post','yfc'])+'yfc_years_traj_rfnd_n8h_mtr_8w_msk23_nbl_fnc'
+	# print 'in_raster: ', in_raster
 
 	in_mask_raster = defineGDBpath(['post','yfc'])+'yfc_years_traj_rfnd_n8h_mtr_8w_msk23_nbl_mask'
 	print 'in_mask_raster: ', in_mask_raster
@@ -72,7 +101,8 @@ def execute_task(in_extentDict):
 	ras_out = arcpy.sa.Nibble(in_raster, in_mask_raster, "DATA_ONLY")
 	#clear out the extent for next time
 	arcpy.ClearEnvironment("extent")
-
+    
+    # print fc_count
 	outname = "tile_" + str(fc_count) +'.tif'
 
 	outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/temp", r"tiles", outname)
@@ -84,28 +114,31 @@ def execute_task(in_extentDict):
 
 if __name__ == '__main__':
 
+	#get fishnet
+    create_fishnet(in_raster, out_fc)
+
 	#get extents of individual features and add it to a dictionary
-	extDict = {}
-	count = 1 
+	# extDict = {}
+	# count = 1 
 
-	for row in arcpy.da.SearchCursor(out_fishnet_path, ["SHAPE@"]):
-		extent_curr = row[0].extent
-		ls = []
-		ls.append(extent_curr.XMin)
-		ls.append(extent_curr.YMin)
-		ls.append(extent_curr.XMax)
-		ls.append(extent_curr.YMax)
-		extDict[count] = ls
-		count+=1
+	# for row in arcpy.da.SearchCursor(out_fishnet_path, ["SHAPE@"]):
+	# 	extent_curr = row[0].extent
+	# 	ls = []
+	# 	ls.append(extent_curr.XMin)
+	# 	ls.append(extent_curr.YMin)
+	# 	ls.append(extent_curr.XMax)
+	# 	ls.append(extent_curr.YMax)
+	# 	extDict[count] = ls
+	# 	count+=1
     
-	print extDict
-	print extDict.items()
+	# print extDict
+	# print extDict.items()
 
-	#create a process and pass dictionary of extent to execute task
-	pool = Pool(processes=cpu_count())
-	pool.map(execute_task, extDict.items())
-	pool.close()
-	pool.join
+	# #create a process and pass dictionary of extent to execute task
+	# pool = Pool(processes=cpu_count())
+	# pool.map(execute_task, extDict.items())
+	# pool.close()
+	# pool.join
 
 	# in_path = 'C:/Users/Bougie/Desktop/Gibbs/try'
  #    arcpy.AddRastersToMosiacDatasaet_management(defineGDBpath(['ancillary','misc'])+'final', "Raster Dataset", in_path)
