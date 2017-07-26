@@ -156,8 +156,10 @@ def addGDBTable2postgres(gdb_args,wc,pg_shema):
 
 
 def addTrajArrayField(wc):
+    #this is a sub function for addGDBTable2postgres()
+    
     cur = conn.cursor()
-    #this is a sub finction for addGDBTable2postgres()
+    
     arcpy.env.workspace = defineGDBpath(['pre','reclass'])
     
     #store the rasternames on defined gdb into array

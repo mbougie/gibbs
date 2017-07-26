@@ -29,6 +29,14 @@ def defineGDBpath(arg_list):
 
 
 
+
+#### global dictionaires for refrencing for functions  ######################################################
+majorityFilter_combos = {'full':{'n4h':["FOUR", "HALF"],'n4m':["FOUR", "MAJORITY"],'n8h':["EIGHT", "HALF"],'n8m':["EIGHT", "MAJORITY"]},'baseline': {'n8h':["EIGHT", "HALF"]}}
+regionGroup_combos = {'full':{'4w':["FOUR", "WITHIN"],'4c':["FOUR", "CROSS"],'8w':["EIGHT", "WITHIN"],'8c':["EIGHT", "CROSS"]},'baseline': {'8w':["EIGHT", "WITHIN"]}}
+mmu_list = {'full':['23','45','68'],'baseline':['23']}
+
+
+
 def addColorMap(inraster,template):
     ##Add Colormap
     ##Usage: AddColormap_management in_raster {in_template_raster} {input_CLR_file}
@@ -47,7 +55,7 @@ def addColorMap(inraster,template):
 
 
 
-def createMTR(gdb_args_in):
+def createMTR(gdb_args_in, wc):
     ## replace the arbitrary values in the trajectories dataset with the mtr values 1-5.
     arcpy.env.workspace = defineGDBpath(gdb_args_in)
     for raster in arcpy.ListDatasets('*', "Raster"): 
@@ -85,11 +93,13 @@ def createReclassifyList():
 
 
 
-def majorityFilter(gdb_args_in, dataset):
+
+def majorityFilter(gdb_args_in, dataset, gdb_args_out, filter_combos):
     arcpy.env.workspace = defineGDBpath(gdb_args_in)
 
-    #filter_combos = {'n4h':["FOUR", "HALF"],'n4m':["FOUR", "MAJORITY"],'n8h':["EIGHT", "HALF"],'n8m':["EIGHT", "MAJORITY"]}
-    filter_combos = {'n8h':["EIGHT", "HALF"]}
+    # filter_combos = {'n4h':["FOUR", "HALF"],'n4m':["FOUR", "MAJORITY"],'n8h':["EIGHT", "HALF"],'n8m':["EIGHT", "MAJORITY"]}
+    # filter_combos = {'n8h':["EIGHT", "HALF"]}
+
     for k, v in filter_combos.iteritems():
         print k,v
         for raster in arcpy.ListDatasets(dataset, "Raster"): 
@@ -98,13 +108,13 @@ def majorityFilter(gdb_args_in, dataset):
             raster_out=raster+'_'+k
             
             # Execute MajorityFilter
-            # outMajFilt = MajorityFilter(raster, v[0], v[1])
+            outMajFilt = MajorityFilter(raster, v[0], v[1])
             
-            output = defineGDBpath(['sensitivity_analysis','filter'])+raster_out
+            output = defineGDBpath(gdb_args_out)+raster_out
             print 'output: ',output
             
             #save processed raster to new file
-            # outMajFilt.save(output)
+            outMajFilt.save(output)
 
             gen.buildPyramids(output)
 
@@ -154,13 +164,13 @@ def focalStats(index,dir_in,dir_out):
 
 ####################  mmu functions  ##########################################
 
-def regionGroup(arg_list):
+def regionGroup(gdb_args_in, wc, region_combos):
     #define workspace
-    arcpy.env.workspace=defineGDBpath(arg_list)
+    arcpy.env.workspace=defineGDBpath(gdb_args_in)
 
-    filter_combos = {'4w':["FOUR", "WITHIN"],'4c':["FOUR", "CROSS"],'8w':["EIGHT", "WITHIN"],'8c':["EIGHT", "CROSS"]}
+    # region_combos = {'4w':["FOUR", "WITHIN"],'4c':["FOUR", "CROSS"],'8w':["EIGHT", "WITHIN"],'8c':["EIGHT", "CROSS"]}
     # filter_combos = {'8w':["EIGHT", "WITHIN"]}
-    for k, v in filter_combos.iteritems():
+    for k, v in region_combos.iteritems():
         print k,v
         for raster in arcpy.ListDatasets("*", "Raster"): 
             print 'raster: ', raster
@@ -182,9 +192,9 @@ def regionGroup(arg_list):
 
 
 
-def clipByMMUmask(masks_list,arg_list):
+def clipByMMUmask(gdb_args_in, mmu_list):
     #define workspace
-    arcpy.env.workspace=defineGDBpath(arg_list)
+    arcpy.env.workspace=defineGDBpath(gdb_args_in)
 
 
     for raster in arcpy.ListDatasets('*8w', "Raster"): 
@@ -204,7 +214,7 @@ def clipByMMUmask(masks_list,arg_list):
         --------------------------------------------------------------------------
         '''
 
-        for count in masks_list:
+        for count in mmu_list:
             cond = "Count < " + count
             print 'cond: ',cond
 
@@ -266,15 +276,20 @@ def route1():
 
 def route2():
     print ('------------------route2---------------------------------')
+    
+    ###### path 1  #####################################
     #------filter gdb--------------
-    majorityFilter(['pre','trajectories'],"traj_b")
+    majorityFilter(['pre','trajectories'], "traj_cdl_b", ['sensitivity_analysis','filter'], majorityFilter_combos['full'])
 
     # #------mtr gdb-----------------
-    # createMTR(['sensitivity_analysis','filter'])
+    createMTR(['sensitivity_analysis','filter'], '*')
 
-    # #------mmu gdb-----------------
-    # regionGroup(['sensitivity_analysis','mtr'])
-    # clipByMMUmask(['23','45','68'],['sensitivity_analysis','mmu'])
+    # # #------mmu gdb-----------------
+    regionGroup(['sensitivity_analysis','mtr'], '*', regionGroup_combos['baseline'])
+
+    
+    clipByMMUmask(['sensitivity_analysis','mmu'], mmu_list['baseline'])
+
     # nibble(['23','45','68'],['sensitivity_analysis','mmu'],['sensitivity_analysis','mtr'],'traj_rfnd_n8h_mtr')   
 
 
@@ -296,11 +311,11 @@ def route3():
   
 
 
-#############################  Call Functions ######################################
+# #############################  Call Functions ######################################
 
-# route1()
-route2()
-# route3()
+# # route1()
+# route2()
+# # route3()
 
 
 
