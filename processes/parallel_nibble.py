@@ -31,11 +31,10 @@ out_fishnet = defineGDBpath(['ancillary','temp'])+'fishnet_7'
 
 
 def create_fishnet(in_raster, out_fishnet):
-	#delete previous feature class
+	#delete previous fishnet feature class
 	arcpy.Delete_management(out_fishnet)
 
     #acquire parameters for creatfisnet function
-	# ras1 = arcpy.Raster(in_raster)
 	XMin = ras1.extent.XMin
 	YMin = ras1.extent.YMin
 	XMax = ras1.extent.XMax
@@ -76,7 +75,7 @@ def create_fishnet(in_raster, out_fishnet):
 	    fishnet_list.append(row.getValue(field))
 	print fishnet_list
 
-    #find the difference between the 2 lsit that represent tiles with no pixels of value
+    #find the difference between the 2 lists that represent tiles with no pixels of value
 	null_tiles = set(fishnet_list).difference(list_zonal)
 	print null_tiles
 
@@ -98,37 +97,17 @@ def execute_task(in_extentDict):
 	YMax = procExt[3]
 
 	#set environments
+	 #The brilliant thing here is that using the extents with the full dataset!!!!!!   DONT EVEN NEED TO CLIP THE FULL RASTER TO THE FISHNET BECASUE 
 	arcpy.env.snapRaster = in_raster
 	arcpy.env.cellsize = in_raster
 	arcpy.env.extent = arcpy.Extent(XMin, YMin, XMax, YMax)
-    
-    #The brilliant thing here is that using the extents with the full dataset!!!!!!   DONT EVEN NEED TO CLIP THE FULL RASTER TO THE FISHNET BECASUE 
-	# ras_out = arcpy.sa.SquareRoot(in_raster_path)
-    
- #    #clear out the extent for next time
-	# arcpy.ClearEnvironment("extent")
-
-	# outname = "try22" + str(fc_count) +'.tif'
-
-	# outpath = os.path.join(os.getcwd(), r"local_rast_wspace", outname)
-
-	# ras_out.save(outpath)
-
-	#########################################################################
-	#define gdb workspace
-	# arcpy.env.workspace=defineGDBpath(gdb_args_in)
-
-	#declare variables but dont intialize them
-	# in_raster = defineGDBpath(['post','yfc'])+'yfc_years_traj_rfnd_n8h_mtr_8w_msk23_nbl_fnc'
-	# print 'in_raster: ', in_raster
-
+   
 	in_mask_raster = defineGDBpath(['post','yfc'])+'yfc_years_traj_rfnd_n8h_mtr_8w_msk23_nbl_mask'
 	print 'in_mask_raster: ', in_mask_raster
 
-
-
 	###  Execute Nibble  #####################
 	ras_out = arcpy.sa.Nibble(in_raster, in_mask_raster, "DATA_ONLY")
+
 	#clear out the extent for next time
 	arcpy.ClearEnvironment("extent")
     
@@ -142,8 +121,8 @@ def execute_task(in_extentDict):
 
 if __name__ == '__main__':
 
-	#get fishnet
-	# create_fishnet(in_raster, out_fishnet)
+	#need to create a unique fishnet for each dataset
+	create_fishnet(in_raster, out_fishnet)
 
 	# get extents of individual features and add it to a dictionary
 	extDict = {}

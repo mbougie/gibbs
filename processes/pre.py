@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 import psycopg2
 from itertools import groupby
+import general as gen
 
 
 arcpy.CheckOutExtension("Spatial")
@@ -104,27 +105,33 @@ def createTrajectories(gdb_args_in,wc,gdb_args_out):
     #sort the rasterlist by accending years
     rasterList.sort(reverse=False)
     
-    if wc == wc:
+
+    ##Check to see if NLCD is in the rasterlist and use pop() if it is
+    if 'nlcd_b_2011' in rasterList:
         #for the binary trajectories, moves the last element in the list (i.e. nlcd_b_2011) to the first element position in the list.
         rasterList.insert(0, rasterList.pop())
     
     print 'rasterList: ',rasterList
 
-    #Execute Combine
+    # Execute Combine
     outCombine = Combine(rasterList)
     print 'outCombine: ', outCombine
     
-    output = defineGDBpath(gdb_args_out)+'traj_'+wc
+    output = defineGDBpath(gdb_args_out)+'traj_boug'+wc
     
-    #Save the output 
+    # #Save the output 
     outCombine.save(output)
 
+    #create pyraminds
+    # gen.buildPyramids(output)
 
 
-def addGDBTable2postgres(gdb_args,tablename,pg_shema):
+
+def addGDBTable2postgres(gdb_args,wc,pg_shema):
     # set the engine.....
     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
-
+    
+    tablename = 'traj_'+wc
     # path to the table you want to import into postgres
     input = defineGDBpath(gdb_args)+tablename
 
@@ -142,19 +149,24 @@ def addGDBTable2postgres(gdb_args,tablename,pg_shema):
     
     # use pandas method to import table into psotgres
     df.to_sql(tablename, engine, schema=pg_shema)
+    
+    #add trajectory field to table
+    addTrajArrayField(wc)
 
 
 
-def addTrajArrayField(degree_lc):
+def addTrajArrayField(wc):
     cur = conn.cursor()
-    arcpy.env.workspace = defineGDBpath(['pre','binaries'])
+    #this is a sub finction for addGDBTable2postgres()
+    arcpy.env.workspace = defineGDBpath(['pre','reclass'])
     
     #store the rasternames on defined gdb into array
-    rasterList = arcpy.ListDatasets('*'+degree_lc+'*', "Raster")
+    rasterList = arcpy.ListDatasets('*'+wc+'*', "Raster")
 
     rasterList.sort(reverse=False)
     
-    if degree_lc == 'b':
+    ##Check to see if NLCD is in the rasterlist and use pop() if it is
+    if 'nlcd_b_2011' in rasterList:
         #for the binary trajectories, moves the last element in the list (i.e. nlcd_b_2011) to the first element position in the list.
         rasterList.insert(0, rasterList.pop())
     
@@ -163,49 +175,15 @@ def addTrajArrayField(degree_lc):
     print columnList
 
     #DDL: add column to hold arrays
-    cur.execute('ALTER TABLE pre.traj_' + degree_lc + ' ADD COLUMN traj_array integer[];');
+    cur.execute('ALTER TABLE pre.traj_' + wc + ' ADD COLUMN traj_array integer[];');
     
     #DML: insert values into new array column
-    cur.execute('UPDATE pre.traj_' + degree_lc + ' SET traj_array = ARRAY['+columnList+'];');
+    cur.execute('UPDATE pre.traj_' + wc + ' SET traj_array = ARRAY['+columnList+'];');
     
     conn.commit()
     print "Records created successfully";
     conn.close()
 
-
-
-def createReclassifyList(degree_lc):
-    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/refinement/trajectories.gdb/'
-    engine = create_engine('postgresql://postgres:postgres@localhost:5432/core')
-    df = pd.read_sql_query("select \"Value\",new_value from refinement.traj_"+degree_lc+" as a JOIN refinement.traj_lookup as b ON a.traj_array = b.traj_array WHERE b.name='"+degree_lc+"'",con=engine)
-    
-    print df
-    a = df.values
-    print a
-    print type(a)
-
-    l=a.tolist()
-    print type(l)
-    print l
-
-    for raster in arcpy.ListDatasets('*'+degree_lc, "Raster"): 
-        print 'raster', raster
-        output = raster+'_msk'
-
-        outReclass = Reclassify(raster, "Value", RemapRange(l), "NODATA")
-        
-        outReclass.save(output)
-
-
-
-def mosaicRasters():
-    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/refinement/trajectories.gdb'
-
-    pre_gdb = "C:/Users/bougie/Desktop/gibbs/production/processes/pre/pre.gdb"
-    traj = "C:/Users/bougie/Desktop/gibbs/production/processes/pre/pre.gdb/traj"
-
-    # Process: Mosaic To New Raster
-    arcpy.MosaicToNewRaster_management("C:/Users/bougie/Desktop/gibbs/refinement/trajectories.gdb/traj;traj_q36_msk;traj_t61_msk;traj_tdev_msk", pre_gdb, "traj_refined50", "", "16_BIT_UNSIGNED", "", "1", "LAST", "LAST")
 
 
 
@@ -214,24 +192,16 @@ def mosaicRasters():
 
 
 ######  call functions  #############################
-#-----reclassifyRaster(gdb_args_in, wc, reclass_degree, gdb_args_out)------------------
-# reclassifyRaster(['ancillary','cdl'], "cdl", "test", ['pre','test'])
-# reclassifyRaster(['ancillary','misc'], "nlcd", "b", ['pre','binaries'])
+##-----reclassifyRaster()------------------
+reclassifyRaster(['ancillary','cdl'], "cdl", "b", ['pre','binaries'])
+reclassifyRaster(['ancillary','misc'], "nlcd", "b", ['pre','binaries'])
 
-#-----createTrajectories(gdb_args_in,wc,gdb_args_out)-----------------------------------------------
-# createTrajectories(['pre','test'], "test", ['pre','trajectories'])
+##-----createTrajectories()-----------------------------------------------
+createTrajectories(['pre','binaries'], "cdl_b", ['pre','traj2'])
 
-#-----add the trajectories atribute table to postgres
-# addGDBTable2postgres(['pre','trajectories'],'traj_b','pre')
 
-#-----add field to PG table
-# addTrajArrayField('b')
-
-#-----describe
-# createReclassifyList('tdev')
-
-#-----NOTE: this a a refinement function to mosiac all the rasters!
-#mosaicRasters()
+##-----addGDBTable2postgres()
+addGDBTable2postgres(['pre','trajectories'],'cdl_b','pre')
 
 
 
@@ -239,17 +209,8 @@ def mosaicRasters():
 
 
 
-# addGDBTable2postgres(['ancillary','misc'],'nlcd_2011','pre')
-
-
-# addGDBTable2postgres(['pre','trajectories'],'traj_b_counts','pre')
 
 
 
 
 
-# C:\ProgramData\Oracle\Java\javapath;%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem;%SYSTEMROOT%\System32\WindowsPowerShell\v1.0\;C:\Python27\ArcGISx6410.4;C:\Python27\ArcGISx6410.4\Scripts;C:\Python27\ArcGISx6410.4\Lib\site-packages;C:\Python27\ArcGISx6410.4\Lib\site-packages\osgeo;C:\Program Files\Git\cmd;C:\Program Files (x86)\Skype\Phone\
-
-
-
-# C:\ProgramData\Oracle\Java\javapath;%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem;%SYSTEMROOT%\System32\WindowsPowerShell\v1.0\;C:\Python27\ArcGISx6410.4;C:\Python27\ArcGISx6410.4\Scripts;C:\Python27\ArcGISx6410.4\Lib\site-packages;C:\Python27\ArcGISx6410.4\Lib\site-packages\osgeo;C:\Program Files\Git\cmd;C:\Program Files (x86)\Skype\Phone\

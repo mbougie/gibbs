@@ -13,6 +13,7 @@ from arcpy import env
 from arcpy.sa import *
 import glob
 import psycopg2
+import general as gen
 
 
 arcpy.CheckOutExtension("Spatial")
@@ -47,7 +48,7 @@ def addColorMap(inraster,template):
 
 
 def createMTR(gdb_args_in):
-    
+    ## replace the arbitrary values in the trajectories dataset with the mtr values 1-5.
     arcpy.env.workspace = defineGDBpath(gdb_args_in)
     for raster in arcpy.ListDatasets('*', "Raster"): 
         print 'raster:', raster
@@ -65,6 +66,8 @@ def createMTR(gdb_args_in):
 
 
 def createReclassifyList():
+    ##this is a subfunction of createMTR()
+
     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
     df = pd.read_sql_query('SELECT "Value", mtr from pre.traj_b union select new_value, mtr from refinement.traj_lookup',con=engine)
     print df
@@ -82,11 +85,11 @@ def createReclassifyList():
 
 
 
-def majorityFilter(dataset):
-    arcpy.env.workspace = 'C:/Users/bougie/Desktop/gibbs/data/processes/pre/pre.gdb'
+def majorityFilter(gdb_args_in, dataset):
+    arcpy.env.workspace = defineGDBpath(gdb_args_in)
 
-    filter_combos = {'n4h':["FOUR", "HALF"],'n4m':["FOUR", "MAJORITY"],'n8h':["EIGHT", "HALF"],'n8m':["EIGHT", "MAJORITY"]}
-    # filter_combos = {'n8h':["EIGHT", "HALF"]}
+    #filter_combos = {'n4h':["FOUR", "HALF"],'n4m':["FOUR", "MAJORITY"],'n8h':["EIGHT", "HALF"],'n8m':["EIGHT", "MAJORITY"]}
+    filter_combos = {'n8h':["EIGHT", "HALF"]}
     for k, v in filter_combos.iteritems():
         print k,v
         for raster in arcpy.ListDatasets(dataset, "Raster"): 
@@ -95,13 +98,15 @@ def majorityFilter(dataset):
             raster_out=raster+'_'+k
             
             # Execute MajorityFilter
-            outMajFilt = MajorityFilter(raster, v[0], v[1])
+            # outMajFilt = MajorityFilter(raster, v[0], v[1])
             
-            output = 'C:/Users/bougie/Desktop/gibbs/data/processes/sensitivity_analysis/filter.gdb/'+raster_out
+            output = defineGDBpath(['sensitivity_analysis','filter'])+raster_out
             print 'output: ',output
             
             #save processed raster to new file
-            outMajFilt.save(output)
+            # outMajFilt.save(output)
+
+            gen.buildPyramids(output)
 
 
 
@@ -244,10 +249,11 @@ def nibble(maskSize,arg_list1,arg_list2,filename):
 ##########  routing scripts that call functions inspecific order
 
 def route1():
-    #------mtr gdb-----------------
-    createMTR(['pre','trajectories'])
+    print ('-------------------route1----------------------------------')
+    # #------mtr gdb-----------------
+    # createMTR(['pre','trajectories'])
 
-    #------filter gdb--------------
+    # #------filter gdb--------------
     # majorityFilter("traj_rfnd")
     # focalStats(index,dir_in,dir_out)
 
@@ -259,39 +265,41 @@ def route1():
 
 
 def route2():
+    print ('------------------route2---------------------------------')
     #------filter gdb--------------
-    majorityFilter("traj_rfnd")
+    majorityFilter(['pre','trajectories'],"traj_b")
 
-    #------mtr gdb-----------------
-    createMTR('filter')
+    # #------mtr gdb-----------------
+    # createMTR(['sensitivity_analysis','filter'])
 
-    #------mmu gdb-----------------
-    regionGroup(['sensitivity_analysis','mtr'])
-    clipByMMUmask(['23','45','68'],['sensitivity_analysis','mmu'])
+    # #------mmu gdb-----------------
+    # regionGroup(['sensitivity_analysis','mtr'])
+    # clipByMMUmask(['23','45','68'],['sensitivity_analysis','mmu'])
     # nibble(['23','45','68'],['sensitivity_analysis','mmu'],['sensitivity_analysis','mtr'],'traj_rfnd_n8h_mtr')   
 
 
 def route3():
-    #------filter gdb--------------
-    majorityFilter("traj_rfnd")
+    print ('route3')
+    # #------filter gdb--------------
+    # majorityFilter("traj_rfnd")
 
 
-    #------mmu gdb-----------------
-    regionGroup(['sensitivity_analysis','mtr'])
-    clipByMMUmask(['23','45','68'],['sensitivity_analysis','mmu'])
-    # nibble('23',['sensitivity_analysis','mmu'],['sensitivity_analysis','mtr'],'traj_rfnd_n8h_mtr') 
+    # #------mmu gdb-----------------
+    # regionGroup(['sensitivity_analysis','mtr'])
+    # clipByMMUmask(['23','45','68'],['sensitivity_analysis','mmu'])
+    # # nibble('23',['sensitivity_analysis','mmu'],['sensitivity_analysis','mtr'],'traj_rfnd_n8h_mtr') 
 
 
-    #------mtr gdb-----------------
-    createMTR('filter')
+    # #------mtr gdb-----------------
+    # createMTR('filter')
 
   
 
 
 #############################  Call Functions ######################################
 
-route1()
-# route2()
+# route1()
+route2()
 # route3()
 
 

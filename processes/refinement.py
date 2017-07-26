@@ -202,11 +202,11 @@ def addGDBTable2postgres(gdb_args,tablename,pg_shema):
 
 
 ######  call functions  #############################
-# reclassifyRaster()
-# createTrajectories("r")
-# addGDBTable2postgres(['pre','trajectories'],'traj_r','pre')
-# PG_DDLandDML('r')
-# createTrajMask('r')
+reclassifyRaster()
+createTrajectories("r")
+addGDBTable2postgres(['pre','trajectories'],'traj_r','pre')
+PG_DDLandDML('r')
+createTrajMask('r')
 mosaicRasters()
 
 

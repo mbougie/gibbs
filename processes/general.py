@@ -564,9 +564,22 @@ def createPGtableFromRaster():
 
 
 
+def buildPyramids(inras):
+    print 'yo'
 
+    #Build Pyramids for single Raster Dataset
+    #Define the type and compression of pyramids in the tool
+    #Skip if dataset already has pyramids
 
+    pyramid_level = "10"
+    skipfirst = "NONE"
+    resample_technique = "BILINEAR"
+    compression_type = "JPEG"
+    compression_quality = "80"
+    skipexist = "SKIP_EXISTING"
 
+    arcpy.BuildPyramids_management(inras, pyramid_level, skipfirst, resample_technique, 
+                                   compression_type, compression_quality, skipexist)
 
 
 ############   CALL FUNCTIONS   #######################################
