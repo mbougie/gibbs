@@ -254,7 +254,7 @@ def nibble(maskSize,arg_list1,arg_list2,filename):
 # createMTR(['sensitivity_analysis','filter'], ['sensitivity_analysis','mtr'])
 
 #------mmu gdb-----------------
-regionGroup(['sensitivity_analysis','mtr'])
+# regionGroup(['sensitivity_analysis','mtr'])
 # clipByMMUmask(['23'],['core','mmu'])
 # nibble('23',['core','mmu'],['core','mtr'],'traj_rfnd_n8h_mtr')
 
