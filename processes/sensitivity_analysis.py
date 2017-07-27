@@ -60,24 +60,31 @@ def createMTR(gdb_args_in, wc):
     arcpy.env.workspace = defineGDBpath(gdb_args_in)
     for raster in arcpy.ListDatasets('*', "Raster"): 
         print 'raster:', raster
-        raster_out = raster+'_mtr'
-        output = defineGDBpath(['sensitivity_analysis','mtr'])+raster_out
-        print 'output:', output
+        raster_name = raster+'_mtr'
 
-        reclassArray = createReclassifyList() 
-        outReclass = Reclassify(raster, "Value", RemapRange(reclassArray), "NODATA")
-        
-        outReclass.save(output)
+        raster_out = defineGDBpath(['sensitivity_analysis','mtr'])+raster_name
+        print 'raster_out', raster_out
 
-        # addColorMap(output,'C:/Users/bougie/Desktop/gibbs/colormaps/mmu.clr')
+        if arcpy.Exists(raster_out):
+            print "{} exists, not copying".format(raster)
+        else:
+
+            reclassArray = createReclassifyList() 
+            outReclass = Reclassify(raster, "Value", RemapRange(reclassArray), "NODATA")
+            
+            outReclass.save(raster_out)
+
+            gen.buildPyramids(raster_out)
+
+            # addColorMap(output,'C:/Users/bougie/Desktop/gibbs/colormaps/mmu.clr')
 
 
 
 def createReclassifyList():
-    ##this is a subfunction of createMTR()
+    #this is a sub function for createMTR().  references the mtr value in psotgres to create a list containing arbitray trajectory value and associated new mtr value
 
     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
-    df = pd.read_sql_query('SELECT "Value", mtr from pre.traj_b union select new_value, mtr from refinement.traj_lookup',con=engine)
+    df = pd.read_sql_query('SELECT "Value", mtr from pre.traj_cdl_b',con=engine)
     print df
     fulllist=[[0,0,"NODATA"]]
     # fulllist=[]
@@ -92,13 +99,8 @@ def createReclassifyList():
     return fulllist
 
 
-
-
 def majorityFilter(gdb_args_in, dataset, gdb_args_out, filter_combos):
     arcpy.env.workspace = defineGDBpath(gdb_args_in)
-
-    # filter_combos = {'n4h':["FOUR", "HALF"],'n4m':["FOUR", "MAJORITY"],'n8h':["EIGHT", "HALF"],'n8m':["EIGHT", "MAJORITY"]}
-    # filter_combos = {'n8h':["EIGHT", "HALF"]}
 
     for k, v in filter_combos.iteritems():
         print k,v
@@ -106,17 +108,20 @@ def majorityFilter(gdb_args_in, dataset, gdb_args_out, filter_combos):
             print 'raster: ', raster
     
             raster_out=raster+'_'+k
-            
-            # Execute MajorityFilter
-            outMajFilt = MajorityFilter(raster, v[0], v[1])
-            
-            output = defineGDBpath(gdb_args_out)+raster_out
-            print 'output: ',output
-            
-            #save processed raster to new file
-            outMajFilt.save(output)
 
-            gen.buildPyramids(output)
+            if arcpy.Exists(raster_out):
+                print "{} exists, not copying".format(raster)
+            else:
+                # Execute MajorityFilter
+                outMajFilt = MajorityFilter(raster, v[0], v[1])
+                
+                output = defineGDBpath(gdb_args_out)+raster_out
+                print 'output: ',output
+                
+                #save processed raster to new file
+                outMajFilt.save(output)
+
+                gen.buildPyramids(output)
 
 
 
@@ -168,24 +173,28 @@ def regionGroup(gdb_args_in, wc, region_combos):
     #define workspace
     arcpy.env.workspace=defineGDBpath(gdb_args_in)
 
-    # region_combos = {'4w':["FOUR", "WITHIN"],'4c':["FOUR", "CROSS"],'8w':["EIGHT", "WITHIN"],'8c':["EIGHT", "CROSS"]}
-    # filter_combos = {'8w':["EIGHT", "WITHIN"]}
     for k, v in region_combos.iteritems():
         print k,v
-        for raster in arcpy.ListDatasets("*", "Raster"): 
+        for raster in arcpy.ListDatasets(wc, "Raster"): 
             print 'raster: ', raster
     
             raster_out=raster+'_'+k
             print 'raster_out', raster_out
-            output=defineGDBpath(['sensitivity_analysis','mmu'])+raster_out
-            
-            print 'output: ',output
-            # Execute RegionGroup
-            outRegionGrp = RegionGroup(raster, v[0], v[1],"NO_LINK")
 
-            # Save the output 
-            print 'save the output'
-            outRegionGrp.save(output)
+            if arcpy.Exists(raster_out):
+                print "{} exists, not copying".format(raster)
+            else:
+                output=defineGDBpath(['sensitivity_analysis','mmu'])+raster_out
+                
+                print 'output: ',output
+                # Execute RegionGroup
+                outRegionGrp = RegionGroup(raster, v[0], v[1],"NO_LINK")
+
+                # Save the output 
+                print 'save the output'
+                outRegionGrp.save(output)
+
+                gen.buildPyramids(output)
 
 
 
@@ -218,38 +227,43 @@ def clipByMMUmask(gdb_args_in, mmu_list):
             cond = "Count < " + count
             print 'cond: ',cond
 
-            output = raster+'_msk'+ count
+            raster_out = raster+'_msk'+ count
+            print 'raster_out', raster_out
+
+            if arcpy.Exists(raster_out):
+                print "{} exists, not copying".format(raster)
+            else:
+
+                outSetNull = SetNull(raster, 1, cond)
+
+                # Save the output 
+                outSetNull.save(raster_out)
+
+                gen.buildPyramids(raster_out)
+
+
+
+# def nibble(maskSize,arg_list1,arg_list2,filename):
+#     #define workspace
+#     arcpy.env.workspace=defineGDBpath(arg_list1)
+
+#     #find mask raster in gdb
+#     for mask in arcpy.ListDatasets('*_msk'+maskSize, "Raster"): 
+#         print 'mask: ',  mask
+
+#         #create file structure
+#         output = mask+'_nbl'
+#         print 'output: ', output
     
-            print output
-
-            outSetNull = SetNull(raster, 1, cond)
-
-            # Save the output 
-            outSetNull.save(output)
-
-
-
-def nibble(maskSize,arg_list1,arg_list2,filename):
-    #define workspace
-    arcpy.env.workspace=defineGDBpath(arg_list1)
-
-    #find mask raster in gdb
-    for mask in arcpy.ListDatasets('*_msk'+maskSize, "Raster"): 
-        print 'mask: ',  mask
-
-        #create file structure
-        output = mask+'_nbl'
-        print 'output: ', output
-    
-        ####  create the paths to the mask files  ############# 
-        raster_in=defineGDBpath(arg_list2)+filename
-        print 'raster_in: ', raster_in
+#         ####  create the paths to the mask files  ############# 
+#         raster_in=defineGDBpath(arg_list2)+filename
+#         print 'raster_in: ', raster_in
       
-        ###  Execute Nibble  #####################
-        nibbleOut = Nibble(Raster(raster_in), mask, "DATA_ONLY")
+#         ###  Execute Nibble  #####################
+#         nibbleOut = Nibble(Raster(raster_in), mask, "DATA_ONLY")
 
-        ###  Save the output  ################### 
-        nibbleOut.save(output)
+#         ###  Save the output  ################### 
+#         nibbleOut.save(output)
 
     #     addColorMap(output,'C:/Users/bougie/Desktop/gibbs/colormaps/mmu.clr')
 
@@ -279,16 +293,25 @@ def route2():
     
     ###### path 1  #####################################
     #------filter gdb--------------
-    majorityFilter(['pre','trajectories'], "traj_cdl_b", ['sensitivity_analysis','filter'], majorityFilter_combos['full'])
+    # majorityFilter(['pre','trajectories'], "traj_cdl_b", ['sensitivity_analysis','filter'], majorityFilter_combos['full'])
 
     # #------mtr gdb-----------------
-    createMTR(['sensitivity_analysis','filter'], '*')
+    # createMTR(['sensitivity_analysis','filter'], '*')
 
     # # #------mmu gdb-----------------
     regionGroup(['sensitivity_analysis','mtr'], '*', regionGroup_combos['baseline'])
 
     
-    clipByMMUmask(['sensitivity_analysis','mmu'], mmu_list['baseline'])
+    # clipByMMUmask(['sensitivity_analysis','mmu'], mmu_list['baseline'])
+
+
+
+    ###### path 2  #####################################
+    # # #------mmu gdb-----------------
+    # regionGroup(['sensitivity_analysis','mtr'], "*n8h*", regionGroup_combos['full'])
+
+    
+    # clipByMMUmask(['sensitivity_analysis','mmu'], mmu_list['baseline'])
 
     # nibble(['23','45','68'],['sensitivity_analysis','mmu'],['sensitivity_analysis','mtr'],'traj_rfnd_n8h_mtr')   
 
@@ -314,7 +337,7 @@ def route3():
 # #############################  Call Functions ######################################
 
 # # route1()
-# route2()
+route2()
 # # route3()
 
 

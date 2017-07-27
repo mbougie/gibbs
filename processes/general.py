@@ -565,7 +565,7 @@ def createPGtableFromRaster():
 
 
 def buildPyramids(inras):
-    print 'buildPyramids....'
+    print 'running buildPyramids() function....'
 
     #Build Pyramids for single Raster Dataset
     #Define the type and compression of pyramids in the tool
