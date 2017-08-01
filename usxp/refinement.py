@@ -23,20 +23,21 @@ try:
 except:
     print "I am unable to connect to the database"
 
-
-
 #Note: need to change this each time on different machine
 case=['Bougie','Gibbs']
+
+#establish root path for this the main project (i.e. usxp)
+rootpath = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/data/usxp/'
 
 import extension
 arcpy.CheckOutExtension("Spatial")
 
-
-
+### establish gdb path  ####
 def defineGDBpath(arg_list):
-    gdb_path = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/arcgis/geodatabases/'+arg_list[0]+'/'+arg_list[1]+'.gdb/'
+    gdb_path = rootpath + arg_list[0]+'/'+arg_list[1]+'.gdb/'
     print 'gdb path: ', gdb_path 
     return gdb_path
+
 
 def getQuanitiativeFocusCounties():
 
@@ -166,7 +167,7 @@ def createKMLfile():
             print fc
             # Set local variables
             layer = fc
-            out_kmz_file = 'C:/Users/Bougie/Desktop/Gibbs/arcgis/geodatabases/refinement/' + fc
+            out_kmz_file =  rootpath + 'refinement/' + fc
             arcpy.LayerToKML_conversion (layer, out_kmz_file)
     
     ###### call functions #####################
