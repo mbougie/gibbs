@@ -59,20 +59,20 @@ gen.transposeTable(['refinement','refinement'],'counties_yfc_years')
 
 #########################  GOOD SQL  ##################################################################
 
-# create table refinement.counties_yfc_bfnc_w_percent as
+create table refinement.counties_yfc_bfnc_w_percent as
 
-# SELECT 
-#    a.*,
-#    round(a.acres/b.total_acres * 100,2) as percent 
-# FROM 
-#   refinement.counties_yfc_bfnc as a, (SELECT 
-#    stco, sum(acres) total_acres
-# FROM 
-#   refinement.counties_yfc_bfnc
-# group by stco) as b
-# where a.stco = b.stco
+SELECT 
+   a.*,
+   round(a.acres/b.total_acres * 100,2) as percent 
+FROM 
+  refinement.counties_yfc_bfnc as a, (SELECT 
+   stco, sum(acres) total_acres
+FROM 
+  refinement.counties_yfc_bfnc
+group by stco) as b
+where a.stco = b.stco
 
-# order by stco, percent desc
+order by stco, percent desc
 
 
 ################  ANOTHER GOOD SQL #########################################################

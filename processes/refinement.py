@@ -1,7 +1,7 @@
 # Import system modules
-import arcpy
-from arcpy import env
-from arcpy.sa import *
+# import arcpy
+# from arcpy import env
+# from arcpy.sa import *
 import glob
 import os
 from sqlalchemy import create_engine
@@ -29,7 +29,7 @@ except:
 case=['Bougie','Gibbs']
 
 #import extension
-arcpy.CheckOutExtension("Spatial")
+# arcpy.CheckOutExtension("Spatial")
 
 
 
@@ -262,8 +262,99 @@ def createKMLfile():
     featureToKML()
 
 
-######  call functions  #############################
+def getQuanitiativeFocusCounties():
+
+    def createEmptyTable(table_list):
+        for table in table_list:
+            cur = conn.cursor()
+            query="CREATE TABLE refinement.counties_yfc_"+table+"_temp(stco text, lc text, acres numeric)"
+            print query
+            cur.execute(query)
+            conn.commit()
+
+
+    def transposeTable(gdb_path, wc):
+
+        arcpy.env.workspace = defineGDBpath(gdb_path)
+
+        for table in arcpy.ListTables(wc): 
+            print 'table: ', table
+            fields = arcpy.ListFields(table)
+            
+            for field in fields:
+                #constrant column names by excluding the below fields from the processing
+                if field.name == 'OBJECTID' or field.name == 'ATLAS_STCO':
+                    print field.name
+                else:
+                    # loop through each row and get the value for specified columns
+                    rows = arcpy.SearchCursor(table)
+                    for row in rows:
+                        lc = row.getValue(field.name)
+                        stco = row.getValue('ATLAS_STCO')
+                        print 'table: ', table
+                        print 'stco: ', stco
+                        print 'field.name: ', field.name
+                        print 'lc: ', lc
+                        
+                        cur = conn.cursor()
+                        query="INSERT INTO refinement."+wc+"_temp VALUES ('" + str(stco) + "' , '" + str(field.name) + "' , " + str(lc) + ")"
+                        print query
+                        cur.execute(query)
+                        conn.commit()
+    
+
+    def createTableAS(table_list):
+        for table in table_list:
+            cur = conn.cursor()
+            query="create table refinement.counties_yfc_"+table+" as SELECT a.*, round(a.acres/b.total_acres * 100,2) as percent FROM refinement.counties_yfc_"+table+"_temp as a, (SELECT stco, sum(acres) total_acres FROM refinement.counties_yfc_"+table+"_temp group by stco) as b where a.stco = b.stco and acres <> 0 order by stco, percent desc"
+            print query
+            cur.execute(query)
+            conn.commit()
+
+
+    def dropTable(table_list):
+        for table in table_list:
+            cur = conn.cursor()
+            query="DROP TABLE refinement.counties_yfc_"+table+"_temp"
+            print query
+            cur.execute(query)
+            conn.commit()
+
+
+    def createReferenceTable():
+        cur = conn.cursor()
+        query="CREATE TABLE refinement.focus_counties_yfc2 as SELECT counties_yfc_bfnc.stco, counties_yfc_bfnc.lc as crop, counties_yfc_bfnc.max_bfnc_percent, counties_yfc_fnc.lc as noncrop, counties_yfc_fnc.max_fnc_percent, counties_yfc_years.lc year_to_nc, counties_yfc_years.max_years_percent FROM ( select a.*, b.max_bfnc_percent from refinement.counties_yfc_bfnc as a,  (SELECT stco, max(percent) as max_bfnc_percent FROM refinement.counties_yfc_bfnc group by stco) as b where a.stco = b.stco and a.percent = b.max_bfnc_percent) as counties_yfc_bfnc,( select a.*, b.max_fnc_percent from refinement.counties_yfc_fnc as a,  (SELECT stco, max(percent) as max_fnc_percent FROM refinement.counties_yfc_fnc group by stco) as b where a.stco = b.stco and a.percent = b.max_fnc_percent) as counties_yfc_fnc,( select a.*, b.max_years_percent from refinement.counties_yfc_years as a,(SELECT stco, max(percent) as max_years_percent FROM refinement.counties_yfc_years group by stco) as b where a.stco = b.stco and a.percent = b.max_years_percent) as counties_yfc_years WHERE counties_yfc_bfnc.stco = counties_yfc_fnc.stco AND counties_yfc_fnc.stco = counties_yfc_years.stco order by counties_yfc_bfnc.max_bfnc_percent"
+        print query
+        cur.execute(query)
+        conn.commit()
+    
+      
+    ###### call functions #####################
+    table_list = ['bfnc','fnc','years']
+
+    # createEmptyTable(table_list)
+    # gen.transposeTable(['refinement','refinement'],'counties_yfc_years')
+    # CreateTableAS(table_list)
+    # dropTable(table_list)
+    createReferenceTable()
+
+
+
+
+
+
+
+
+
+
+
+
+##########################################################
+######  call main functions  #############################
+##########################################################
+
+getQuanitiativeFocusCounties()
+# createKMLfile()
 # falseConversion()
-createKMLfile()
 
 
