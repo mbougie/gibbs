@@ -233,7 +233,7 @@ def clipByMMUmask(gdb_args_in, mmu_list):
             if arcpy.Exists(raster_out):
                 print "{} exists, not copying".format(raster)
             else:
-
+                #where regions are less then the mmu convert to null otherwise if larger than the mmu convert to value = 1
                 outSetNull = SetNull(raster, 1, cond)
 
                 # Save the output 
@@ -299,7 +299,7 @@ def route2():
     # createMTR(['sensitivity_analysis','filter'], '*')
 
     # # #------mmu gdb-----------------
-    regionGroup(['sensitivity_analysis','mtr'], '*', regionGroup_combos['baseline'])
+    # regionGroup(['sensitivity_analysis','mtr'], '*', regionGroup_combos['baseline'])
 
     
     # clipByMMUmask(['sensitivity_analysis','mmu'], mmu_list['baseline'])

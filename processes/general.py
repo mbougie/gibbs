@@ -4,6 +4,8 @@ from sqlalchemy import create_engine
 import arcpy
 from arcpy import env
 from arcpy.sa import *
+import os
+import glob
 
 
 
@@ -97,7 +99,8 @@ def getAcres(pixel_count, resolution):
 
 
 def addGDBTable2postgres(gdb_args,wc,pg_shema):
-    print 'hello'
+    print 'running addGDBTable2postgres() function....'
+    ####description: adds tables in geodatabse to postgres
     # set the engine.....
     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
 
@@ -215,6 +218,40 @@ def addRasterAttributeTableByRow(gdb_path, wc, tablename):
 
 
 
+
+def transposeTable(gdb_path, wc):
+
+    arcpy.env.workspace = defineGDBpath(gdb_path)
+
+    for table in arcpy.ListTables(wc): 
+        print 'table: ', table
+        fields = arcpy.ListFields(table)
+        
+        for field in fields:
+            #constrant column names by excluding the below fields from the processing
+            if field.name == 'OBJECTID' or field.name == 'ATLAS_STCO':
+                print field.name
+            else:
+                # loop through each row and get the value for specified columns
+                rows = arcpy.SearchCursor(table)
+                for row in rows:
+                    lc = row.getValue(field.name)
+                    stco = row.getValue('ATLAS_STCO')
+                    print 'table: ', table
+                    print 'stco: ', stco
+                    print 'field.name: ', field.name
+                    print 'lc: ', lc
+                    
+                    cur = conn.cursor()
+                    query="INSERT INTO refinement."+wc+" VALUES ('" + str(stco) + "' , '" + str(field.name) + "' , " + str(lc) + ")"
+                    print query
+                    cur.execute(query)
+                    conn.commit()
+     
+
+
+
+
 def getPGTablesList(schema,wc):
     query = """SELECT table_name
     FROM information_schema.tables
@@ -225,14 +262,14 @@ def getPGTablesList(schema,wc):
 
 
 
-def getPGColumnsList(schema, table):
+def getPGColumnsList(schema, table, delimiter):
     query = """SELECT column_name
     FROM information_schema.columns
     WHERE table_schema = """+ schema + """
     AND table_name = """ + table + """
     AND data_type = 'double precision' """
     print query
-    return CreateStringFromList(createListfromCursor(query))
+    return CreateStringFromList(createListfromCursor(query), delimiter)
 
 
 
@@ -257,9 +294,9 @@ def createListfromCursor(query):
     return templist
 
 
-def CreateStringFromList(thelist):
+def CreateStringFromList(thelist, delimiter):
     # str1 = '+'.join('"{0}"'.format(w) for w in thelist)
-    str1 = ' + '.join(thelist)
+    str1 = delimiter.join(thelist)
     print "str1", str1
     return str1
 
@@ -593,4 +630,7 @@ def buildPyramids(inras):
 
 # createPGtableFromRaster()
 
-
+def deleteFiles():
+    filelist = glob.glob("*")
+    for f in filelist:
+        os.remove(f)

@@ -5,17 +5,16 @@ import glob
 import sys
 import time
 import logging
+import general as gen
 from multiprocessing import Process, Queue, Pool, cpu_count, current_process, Manager
 
-arcpy.env.overwriteOutput = True
-arcpy.env.scratchWorkspace = "in_memory" 
 
 
 
 case=['Bougie','Gibbs']
 
 #import extension
-arcpy.CheckOutExtension("Spatial")
+
 
 def defineGDBpath(arg_list):
     gdb_path = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/arcgis/geodatabases/'+arg_list[0]+'/'+arg_list[1]+'.gdb/'
@@ -23,10 +22,16 @@ def defineGDBpath(arg_list):
     return gdb_path 
 
 
+arcpy.env.overwriteOutput = True
+arcpy.env.scratchWorkspace = "in_memory" 
+arcpy.env.workspace = defineGDBpath(['sensitivity_analysis','mmu'])
+arcpy.CheckOutExtension("Spatial")
 
 
-def create_fishnet(gdb_args_in, wc):
-	arcpy.env.workspace = defineGDBpath(gdb_args_in)
+
+
+def create_fishnet(wc):
+	# arcpy.env.workspace = defineGDBpath(gdb_args_in)
 	for raster in arcpy.ListDatasets(wc, "Raster"): 
         
 		in_raster = arcpy.Raster(raster)
@@ -36,7 +41,6 @@ def create_fishnet(gdb_args_in, wc):
 		# arcpy.Delete_management(out_fishnet)
         if arcpy.Exists('fishnet'):
             print "fishnet already exists"
-            refineFishnet(in_raster)
         else:
 
 			#create a fishnet for the geodatabase
@@ -67,7 +71,7 @@ def create_fishnet(gdb_args_in, wc):
 			arcpy.CreateFishnet_management(out_fishnet, origCord, YAxisCord, cellSizeW, cellSizeH, numRows, numCols, cornerCord, "NO_LABELS", "", geotype)
 
 			#refine fisshnet by removing all cells that are null
-			refineFishnet(in_raster)
+			# refineFishnet(in_raster)
 
     
         
@@ -134,41 +138,103 @@ def refineFishnet(in_raster):
 
 
 
-def execute_Nibble(in_extentDict):
-	in_raster = defineGDBpath(['post','yfc'])+'yfc_years_traj_rfnd_n8h_mtr_8w_msk23_nbl_fnc'
-	ras1 = arcpy.Raster(in_raster)
+# def execute_Nibble(in_extentDict):
+# 	in_raster = defineGDBpath(['post','yfc'])+'yfc_years_traj_rfnd_n8h_mtr_8w_msk23_nbl_fnc'
+# 	ras1 = arcpy.Raster(in_raster)
 
 
-	fc_count = in_extentDict[0]
-	print fc_count
-	procExt = in_extentDict[1]
-	print procExt
-	XMin = procExt[0]
-	YMin = procExt[1]
-	XMax = procExt[2]
-	YMax = procExt[3]
+# 	fc_count = in_extentDict[0]
+# 	print fc_count
+# 	procExt = in_extentDict[1]
+# 	print procExt
+# 	XMin = procExt[0]
+# 	YMin = procExt[1]
+# 	XMax = procExt[2]
+# 	YMax = procExt[3]
 
-	#set environments
-	 #The brilliant thing here is that using the extents with the full dataset!!!!!!   DONT EVEN NEED TO CLIP THE FULL RASTER TO THE FISHNET BECASUE 
-	arcpy.env.snapRaster = in_raster
-	arcpy.env.cellsize = in_raster
-	arcpy.env.extent = arcpy.Extent(XMin, YMin, XMax, YMax)
+# 	#set environments
+# 	 #The brilliant thing here is that using the extents with the full dataset!!!!!!   DONT EVEN NEED TO CLIP THE FULL RASTER TO THE FISHNET BECASUE 
+# 	arcpy.env.snapRaster = in_raster
+# 	arcpy.env.cellsize = in_raster
+# 	arcpy.env.extent = arcpy.Extent(XMin, YMin, XMax, YMax)
    
-	in_mask_raster = defineGDBpath(['post','yfc'])+'yfc_years_traj_rfnd_n8h_mtr_8w_msk23_nbl_mask'
-	print 'in_mask_raster: ', in_mask_raster
+# 	in_mask_raster = defineGDBpath(['post','yfc'])+'yfc_years_traj_rfnd_n8h_mtr_8w_msk23_nbl_mask'
+# 	print 'in_mask_raster: ', in_mask_raster
 
-	###  Execute Nibble  #####################
-	ras_out = arcpy.sa.Nibble(in_raster, in_mask_raster, "DATA_ONLY")
+# 	###  Execute Nibble  #####################
+# 	ras_out = arcpy.sa.Nibble(in_raster, in_mask_raster, "DATA_ONLY")
 
-	#clear out the extent for next time
-	arcpy.ClearEnvironment("extent")
+# 	#clear out the extent for next time
+# 	arcpy.ClearEnvironment("extent")
     
-    # print fc_count
-	outname = "tile_test" + str(fc_count) +'.tif'
+#     # print fc_count
+# 	outname = "tile_test" + str(fc_count) +'.tif'
 
-	outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/temp2", r"tiles", outname)
+# 	outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/temp2", r"tiles", outname)
 
-	ras_out.save(outpath)
+# 	ras_out.save(outpath)
+
+
+
+def execute_Nibble(in_extentDict):
+    def nibble(wc):
+	    # def nibble(wc):
+		arcpy.env.workspace = defineGDBpath(['post','yfc'])
+		
+		for raster in arcpy.ListDatasets('*'+wc+'*', "Raster"): 
+			# clear out previous rasters
+			os.chdir("C:/Users/Bougie/Desktop/Gibbs/temp_processing/tiles")
+			gen.deleteFiles()
+
+			# print 'raster: ', raster
+			temp_raster = raster.strip(wc)
+			in_raster = arcpy.Raster(temp_raster)
+			print in_raster
+			in_mask_raster = arcpy.Raster(raster)
+			# in_raster = arcpy.Raster('traj_cdl_b_n4h_mtr_8w')
+			# in_mask_raster = arcpy.Raster('traj_cdl_b_n4h_mtr_8w_msk23')
+
+			# in_raster = defineGDBpath(['post','yfc'])+'yfc_years_traj_rfnd_n8h_mtr_8w_msk23_nbl_fnc'
+			# in_mask_raster = defineGDBpath(['post','yfc'])+'yfc_years_traj_rfnd_n8h_mtr_8w_msk23_nbl_mask'
+			print 'in_mask_raster: ', in_mask_raster
+
+			# setEnvironment(in_extentDict, in_raster)
+			print in_extentDict
+			fc_count = in_extentDict[0]
+			print fc_count
+			procExt = in_extentDict[1]
+			print procExt
+			XMin = procExt[0]
+			YMin = procExt[1]
+			XMax = procExt[2]
+			YMax = procExt[3]
+
+
+			arcpy.env.snapRaster = in_raster
+			arcpy.env.cellsize = in_raster
+			arcpy.env.extent = arcpy.Extent(XMin, YMin, XMax, YMax)
+
+			###  Execute Nibble  #####################
+			ras_out = arcpy.sa.Nibble(in_raster, in_mask_raster, "DATA_ONLY")
+
+			#clear out the extent for next time
+			arcpy.ClearEnvironment("extent")
+		    
+		    # print fc_count
+			fc_count = in_extentDict[0]
+			print fc_count
+			outname = "tile_" + str(fc_count) + '_' + raster + '.tif'
+		 
+			outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/temp_processing", r"tiles", outname)
+
+		   	ras_out.save(outpath)
+
+    ##ccall regionGroup local function
+    nibble("_nbl_")
+
+
+
+
 
 
 
@@ -210,13 +276,14 @@ def execute_RegionGroup(in_extentDict):
 
 	  
 
-    #ccall regionGroup local function
+	 #ccall regionGroup local function
 	regionGroup(['sensitivity_analysis','mtr'], "traj_cdl_b_n4h_mtr", regionGroup_combos['baseline'])
 
 
 
 
 def setEnvironment(in_extentDict, in_raster):
+	print in_extentDict
 	fc_count = in_extentDict[0]
 	print fc_count
 	procExt = in_extentDict[1]
@@ -253,10 +320,10 @@ def createMosaicRaster_Nibble():
 
 
 if __name__ == '__main__':
-	arcpy.env.workspace = defineGDBpath(['sensitivity_analysis','mtr'])
+	
 
     ###### NOTE FISHNET FUNCTION NEEDS WORK !!!!!!  ###########################
-	# create_fishnet(['sensitivity_analysis','mtr'], '*')
+	# create_fishnet('*')
 
 	#get extents of individual features and add it to a dictionary
 	extDict = {}
@@ -274,16 +341,17 @@ if __name__ == '__main__':
     
 	print extDict
 	print extDict.items()
+    
 
-	#######create a process and pass dictionary of extent to execute task
+	# execute_Nibble(extDict.items())
+	######create a process and pass dictionary of extent to execute task
 	pool = Pool(processes=cpu_count())
-	pool.map(execute_RegionGroup, extDict.items())
+	pool.map(execute_Nibble, extDict.items())
 	pool.close()
 	pool.join
 
 
 
-	# createMosaicRaster_RegionGroup()
 
 
     

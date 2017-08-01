@@ -39,177 +39,231 @@ def defineGDBpath(arg_list):
     return gdb_path
 
 
-
-def PG_DDLandDML(degree_lc):
-
-    #define cursor
-	cur = conn.cursor()
-    
-    # add column to table to hold arrays
-	cur.execute('ALTER TABLE pre.traj_' + degree_lc + ' ADD COLUMN traj_array integer[];');
-    
-    # insert values into array column
-	cur.execute('UPDATE pre.traj_' + degree_lc + ' SET traj_array = ARRAY[nlcd_b_2011,cdl_' + degree_lc + '_2010,cdl_' + degree_lc + '_2011,cdl_' + degree_lc + '_2012,cdl_' + degree_lc + '_2013,cdl_' + degree_lc + '_2014,cdl_' + degree_lc + '_2015,cdl_' + degree_lc + '_2016];');
-    
-    #commit the changes
-	conn.commit()
-	print "Records created successfully";
-
-	#close..........
-	conn.close()
+def falseConversion():
 
 
+    def reclassifyRaster():
+        # Description: reclass cdl rasters based on the specific arc_reclassify_table 
 
-def createTrajMask(degree_lc):
-    arcpy.env.workspace = defineGDBpath(['pre','trajectories'])
+        # Set environment settings
+        arcpy.env.workspace = defineGDBpath(['ancillary','cdl'])
 
-    df = pd.read_sql_query("select a.\"Value\",b.mtr from pre.traj_"+degree_lc+" as a JOIN pre.traj_r_lookup as b ON a.traj_array = b.traj_array",con=engine)
-    
-    print df
-    a = df.values
-    print a
-    print type(a)
+        for raster in arcpy.ListDatasets('*', "Raster"): 
+            print 'raster:', raster
 
-    l=a.tolist()
-    print type(l)
-    print l
+            outraster = raster.replace("_", "_r_")
 
-    for raster in arcpy.ListDatasets('*'+degree_lc, "Raster"): 
-        print 'in raster: ', raster
-        output = raster+'_msk'
-        print 'output raster: ', output
-        outReclass = Reclassify(raster, "Value", RemapRange(l), "NODATA")
+            print outraster 
+
+            #define the output
+            output = defineGDBpath(['pre','reclass'])+outraster
+            print 'output: ', output
+
+            return_string=getReclassifyValuesString()
+
+            # Execute Reclassify
+            arcpy.gp.Reclassify_sa(raster, "Value", return_string, output, "NODATA")
+
+
+    def getReclassifyValuesString():
+        #Note: this is a aux function that the reclassifyRaster() function references
+        cur = conn.cursor()
+
+        #DDL: add column to hold arrays
+        cur.execute('SELECT value::text,test FROM misc.lookup_cdl WHERE test IS NOT NULL ORDER BY value');
         
-        outReclass.save(output)
+        #create empty list
+        reclassifylist=[]
+
+        # fetch all rows from table
+        rows = cur.fetchall()
+        
+        # interate through rows tuple to format the values into an array that is is then appended to the reclassifylist
+        for row in rows:
+            ww = [row[0] + ' ' + row[1]]
+            reclassifylist.append(ww)
+
+        #flatten the nested array and then convert it to a string with a ";" separator to match arcgis format 
+        columnList = ';'.join(sum(reclassifylist, []))
+        print columnList
+        
+        #return list to reclassifyRaster() fct
+        return columnList
+
+
+    def createTrajectories(wc):
+
+        # Set environment settings
+        arcpy.env.workspace = defineGDBpath(['pre','reclass'])
+        
+        #get a lsit of all rasters in sepcified database
+        rasterList = arcpy.ListDatasets('cdl_'+wc+'*', "Raster")
+        
+        #sort the rasterlist by accending years
+        rasterList.sort(reverse=False)
+        
+        #prepend nlcd raster name 
+        rasterList.insert(0, 'nlcd_b_2011')
+        print 'rasterList: ',rasterList
+
+        #Execute Combine
+        outCombine = Combine(rasterList)
+        print 'outCombine: ', outCombine
+        
+        output = defineGDBpath(['pre','trajectories'])+'traj_'+wc
+        
+        #Save the output 
+        outCombine.save(output)
+
+
+    def addGDBTable2postgres(gdb_args,tablename,pg_shema):
+
+
+        # path to the table you want to import into postgres
+        input = defineGDBpath(gdb_args)+tablename
+
+        # Execute AddField twice for two new fields
+        fields = [f.name for f in arcpy.ListFields(input)]
+        
+        # converts a table to NumPy structured array.
+        arr = arcpy.da.TableToNumPyArray(input,fields)
+        print arr
+        
+        # convert numpy array to pandas dataframe
+        df = pd.DataFrame(data=arr)
+
+        print df
+        
+        # use pandas method to import table into psotgres
+        df.to_sql(tablename, engine, schema=pg_shema)
+
+
+    def PG_DDLandDML(degree_lc):
+
+        #define cursor
+        cur = conn.cursor()
+        
+        # add column to table to hold arrays
+        cur.execute('ALTER TABLE pre.traj_' + degree_lc + ' ADD COLUMN traj_array integer[];');
+        
+        # insert values into array column
+        cur.execute('UPDATE pre.traj_' + degree_lc + ' SET traj_array = ARRAY[nlcd_b_2011,cdl_' + degree_lc + '_2010,cdl_' + degree_lc + '_2011,cdl_' + degree_lc + '_2012,cdl_' + degree_lc + '_2013,cdl_' + degree_lc + '_2014,cdl_' + degree_lc + '_2015,cdl_' + degree_lc + '_2016];');
+        
+        #commit the changes
+        conn.commit()
+        print "Records created successfully";
+
+        #close..........
+        conn.close()
+
+
+    def createTrajMask(degree_lc):
+        arcpy.env.workspace = defineGDBpath(['pre','trajectories'])
+
+        df = pd.read_sql_query("select a.\"Value\",b.mtr from pre.traj_"+degree_lc+" as a JOIN pre.traj_r_lookup as b ON a.traj_array = b.traj_array",con=engine)
+        
+        print df
+        a = df.values
+        print a
+        print type(a)
+
+        l=a.tolist()
+        print type(l)
+        print l
+
+        for raster in arcpy.ListDatasets('*'+degree_lc, "Raster"): 
+            print 'in raster: ', raster
+            output = raster+'_msk'
+            print 'output raster: ', output
+            outReclass = Reclassify(raster, "Value", RemapRange(l), "NODATA")
+            
+            outReclass.save(output)
 
 
 
-def mosaicRasters():
+    def mosaicRasters():
 
-    ##STILL NEED TO DEVLOP
-    arcpy.env.workspace = defineGDBpath(['pre','trajectories'])
+        ##STILL NEED TO DEVLOP
+        arcpy.env.workspace = defineGDBpath(['pre','trajectories'])
 
-    # Execute Con
-    outCon = Con(IsNull('traj_r_msk'), 'traj_b', 'traj_r_msk')
+        # Execute Con
+        outCon = Con(IsNull('traj_r_msk'), 'traj_b', 'traj_r_msk')
 
-    outCon.save("traj")
-
-
-
-
-def reclassifyRaster():
-    # Description: reclass cdl rasters based on the specific arc_reclassify_table 
-
-    # Set environment settings
-    arcpy.env.workspace = defineGDBpath(['ancillary','cdl'])
-
-    for raster in arcpy.ListDatasets('*', "Raster"): 
-        print 'raster:', raster
-
-        outraster = raster.replace("_", "_r_")
-
-        print outraster 
-
-        #define the output
-        output = defineGDBpath(['pre','reclass'])+outraster
-        print 'output: ', output
-
-        return_string=getReclassifyValuesString()
-
-        # Execute Reclassify
-        arcpy.gp.Reclassify_sa(raster, "Value", return_string, output, "NODATA")
-
-
-
-def getReclassifyValuesString():
-    #Note: this is a aux function that the reclassifyRaster() function references
-    cur = conn.cursor()
-
-    #DDL: add column to hold arrays
-    cur.execute('SELECT value::text,test FROM misc.lookup_cdl WHERE test IS NOT NULL ORDER BY value');
+        outCon.save("traj")
     
-    #create empty list
-    reclassifylist=[]
-
-    # fetch all rows from table
-    rows = cur.fetchall()
-    
-    # interate through rows tuple to format the values into an array that is is then appended to the reclassifylist
-    for row in rows:
-        ww = [row[0] + ' ' + row[1]]
-        reclassifylist.append(ww)
-
-    #flatten the nested array and then convert it to a string with a ";" separator to match arcgis format 
-    columnList = ';'.join(sum(reclassifylist, []))
-    print columnList
-    
-    #return list to reclassifyRaster() fct
-    return columnList
+    ######  call functions  #############################
+    reclassifyRaster()
+    createTrajectories("r")
+    addGDBTable2postgres(['pre','trajectories'],'traj_r','pre')
+    PG_DDLandDML('r')
+    createTrajMask('r')
+    mosaicRasters()
 
 
-
-def createTrajectories(wc):
-
+def createKMLfile():
     # Set environment settings
     arcpy.env.workspace = defineGDBpath(['pre','reclass'])
+
+    def rasterToPoly():
+        for raster in arcpy.ListDatasets('*', "Raster"): 
+            print 'raster:', raster
+
+            # Set local variables
+            in_raster = "zone"
+            out_polygon_features = raster + 'blah'
+            simplify = "NO_SIMPLIFY"
+            raster_field = "VALUE"
+
+            # Execute RasterToPolygon
+            arcpy.RasterToPolygon_conversion(in_raster, out_polygon_features, simplify, raster_field)
+
+    def stackMutipleFC():
+        for raster in arcpy.ListDatasets('*', "Raster"): 
+            print 'raster:', raster
+            # Set local variables
+            in_features = arcpy.ListDatasets('cdl_'+wc+'*', "Raster")
+            out_feature_class = "focus_counties"
+            join_attributes = "NO_FID"
+            cluster_tolerance = 0.0003
+            arcpy.Union_analysis (in_features, out_feature_class, join_attributes, cluster_tolerance)
+
+    def clipFCtoCounty():
+        # Use the ListFeatureClasses function to return a list of shapefiles.
+        featureclasses = arcpy.ListFeatureClasses(wild_card='sdsd')
+
+        # Copy shapefiles to a file geodatabase
+        for fc in featureclasses:
+            print fc
+            # Set local variables
+            in_features = "focus_counties"
+            clip_features = fc
+            out_feature_class = "focus_counties"+fc
+            xy_tolerance = ""
+
+            # Execute Clip
+            arcpy.Clip_analysis(in_features, clip_features, out_feature_class, xy_tolerance)
+
+    def featureToKML():
+        # Use the ListFeatureClasses function to return a list of shapefiles.
+        featureclasses = arcpy.ListFeatureClasses(wild_card='sdsd')
+
+        # Copy shapefiles to a file geodatabase
+        for fc in featureclasses:
+            print fc
+            # Set local variables
+            layer = fc
+            out_kmz_file = 'C:/Users/Bougie/Desktop/Gibbs/arcgis/geodatabases/refinement/' + fc
+            arcpy.LayerToKML_conversion (layer, out_kmz_file)
     
-    #get a lsit of all rasters in sepcified database
-    rasterList = arcpy.ListDatasets('cdl_'+wc+'*', "Raster")
-    
-    #sort the rasterlist by accending years
-    rasterList.sort(reverse=False)
-    
-    #prepend nlcd raster name 
-    rasterList.insert(0, 'nlcd_b_2011')
-    print 'rasterList: ',rasterList
-
-    #Execute Combine
-    outCombine = Combine(rasterList)
-    print 'outCombine: ', outCombine
-    
-    output = defineGDBpath(['pre','trajectories'])+'traj_'+wc
-    
-    #Save the output 
-    outCombine.save(output)
-
-
-
-def addGDBTable2postgres(gdb_args,tablename,pg_shema):
-
-
-    # path to the table you want to import into postgres
-    input = defineGDBpath(gdb_args)+tablename
-
-    # Execute AddField twice for two new fields
-    fields = [f.name for f in arcpy.ListFields(input)]
-    
-    # converts a table to NumPy structured array.
-    arr = arcpy.da.TableToNumPyArray(input,fields)
-    print arr
-    
-    # convert numpy array to pandas dataframe
-    df = pd.DataFrame(data=arr)
-
-    print df
-    
-    # use pandas method to import table into psotgres
-    df.to_sql(tablename, engine, schema=pg_shema)
-
-
-
-
-
+    ###### call functions #####################
+    raster2Poly()
+    stackMutipleFC()
+    clipFCtoCounty()
+    featureToKML()
 
 
 ######  call functions  #############################
-reclassifyRaster()
-createTrajectories("r")
-addGDBTable2postgres(['pre','trajectories'],'traj_r','pre')
-PG_DDLandDML('r')
-createTrajMask('r')
-mosaicRasters()
-
-
-
+# falseConversion()
+createKMLfile()
 
 
