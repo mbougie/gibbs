@@ -1,4 +1,4 @@
-Import system modules
+##### Import system modules
 import arcpy
 from arcpy import env
 from arcpy.sa import *
@@ -29,7 +29,7 @@ case=['Bougie','Gibbs']
 #establish root path for this the main project (i.e. usxp)
 rootpath = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/data/usxp/'
 
-import extension
+### import extension
 arcpy.CheckOutExtension("Spatial")
 
 ### establish gdb path  ####
@@ -117,15 +117,16 @@ def getQuanitiativeFocusCounties():
 
 def createKMLfile():
     # Set environment settings
-    arcpy.env.workspace = defineGDBpath(['pre','reclass'])
+    
 
     def rasterToPoly():
-        for raster in arcpy.ListDatasets('*', "Raster"): 
+        arcpy.env.workspace = defineGDBpath(['post','yfc'])
+        for raster in arcpy.ListDatasets('*_fnl', "Raster"): 
             print 'raster:', raster
 
             # Set local variables
-            in_raster = "zone"
-            out_polygon_features = raster + 'blah'
+            in_raster = raster
+            out_polygon_features = defineGDBpath(['refinement','refinement']) + raster + '_shp'
             simplify = "NO_SIMPLIFY"
             raster_field = "VALUE"
 
@@ -133,47 +134,65 @@ def createKMLfile():
             arcpy.RasterToPolygon_conversion(in_raster, out_polygon_features, simplify, raster_field)
 
     def stackMutipleFC():
-        for raster in arcpy.ListDatasets('*', "Raster"): 
-            print 'raster:', raster
-            # Set local variables
-            in_features = arcpy.ListDatasets('cdl_'+wc+'*', "Raster")
-            out_feature_class = "focus_counties"
-            join_attributes = "NO_FID"
-            cluster_tolerance = 0.0003
-            arcpy.Union_analysis (in_features, out_feature_class, join_attributes, cluster_tolerance)
+        arcpy.env.workspace = defineGDBpath(['refinement','refinement'])
+
+        # # Set local variables
+        in_features = arcpy.ListFeatureClasses("*_shp")
+        print in_features
+        out_feature_class = "stacked_features"
+        join_attributes = "NO_FID"
+        cluster_tolerance = 0.0003
+        arcpy.Union_analysis (in_features, out_feature_class, join_attributes, cluster_tolerance)
 
     def clipFCtoCounty():
+        arcpy.env.workspace = defineGDBpath(['refinement','refinement'])
         # Use the ListFeatureClasses function to return a list of shapefiles.
-        featureclasses = arcpy.ListFeatureClasses(wild_card='sdsd')
+        fc = 'focus_counties'
 
-        # Copy shapefiles to a file geodatabase
-        for fc in featureclasses:
-            print fc
+        cursor = arcpy.da.SearchCursor(fc, ['atlas_stco'])
+        for row in cursor:
+            print(row[0])
+            
+            layer = "layer_" + row[0]
+            where_clause = "atlas_stco = '" + row[0] + "'"
+
+     
+
+
             # Set local variables
-            in_features = "focus_counties"
-            clip_features = fc
-            out_feature_class = "focus_counties"+fc
+            in_features = 'stacked_features'
+            clip_features = arcpy.MakeFeatureLayer_management(fc,layer, where_clause)
+            out_feature_class = "stco_"+row[0]
             xy_tolerance = ""
 
             # Execute Clip
             arcpy.Clip_analysis(in_features, clip_features, out_feature_class, xy_tolerance)
 
     def featureToKML():
+        arcpy.env.workspace = defineGDBpath(['refinement','refinement'])
         # Use the ListFeatureClasses function to return a list of shapefiles.
-        featureclasses = arcpy.ListFeatureClasses(wild_card='sdsd')
+        filename = "stco_*"
+        featureclasses = arcpy.ListFeatureClasses(filename)
 
         # Copy shapefiles to a file geodatabase
         for fc in featureclasses:
             print fc
+
+            # create directories to hold kml file and associated images
+            stco_dir = rootpath + 'refinement/yfc/' + fc + '/'
+            if not os.path.exists(stco_dir):
+                os.makedirs(stco_dir)
             # Set local variables
-            layer = fc
-            out_kmz_file =  rootpath + 'refinement/' + fc
-            arcpy.LayerToKML_conversion (layer, out_kmz_file)
+            # Make a layer from the feature class
+            arcpy.MakeFeatureLayer_management(fc,fc)
+
+            out_kmz_file =  stco_dir + fc + '.kmz'
+            arcpy.LayerToKML_conversion (fc, out_kmz_file)
     
     ###### call functions #####################
-    raster2Poly()
-    stackMutipleFC()
-    clipFCtoCounty()
+    # rasterToPoly()
+    # stackMutipleFC()
+    # clipFCtoCounty()
     featureToKML()
 
 def falseConversion():
@@ -348,7 +367,7 @@ def falseConversion():
 ##########################################################
 
 # getQuanitiativeFocusCounties()
-# createKMLfile()
+createKMLfile()
 # falseConversion()
 
 
