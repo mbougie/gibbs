@@ -8,6 +8,7 @@ from sqlalchemy import create_engine
 import pandas as pd
 import numpy as np
 import psycopg2
+import parallel_nibble 
 
 '''
 Description---
@@ -26,11 +27,11 @@ except:
 #Note: need to change this each time on different machine
 case=['Bougie','Gibbs']
 
-#establish root path for this the main project (i.e. usxp)
-rootpath = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/data/usxp/'
-
 ### import extension
 arcpy.CheckOutExtension("Spatial")
+
+#establish root path for this the main project (i.e. usxp)
+rootpath = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/data/usxp/'
 
 ### establish gdb path  ####
 def defineGDBpath(arg_list):
@@ -115,7 +116,7 @@ def getQuanitiativeFocusCounties():
     dropTable(table_list)
     createReferenceTable()
 
-def createKMLfile():
+def createKMLfile_initial():
     # Set environment settings
     
 
@@ -194,6 +195,41 @@ def createKMLfile():
     # stackMutipleFC()
     # clipFCtoCounty()
     featureToKML()
+
+def createKMLfile():
+    # Set environment settings
+    arcpy.env.workspace = defineGDBpath(['refinement','refinement'])
+    
+    def featureToKML(wc):
+        arcpy.env.workspace = defineGDBpath(['refinement','refinement'])
+        # Use the ListFeatureClasses function to return a list of shapefiles.
+        fc = arcpy.FeatureSet("combine_post_yfc_fc")
+        # featureclasses = arcpy.ListFeatureClasses(filename)
+
+        # Copy shapefiles to a file geodatabase
+      
+
+        # # create directories to hold kml file and associated images
+        stco_dir = rootpath + 'refinement/yfc/gridcode_' + wc + '/'
+        if not os.path.exists(stco_dir):
+            os.makedirs(stco_dir)
+        
+        #Set local variables
+        layer = "gridcode_" + wc
+        where_clause = "gridcode = " + wc 
+
+        # # Make a layer from the feature class
+        arcpy.MakeFeatureLayer_management(fc, layer, where_clause)
+
+        out_kmz_file =  stco_dir + 'gridcode_' + wc  + '.kmz'
+        arcpy.LayerToKML_conversion(layer, out_kmz_file)
+    
+    ###### call functions #####################
+    # rasterToPoly()
+    # stackMutipleFC()
+    # clipFCtoCounty()
+    featureToKML('3')
+    
 
 def falseConversion():
 
@@ -367,7 +403,7 @@ def falseConversion():
 ##########################################################
 
 # getQuanitiativeFocusCounties()
-createKMLfile()
+# createKMLfile()
 # falseConversion()
 
-
+parallel_nibble.getRasters()

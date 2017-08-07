@@ -6,34 +6,44 @@ import sys
 import time
 import logging
 from multiprocessing import Process, Queue, Pool, cpu_count, current_process, Manager
-import general as gen
+# import general as gen
 
 arcpy.env.overwriteOutput = True
 arcpy.env.scratchWorkspace = "in_memory" 
 
-working_dir = "C:/Users/Bougie/Desktop/Gibbs/temp_processing/"
+working_dir = "C:/Users/Bougie/Desktop/Gibbs/temp/"
 
 case=['Bougie','Gibbs']
 
 #import extension
 arcpy.CheckOutExtension("Spatial")
 
-def defineGDBpath(arg_list):
-    gdb_path = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/arcgis/geodatabases/'+arg_list[0]+'/'+arg_list[1]+'.gdb/'
-    print 'gdb path: ', gdb_path 
-    return gdb_path 
+#establish root path for this the main project (i.e. usxp)
+rootpath = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/data/usxp/'
 
-ras1_name = 'traj_cdl_b_n8h_mtr'
-ras1 = defineGDBpath(['sensitivity_analysis','mtr'])+ras1_name
-in_raster = arcpy.Raster(ras1)
+### establish gdb path  ####
+def defineGDBpath(arg_list):
+    gdb_path = rootpath + arg_list[0]+'/'+arg_list[1]+'.gdb/'
+    print 'gdb path: ', gdb_path 
+    return gdb_path
+
+
+
+
+
+
+#######  define raster and mask  ####################
+ras_name = 'ytc_years_traj_rfnd_n8h_mtr_8w_msk23_nbl'
+in_raster = arcpy.Raster(defineGDBpath(['post','ytc'])+ras_name)
+# in_raster = arcpy.Raster(ras1)
 
 # in_mask_raster = defineGDBpath(['sensitivity_analysis','mmu'])+'traj_cdl_b_n4h_mtr_8w_msk23'
-ras2 = defineGDBpath(['sensitivity_analysis','mmu'])+ras1_name+'_8w_msk23'
-in_mask_raster = arcpy.Raster(ras2)
-print 'in_mask_raster: ', in_mask_raster
+in_mask_raster = arcpy.Raster(defineGDBpath(['post','ytc'])+ras_name+'_mask')
+# in_mask_raster = arcpy.Raster(ras2)
+# print 'in_mask_raster: ', in_mask_raster
 
 
-out_fishnet = defineGDBpath(['sensitivity_analysis','mmu'])+'fishnet_refined'
+out_fishnet = defineGDBpath(['post','ytc'])+'fishnet_ytc'
 
 
 def create_fishnet(in_raster, out_fishnet):
@@ -53,8 +63,8 @@ def create_fishnet(in_raster, out_fishnet):
 	cellSizeW = "0"
 	cellSizeH = "0"
 
-	numRows = 10
-	numCols = 10
+	numRows = 7
+	numCols = 7
 
 	geotype = "POLYGON"
 
@@ -117,51 +127,57 @@ def execute_task(in_extentDict):
     # print fc_count
 	outname = "tile_" + str(fc_count) +'.tif'
 
-	outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/temp_processing", r"tiles", outname)
+	outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/temp", r"tiles", outname)
 
 	ras_out.save(outpath)
 
 
 
-def mosiacRasters():
-	tilelist = glob.glob("C:/Users/Bougie/Desktop/Gibbs/temp_processing/tiles/*.tif")
-	print tilelist 
-	######mosiac tiles together into a new raster
-	arcpy.MosaicToNewRaster_management(tilelist, defineGDBpath(['sensitivity_analysis','mmu']), 'traj_cdl_b_n8h_mtr_8w_mask23_fnl', in_raster.spatialReference, "8_BIT_UNSIGNED", "30", "1", "LAST","FIRST")
+# def mosiacRasters():
+# 	tilelist = glob.glob("C:/Users/Bougie/Desktop/Gibbs/temp/tiles/*.tif")
+# 	print tilelist 
+# 	######mosiac tiles together into a new raster
+# 	arcpy.MosaicToNewRaster_management(tilelist, defineGDBpath(['sensitivity_analysis','mmu']), 'traj_cdl_b_n8h_mtr_8w_mask23_fnl', in_raster.spatialReference, "8_BIT_UNSIGNED", "30", "1", "LAST","FIRST")
 
-	##Overwrite the existing attribute table file
-	arcpy.BuildRasterAttributeTable_management(defineGDBpath(['sensitivity_analysis','mmu']) + 'traj_cdl_b_n8h_mtr_8w_mask23_fnl', "Overwrite")
+# 	##Overwrite the existing attribute table file
+# 	arcpy.BuildRasterAttributeTable_management(defineGDBpath(['sensitivity_analysis','mmu']) + 'traj_cdl_b_n8h_mtr_8w_mask23_fnl', "Overwrite")
     
-    ## Overwrite pyramids
-    gen.buildPyramids(defineGDBpath(['sensitivity_analysis','mmu']) + 'traj_cdl_b_n8h_mtr_8w_mask23_fnl')
+#     ## Overwrite pyramids
+#     gen.buildPyramids(defineGDBpath(['sensitivity_analysis','mmu']) + 'traj_cdl_b_n8h_mtr_8w_mask23_fnl')
+
+
+
+
+
+
 
 if __name__ == '__main__':
 
-	need to create a unique fishnet for each dataset
+	# need to create a unique fishnet for each dataset
 	create_fishnet(in_raster, out_fishnet)
 
-	get extents of individual features and add it to a dictionary
-	extDict = {}
-	count = 1 
+	# # get extents of individual features and add it to a dictionary
+	# extDict = {}
+	# count = 1 
 
-	for row in arcpy.da.SearchCursor(out_fishnet, ["SHAPE@"]):
-		extent_curr = row[0].extent
-		ls = []
-		ls.append(extent_curr.XMin)
-		ls.append(extent_curr.YMin)
-		ls.append(extent_curr.XMax)
-		ls.append(extent_curr.YMax)
-		extDict[count] = ls
-		count+=1
+	# for row in arcpy.da.SearchCursor(out_fishnet, ["SHAPE@"]):
+	# 	extent_curr = row[0].extent
+	# 	ls = []
+	# 	ls.append(extent_curr.XMin)
+	# 	ls.append(extent_curr.YMin)
+	# 	ls.append(extent_curr.XMax)
+	# 	ls.append(extent_curr.YMax)
+	# 	extDict[count] = ls
+	# 	count+=1
     
-	print extDict
-	print extDict.items()
+	# print extDict
+	# print extDict.items()
 
-	#######create a process and pass dictionary of extent to execute task
-	pool = Pool(processes=cpu_count())
-	pool.map(execute_task, extDict.items())
-	pool.close()
-	pool.join
+	# #######create a process and pass dictionary of extent to execute task
+	# pool = Pool(processes=cpu_count())
+	# pool.map(execute_task, extDict.items())
+	# pool.close()
+	# pool.join
 
-	mosiacRasters()
+	# mosiacRasters()
     

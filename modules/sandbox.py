@@ -29,21 +29,21 @@ arcpy.CheckOutExtension("Spatial")
 
 
 ###################  declare functions  #######################################################
+#establish root path for this the main project (i.e. usxp)
+rootpath = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/data/usxp/'
+
+### establish gdb path  ####
 def defineGDBpath(arg_list):
-    gdb_path = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/arcgis/geodatabases/'+arg_list[0]+'/'+arg_list[1]+'.gdb/'
+    gdb_path = rootpath + arg_list[0]+'/'+arg_list[1]+'.gdb/'
     print 'gdb path: ', gdb_path 
-    return gdb_path 
+    return gdb_path
 
 
-
-
-
-
-# gen.addGDBTable2postgres(['refinement','refinement'],'*','refinement')
+gen.addGDBTable2postgres(['refinement','refinement'],'stacked_features_table','refinement')
 
 # gen.getPGColumnsList("'refinement'", "'counties_yfc_bfnc'", " , ")
 
 
-gen.transposeTable(['refinement','refinement'],'counties_yfc_years')
+# gen.transposeTable(['refinement','refinement'],'counties_yfc_years')
 
 
