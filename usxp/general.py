@@ -11,7 +11,6 @@ import glob
 
 
 
-
 try:
     conn = psycopg2.connect("dbname='usxp' user='mbougie' host='144.92.235.105' password='Mend0ta!'")
 except:
@@ -44,6 +43,7 @@ def establishConn(db):
     except:
         print "I am unable to connect to the database"
 
+
 #establish root path for this the main project (i.e. usxp)
 rootpath = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/data/usxp/'
 
@@ -59,6 +59,7 @@ def defineGDBpath(arg_list):
 
 
 
+
 def importCSVtoPG():
 
     df = pd.read_excel('C:/Users/Bougie/Desktop/mutlu/trakya/hist_aea.xlsx')
@@ -67,10 +68,7 @@ def importCSVtoPG():
     from sqlalchemy import create_engine
     engine = create_engine('postgresql://postgres:postgres@localhost:5432/trakya')
 
-    df.to_sql("iowa", engine, schema='attributes')
-
-
-
+    df.to_sql("iowa", engine, schema='attribute')
 
 
 
@@ -139,6 +137,38 @@ def addGDBTable2postgres(gdb_args,wc,pg_shema):
         
         # use pandas method to import table into psotgres
         df.to_sql(table, engine, schema=pg_shema)
+
+
+
+
+
+def tableTotable():
+    # Import system modules
+    import arcpy
+    from arcpy import env
+     
+    # Set environment settings
+    env.workspace = "C:/data"
+     
+    # Set local variables
+    inTable = "vegtable.dbf"
+    outLocation = "C:/output/output.gdb"
+    outTable = "estuarine"
+
+    # Set the expression, with help from the AddFieldDelimiters function to select the appropriate field delimiters for the data type
+    expression = arcpy.AddFieldDelimiters(env.workspace, "VEG_TYPE") + " = 'Estuarine'"
+     
+    # Execute TableToTable
+    arcpy.TableToTable_conversion(inTable, outLocation, outTable, expression)
+
+
+
+
+
+
+
+
+
 
 
 

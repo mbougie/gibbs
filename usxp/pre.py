@@ -26,28 +26,81 @@ except:
 case=['Bougie','Gibbs']
 
 
+###################  Define the environment  #######################################################
+#establish root path for this the main project (i.e. usxp)
+rootpath = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/data/usxp/'
 
-
+### establish gdb path  ####
 def defineGDBpath(arg_list):
-    gdb_path = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/arcgis/geodatabases/'+arg_list[0]+'/'+arg_list[1]+'.gdb/'
+    gdb_path = rootpath + arg_list[0]+'/'+arg_list[1]+'.gdb/'
     print 'gdb path: ', gdb_path 
-    return gdb_path 
+    return gdb_path
+
+
+#################### class to create yxc object  ####################################################
+class ConversionObject:
+
+    def __init__(self, name, subtype, conversionyears):
+        self.name = name
+        self.subtype = subtype
+        self.conversionyears = range(conversionyears[0], conversionyears[1] + 1)
+        # self.mmu_gdb=defineGDBpath(['core','mmu'])
+        # self.mmu='traj_cdl_b_n8h_mtr_8w_msk23_nbl'
+        # self.mmu_Raster=Raster(self.mmu_gdb + self.mmu)
+        
+
+        # if self.name == 'ytc':
+        #     self.mtr = '3'
+        # elif self.name == 'yfc':
+        #     self.mtr = '4'
+    
+    #function for to get correct cdl for the attachCDL() function
+    def getAssociatedCDL(self, year):
+        if self.subtype == 'bfc' or  self.subtype == 'bfnc':
+            # subtract 1 from every year in list
+            cdl_file = defineGDBpath(['ancillary','cdl'])+'cdl_'+ str(year - 1)
+            return cdl_file
+
+        elif self.subtype == 'fc' or  self.subtype == 'fnc':
+            # subtract 1 from every year in list
+            cdl_file = defineGDBpath(['ancillary','cdl'])+'cdl_'+ str(year)
+            return cdl_file
+
+    def createCompareList(self):
+        cdl_binaries = []
+        for n in self.conversionyears:
+            cdl_binaries.append('cdl_b_'+str(n))
+        print cdl_binaries
+        return cdl_binaries
+        #     print n 
+
+        # # set(a) & set(b)
+
+        # if any(str(range(2008,2015)) in s for s in rasterList):
+        #    print 'hi'
+        # #sort the rasterlist by accending years
+        # rasterList.sort(reverse=False)
+
+        
 
 
 
-def reclassifyRaster(gdb_args_in, wc, reclass_degree, gdb_args_out):
+
+def reclassifyRaster(gdb_args_in, res, wc, reclass_degree, gdb_args_out):
     # Description: reclass cdl rasters based on the specific arc_reclassify_table 
 
     # Set environment settings
     arcpy.env.workspace = defineGDBpath(gdb_args_in)
-
+    
+    cond = gdb_args_in[1] + res + wc
+    print cond
     #loop through each of the cdl rasters
-    for raster in arcpy.ListDatasets('*'+wc+'*', "Raster"): 
+    for raster in arcpy.ListDatasets(cond, "Raster"): 
         
         print 'raster: ',raster
 
         # outraster = raster.replace("_", "_"+reclasstable+"_")
-        outraster = wc + '_' + reclass_degree + raster[-5:]
+        outraster = gdb_args_in[1] + res + '_' + reclass_degree + raster[-5:]
         print 'outraster: ', outraster
        
         #get the arc_reclassify table
@@ -58,19 +111,22 @@ def reclassifyRaster(gdb_args_in, wc, reclass_degree, gdb_args_out):
         output = defineGDBpath(gdb_args_out)+outraster
         print 'output: ', output
 
-        return_string=getReclassifyValuesString(wc, reclass_degree)
+        return_string=getReclassifyValuesString(gdb_args_in[1], reclass_degree)
 
         # Execute Reclassify
         arcpy.gp.Reclassify_sa(raster, "Value", return_string, output, "NODATA")
 
+        #create pyraminds
+        gen.buildPyramids(output)
 
 
-def getReclassifyValuesString(wc, reclass_degree):
+
+def getReclassifyValuesString(ds, reclass_degree):
     #Note: this is a aux function that the reclassifyRaster() function references
     cur = conn.cursor()
 
     #DDL: add column to hold arrays
-    cur.execute('SELECT value::text,'+reclass_degree+' FROM misc.lookup_'+wc+' WHERE '+reclass_degree+' IS NOT NULL ORDER BY value');
+    cur.execute('SELECT value::text,'+reclass_degree+' FROM misc.lookup_'+ds+' WHERE '+reclass_degree+' IS NOT NULL ORDER BY value');
     
     #create empty list
     reclassifylist=[]
@@ -92,7 +148,7 @@ def getReclassifyValuesString(wc, reclass_degree):
 
 
 
-def createTrajectories(gdb_args_in,wc,gdb_args_out):
+def createTrajectories(gdb_args_in,wc,gdb_args_out,outname):
     # Description: "Combines multiple rasters so that a unique output value is assigned to each unique combination of input values" -arcGIS def
     #the rasters where combined in chronoloigal order with the recalssifed nlcd raster being in the inital spot.
 
@@ -100,44 +156,40 @@ def createTrajectories(gdb_args_in,wc,gdb_args_out):
     arcpy.env.workspace = defineGDBpath(gdb_args_in)
     
     #get a lsit of all rasters in sepcified database
-    rasterList = arcpy.ListDatasets('*'+wc+'*', "Raster")
-    
-    #sort the rasterlist by accending years
-    rasterList.sort(reverse=False)
+    rasterlist = arcpy.ListRasters('*'+wc+'*')
+    print rasterlist
+    rasterlist.sort(reverse=False)
+    print rasterlist
     
 
-    ##Check to see if NLCD is in the rasterlist and use pop() if it is
-    if 'nlcd_b_2011' in rasterList:
-        #for the binary trajectories, moves the last element in the list (i.e. nlcd_b_2011) to the first element position in the list.
-        rasterList.insert(0, rasterList.pop())
-    
-    print 'rasterList: ',rasterList
-
+    ####NOTE GENERIC!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    # rasterlist = ['cdl30_b_2008', 'cdl30_b_2009', 'cdl30_b_2010', 'cdl30_b_2011', 'cdl30_b_2012']
+    print rasterlist
     # Execute Combine
-    outCombine = Combine(rasterList)
+    outCombine = Combine(rasterlist)
     print 'outCombine: ', outCombine
     
-    output = defineGDBpath(gdb_args_out)+'traj_boug'+wc
-    
+    output = defineGDBpath(gdb_args_out)+outname
+    print 'output', output
     # #Save the output 
     outCombine.save(output)
 
     #create pyraminds
-    # gen.buildPyramids(output)
+    gen.buildPyramids(output)
 
 
 
-def addGDBTable2postgres(gdb_args,wc,pg_shema):
+def addGDBTable2postgres(gdb_args,tablename,pg_shema):
     # set the engine.....
     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
     
-    tablename = 'traj_'+wc
+    # tablename = 'traj_'+wc
     # path to the table you want to import into postgres
     input = defineGDBpath(gdb_args)+tablename
 
     # Execute AddField twice for two new fields
     fields = [f.name for f in arcpy.ListFields(input)]
-    
+   
     # converts a table to NumPy structured array.
     arr = arcpy.da.TableToNumPyArray(input,fields)
     print arr
@@ -151,36 +203,24 @@ def addGDBTable2postgres(gdb_args,wc,pg_shema):
     df.to_sql(tablename, engine, schema=pg_shema)
     
     #add trajectory field to table
-    addTrajArrayField(wc)
+    addTrajArrayField(tablename, fields)
 
 
 
-def addTrajArrayField(wc):
+def addTrajArrayField(tablename, fields):
     #this is a sub function for addGDBTable2postgres()
     
     cur = conn.cursor()
     
-    arcpy.env.workspace = defineGDBpath(['pre','reclass'])
-    
-    #store the rasternames on defined gdb into array
-    rasterList = arcpy.ListDatasets('*'+wc+'*', "Raster")
-
-    rasterList.sort(reverse=False)
-    
-    ##Check to see if NLCD is in the rasterlist and use pop() if it is
-    if 'nlcd_b_2011' in rasterList:
-        #for the binary trajectories, moves the last element in the list (i.e. nlcd_b_2011) to the first element position in the list.
-        rasterList.insert(0, rasterList.pop())
-    
     #convert the rasterList into a string
-    columnList = ','.join(rasterList)
+    columnList = ','.join(fields[3:])
     print columnList
 
     #DDL: add column to hold arrays
-    cur.execute('ALTER TABLE pre.traj_' + wc + ' ADD COLUMN traj_array integer[];');
+    cur.execute('ALTER TABLE pre.' + tablename + ' ADD COLUMN traj_array integer[];');
     
     #DML: insert values into new array column
-    cur.execute('UPDATE pre.traj_' + wc + ' SET traj_array = ARRAY['+columnList+'];');
+    cur.execute('UPDATE pre.' + tablename + ' SET traj_array = ARRAY['+columnList+'];');
     
     conn.commit()
     print "Records created successfully";
@@ -189,21 +229,24 @@ def addTrajArrayField(wc):
 
 
 
-
+yxc = ConversionObject(
+  'ytc',
+  'bfc', 
+  [2008,2012]
+  )
 
 
 
 ######  call functions  #############################
 ##-----reclassifyRaster()------------------
-reclassifyRaster(['ancillary','cdl'], "cdl", "b", ['pre','binaries'])
-reclassifyRaster(['ancillary','misc'], "nlcd", "b", ['pre','binaries'])
+# reclassifyRaster(['ancillary','nlcd'], "30", "*", "b", ['pre','binaries'])
 
-##-----createTrajectories()-----------------------------------------------
-createTrajectories(['pre','binaries'], "cdl_b", ['pre','traj2'])
+# ##-----createTrajectories()-----------------------------------------------
+createTrajectories(['pre','binaries'], "nlcd30", ['refinement','refinement_current'], 'traj_nlcd30_b_0106')
 
 
-##-----addGDBTable2postgres()
-addGDBTable2postgres(['pre','trajectories'],'cdl_b','pre')
+# # ##-----addGDBTable2postgres()
+# addGDBTable2postgres(['pre','trajectories'],'traj_cdl30_b_8to12','pre')
 
 
 

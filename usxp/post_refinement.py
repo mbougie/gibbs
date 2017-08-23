@@ -36,13 +36,14 @@ def defineGDBpath(arg_list):
 #################### class to create yxc object  ####################################################
 class ConversionObject:
 
-    def __init__(self, name, subtype, conversionyears):
-        self.name = name
+    def __init__(self, gdb_args_in, subtype, mmu_dataset, res, conversionyears):
+        self.name = 'ytc'
         self.subtype = subtype
         self.conversionyears = range(conversionyears[0], conversionyears[1] + 1)
-        self.mmu_gdb=defineGDBpath(['core','mmu'])
-        # self.mmu='traj_cdl_b_n8h_mtr_8w_msk23_nbl'
-        # self.mmu_Raster=Raster(self.mmu_gdb + self.mmu)
+        self.res = res
+        print self.conversionyears
+        self.mmu_gdb=defineGDBpath(gdb_args_in)
+        self.mmu_Raster=Raster(self.mmu_gdb + mmu_dataset)
         
 
         if self.name == 'ytc':
@@ -54,12 +55,12 @@ class ConversionObject:
     def getAssociatedCDL(self, year):
         if self.subtype == 'bfc' or  self.subtype == 'bfnc':
             # subtract 1 from every year in list
-            cdl_file = defineGDBpath(['ancillary','cdl'])+'cdl_'+ str(year - 1)
+            cdl_file = defineGDBpath(['ancillary','cdl'])+'cdl'+ self.res + '_' + str(year - 1)
             return cdl_file
 
         elif self.subtype == 'fc' or  self.subtype == 'fnc':
             # subtract 1 from every year in list
-            cdl_file = defineGDBpath(['ancillary','cdl'])+'cdl_'+ str(year)
+            cdl_file = defineGDBpath(['ancillary','cdl'])+'cdl'+ self.res + '_' + str(year)
             return cdl_file
 
         
@@ -92,12 +93,12 @@ def createYearbinaries(gdb_args_in):
     arcpy.env.workspace=defineGDBpath(gdb_args_in)
     
     #copy trajectory raster so it can be modified iteritively
-    # traj_years = yxc.name+"_years"
+    traj_years = 'ytc_years8to12'
     # arcpy.CopyRaster_management(defineGDBpath(['pre', 'trajectories']) + 'traj_cdl_b', traj_years)
     
     #Connect to postgres database to get values from traj dataset 
     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
-    df = pd.read_sql_query('select * from pre.traj_cdl_b as a JOIN pre.traj_cdl_b_lookup as b ON a.traj_array = b.traj_array WHERE b.'+yxc.name+' IS NOT NULL',con=engine)
+    df = pd.read_sql_query('select * from pre.traj_cdl30_b_8to12 as a JOIN pre.traj_cdl30_b_8to12_lookup as b ON a.traj_array = b.traj_array WHERE b.'+yxc.name+' IS NOT NULL',con=engine)
     print 'df--',df
     
     # loop through rows in the dataframe
@@ -155,15 +156,16 @@ def removeArbitraryValues(gdb_args_in):
 
     #define gdb workspace
     arcpy.env.workspace=defineGDBpath(gdb_args_in)
+
+    # allow raster to be overwritten
+    # arcpy.env.overwriteOutput = True
+    # print "overwrite on? ", arcpy.env.overwriteOutput
     
     #get raster from geodatabse
-    raster_input = yxc.name + '_years_' + yxc.mmu
+    raster_input = 'ytc30_years8to12'
+    raster_output = 'ytc30_years8to12_clean'
 
-    #create output file 
-    raster_output = raster_input+'_msk'
-    print 'output: ', raster_output
-
-    cond = "Value < " + str(yxc.conversionyears[0])
+    cond = "Value < 2009" 
     print 'cond: ', cond
         
     # set mmu raster to null where value is less 2013 (i.e. get rid of attribute values)
@@ -217,17 +219,18 @@ def attachCDL(gdb_args_in):
 
 ################ Instantiate the class to create yxc object  ########################
 yxc = ConversionObject(
-      'ytc',
+      ['refinement','refinement_current'],
       'bfc',
-      ## these are the conversion years 
-      [2008,2012]
+      'traj_cdl30_b_8to12_mtr',
+      '30',
+      ## conversion years!!---NOT the range of years in the analysis! 
+      [2009,2012]
       )
 
 ################ call functions  #####################################################
-createYearbinaries(['refinement',yxc.name])
-# clipByMMUmask(['post',yxc.name])
-# removeArbitraryValues(['post',yxc.name])
-# attachCDL(['post',yxc.name])
+# createYearbinaries(['refinement','refinement_current'])
+# removeArbitraryValues(['refinement','refinement_current'])
+attachCDL(['refinement','refinement_current'])
 
 
 
@@ -236,6 +239,7 @@ createYearbinaries(['refinement',yxc.name])
 ## 1 test snap 
 ## 2 test import stats from other image??
 ## 3 try other creating stats from multiple methods
+
 
 
 

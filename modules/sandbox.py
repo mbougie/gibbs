@@ -14,11 +14,7 @@ import psycopg2
 import general as gen
 
 '''######## DEFINE THESE EACH TIME ##########'''
-#NOTE: need to declare if want to process ytc or yfc
-yxc = 'yfc'
 
-#the associated mtr value qwith the yxc
-yxc_mtr = {'ytc':'3', 'yfc':'4'}
 
 #Note: need to change this each time on different machine
 case=['Bougie','Gibbs']
@@ -30,6 +26,7 @@ arcpy.CheckOutExtension("Spatial")
 
 ###################  declare functions  #######################################################
 #establish root path for this the main project (i.e. usxp)
+#establish root path for this the main project (i.e. usxp)
 rootpath = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/data/usxp/'
 
 ### establish gdb path  ####
@@ -39,7 +36,7 @@ def defineGDBpath(arg_list):
     return gdb_path
 
 
-gen.addGDBTable2postgres(['refinement','refinement'],'stacked_features_table','refinement')
+gen.importCSVtoPG()
 
 # gen.getPGColumnsList("'refinement'", "'counties_yfc_bfnc'", " , ")
 

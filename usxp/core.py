@@ -13,18 +13,27 @@ from arcpy import env
 from arcpy.sa import *
 import glob
 import psycopg2
+import general as gen
 
 
+
+'''######## DEFINE THESE EACH TIME ##########'''
+#Note: need to change this each time on different machine
+case=['Bougie','Gibbs']
+
+#import extension
 arcpy.CheckOutExtension("Spatial")
-case=['bougie','gibbs']
+arcpy.env.parallelProcessingFactor = "95%"
 
+###################  Define the environment  #######################################################
+#establish root path for this the main project (i.e. usxp)
+rootpath = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/data/usxp/'
 
-###################  declare functions  #######################################################
+### establish gdb path  ####
 def defineGDBpath(arg_list):
-    gdb_path = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/arcgis/geodatabases/'+arg_list[0]+'/'+arg_list[1]+'.gdb/'
+    gdb_path = rootpath + arg_list[0]+'/'+arg_list[1]+'.gdb/'
     print 'gdb path: ', gdb_path 
-    return gdb_path  
-
+    return gdb_path
 
 
 
@@ -46,31 +55,32 @@ def addColorMap(inraster,template):
 
 
 
-def createMTR(gdb_args_in, gdb_args_out):
+def createMTR(gdb_args_in, traj_dataset, gdb_args_out):
     ## replace the arbitrary values in the trajectories dataset with the mtr values 1-5.
     arcpy.env.workspace = defineGDBpath(gdb_args_in)
-    for raster in arcpy.ListDatasets('*', "Raster"): 
+    for raster in arcpy.ListDatasets(traj_dataset+'*', "Raster"): 
         print 'raster:', raster
         raster_out = raster+'_mtr'
         output = defineGDBpath(gdb_args_out)+raster_out
         print 'output:', output
 
-        reclassArray = createReclassifyList() 
+        reclassArray = createReclassifyList(traj_dataset) 
 
         outReclass = Reclassify(raster, "Value", RemapRange(reclassArray), "NODATA")
         
         outReclass.save(output)
 
+        gen.buildPyramids(output)
 
 
-def createReclassifyList():
+
+def createReclassifyList(traj_dataset):
     #this is a sub function for createMTR().  references the mtr value in psotgres to create a list containing arbitray trajectory value and associated new mtr value
 
     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
-    df = pd.read_sql_query('SELECT "Value", mtr from pre.traj_cdl_b',con=engine)
+    df = pd.read_sql_query('SELECT "Value", mtr from pre.' + traj_dataset + ' as a JOIN pre.' + traj_dataset + '_lookup as b ON a.traj_array = b.traj_array',con=engine)
     print df
     fulllist=[[0,0,"NODATA"]]
-    # fulllist=[]
     for index, row in df.iterrows():
         templist=[]
         value=row['Value'] 
@@ -104,7 +114,7 @@ def majorityFilter(gdb_args_in, dataset, gdb_args_out):
             #save processed raster to new file
             outMajFilt.save(output)
 
-            # gen.buildPyramids(outp
+            gen.buildPyramids(output)
 
 
 
@@ -152,20 +162,19 @@ def focalStats(index,dir_in,dir_out):
 
 ####################  mmu functions  ##########################################
 
-def regionGroup(arg_list):
+def regionGroup(gdb_args_in, wc):
     #define workspace
-    arcpy.env.workspace=defineGDBpath(arg_list)
+    arcpy.env.workspace=defineGDBpath(gdb_args_in)
 
-    # filter_combos = {'4w':["FOUR", "WITHIN"],'4c':["FOUR", "CROSS"],'8w':["EIGHT", "WITHIN"],'8c':["EIGHT", "CROSS"]}
     filter_combos = {'8w':["EIGHT", "WITHIN"]}
     for k, v in filter_combos.iteritems():
         print k,v
-        for raster in arcpy.ListDatasets("*", "Raster"): 
+        for raster in arcpy.ListDatasets("*"+wc+"*", "Raster"): 
             print 'raster: ', raster
     
             raster_out=raster+'_'+k
             print 'raster_out', raster_out
-            output=defineGDBpath(['core','mmu'])+raster_out
+            output=defineGDBpath([gdb_args_in[0],'mmu'])+raster_out
             
             print 'output: ',output
             # Execute RegionGroup
@@ -175,17 +184,19 @@ def regionGroup(arg_list):
             print 'save the output'
             outRegionGrp.save(output)
 
+            gen.buildPyramids(output)
 
 
 
 
 
-def clipByMMUmask(masks_list,arg_list):
+
+def clipByMMUmask(gdb_args_in, wc, masks_list):
     #define workspace
-    arcpy.env.workspace=defineGDBpath(arg_list)
+    arcpy.env.workspace=defineGDBpath(gdb_args_in)
 
 
-    for raster in arcpy.ListDatasets('*8w', "Raster"): 
+    for raster in arcpy.ListDatasets('*'+wc+'*8w', "Raster"): 
 
         print 'raster: ', raster
         '''
@@ -248,15 +259,20 @@ def nibble(maskSize,arg_list1,arg_list2,filename):
 
 #############################  Call Functions ######################################
 ##------filter gdb--------------
-# majorityFilter(['pre','trajectories'],"traj_cdl_b", ['sensitivity_analysis','filter'])
+# majorityFilter(['pre','trajectories'],"traj_cdl30_b_8to12", ['core_8to12','filter'])
 
 ##------mtr gdb-----------------
-# createMTR(['sensitivity_analysis','filter'], ['sensitivity_analysis','mtr'])
+# createMTR(['core_8to12','filter'], "traj_cdl30_b_8to12", ['core_8to12','mtr'])
 
-#------mmu gdb-----------------
-# regionGroup(['sensitivity_analysis','mtr'])
-# clipByMMUmask(['23'],['core','mmu'])
+##------mmu gdb-----------------
+# regionGroup(['core_8to12','mtr'], "cdl30")
+# clipByMMUmask(['core_8to12','mmu'], 'cdl30', ['23'])
 # nibble('23',['core','mmu'],['core','mtr'],'traj_rfnd_n8h_mtr')
 
 
 
+
+
+###################  refinement  ##########################################
+
+createMTR(['pre','trajectories'],"traj_cdl30_b_8to12", ['refinement','refinement_current'])
