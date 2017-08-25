@@ -650,7 +650,7 @@ def buildPyramids(inras):
 
     pyramid_level = "-1"
     skipfirst = "NONE"
-    resample_technique = "NEAREST"
+    resample_technique = "BILINEAR"
     compression_type = "JPEG"
     compression_quality = "100"
     skipexist = "OVERWRITE"

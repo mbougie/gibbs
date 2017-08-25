@@ -1,35 +1,36 @@
-##### Import system modules
+from sqlalchemy import create_engine
+import numpy as np, sys, os
+# from osgeo import gdal
+# from osgeo.gdalconst import *
+import pandas as pd
+import collections
+from collections import namedtuple
+# import openpyxl
 import arcpy
 from arcpy import env
 from arcpy.sa import *
 import glob
-import os
-from sqlalchemy import create_engine
-import pandas as pd
-import numpy as np
 import psycopg2
-import parallel_nibble 
+import general as gen 
 
-'''
-Description---
-This script is meant to refine the intial trajectory by removing false change from each landcover defined.
-'''
 
-# set the engine for psndas
-engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
+'''######## DEFINE THESE EACH TIME ##########'''
+#Note: need to change this each time on different machine
+case=['Bougie','Gibbs']
 
-# set con for psycopg2
+#import extension
+arcpy.CheckOutExtension("Spatial")
+arcpy.env.parallelProcessingFactor = "95%"
+
+
 try:
     conn = psycopg2.connect("dbname='usxp' user='mbougie' host='144.92.235.105' password='Mend0ta!'")
 except:
     print "I am unable to connect to the database"
 
-#Note: need to change this each time on different machine
-case=['Bougie','Gibbs']
 
-### import extension
-arcpy.CheckOutExtension("Spatial")
 
+###################  Define the environment  #######################################################
 #establish root path for this the main project (i.e. usxp)
 rootpath = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/data/usxp/'
 
@@ -40,356 +41,338 @@ def defineGDBpath(arg_list):
     return gdb_path
 
 
-def getQuanitiativeFocusCounties():
+#################### class to create yxc object  ####################################################
+class ConversionObject:
 
-    def createEmptyTable(table_list):
-        for table in table_list:
-            cur = conn.cursor()
-            query="CREATE TABLE refinement.counties_yfc_"+table+"_temp(stco text, lc text, acres numeric)"
-            print query
-            cur.execute(query)
-            conn.commit()
+    def __init__(self, name, res, years):
+        self.name = name
+        # self.subtype = subtype
+        self.res = res
+        self.datarange = str(years[0])+'to'+str(years[1])
+        print self.datarange
+        self.gdb = 'refinement_' + self.datarange
+        self.conversionyears = range(years[0]+1, years[1] + 1)
+        print self.conversionyears
+        # self.mmu_Raster=Raster(defineGDBpath([gdb,'mtr']) + 'traj_cdl'+res+'_b_8to12_mtr')
+        
 
-
-    def transposeTable(gdb_path, wc):
-
-        arcpy.env.workspace = defineGDBpath(gdb_path)
-
-        for table in arcpy.ListTables(wc): 
-            print 'table: ', table
-            fields = arcpy.ListFields(table)
+        if self.name == 'ytc':
+            self.mtr = '3'
+            # self.subtypelist = ['fc','bfc']
+            self.subtypelist = ['bfc']
+            self.traj_nlcd = str(24 * 10000)
+            self.traj_change = str(1 * 10000)
             
-            for field in fields:
-                #constrant column names by excluding the below fields from the processing
-                if field.name == 'OBJECTID' or field.name == 'ATLAS_STCO':
-                    print field.name
-                else:
-                    # loop through each row and get the value for specified columns
-                    rows = arcpy.SearchCursor(table)
-                    for row in rows:
-                        lc = row.getValue(field.name)
-                        stco = row.getValue('ATLAS_STCO')
-                        print 'table: ', table
-                        print 'stco: ', stco
-                        print 'field.name: ', field.name
-                        print 'lc: ', lc
-                        
-                        cur = conn.cursor()
-                        query="INSERT INTO refinement."+wc+"_temp VALUES ('" + str(stco) + "' , '" + str(field.name) + "' , " + str(lc) + ")"
-                        print query
-                        cur.execute(query)
-                        conn.commit()
+
+        elif self.name == 'yfc':
+            self.mtr = '4'
+            self.subtypelist = ['fnc','bfnc']
+            self.reclass = '24'
+
+
+        # for subtype in self.subtypelist:
+        #     print subtype
+        #     self.subtype = subtype
+
+        #     #call function for each subtype in list
+        #     # print self.subtype
+            
     
 
-    def createTableAS(table_list):
-        for table in table_list:
-            cur = conn.cursor()
-            query="create table refinement.counties_yfc_"+table+" as SELECT a.*, round(a.acres/b.total_acres * 100,2) as percent FROM refinement.counties_yfc_"+table+"_temp as a, (SELECT stco, sum(acres) total_acres FROM refinement.counties_yfc_"+table+"_temp group by stco) as b where a.stco = b.stco and acres <> 0 order by stco, percent desc"
-            print query
-            cur.execute(query)
-            conn.commit()
+
+        
 
 
-    def dropTable(table_list):
-        for table in table_list:
-            cur = conn.cursor()
-            query="DROP TABLE refinement.counties_yfc_"+table+"_temp"
-            print query
-            cur.execute(query)
-            conn.commit()
 
 
-    def createReferenceTable():
-        cur = conn.cursor()
-        query="CREATE TABLE refinement.focus_counties_yfc2 as SELECT counties_yfc_bfnc.stco, counties_yfc_bfnc.lc as crop, counties_yfc_bfnc.max_bfnc_percent, counties_yfc_fnc.lc as noncrop, counties_yfc_fnc.max_fnc_percent, counties_yfc_years.lc year_to_nc, counties_yfc_years.max_years_percent FROM ( select a.*, b.max_bfnc_percent from refinement.counties_yfc_bfnc as a,  (SELECT stco, max(percent) as max_bfnc_percent FROM refinement.counties_yfc_bfnc group by stco) as b where a.stco = b.stco and a.percent = b.max_bfnc_percent) as counties_yfc_bfnc,( select a.*, b.max_fnc_percent from refinement.counties_yfc_fnc as a,  (SELECT stco, max(percent) as max_fnc_percent FROM refinement.counties_yfc_fnc group by stco) as b where a.stco = b.stco and a.percent = b.max_fnc_percent) as counties_yfc_fnc,( select a.*, b.max_years_percent from refinement.counties_yfc_years as a,(SELECT stco, max(percent) as max_years_percent FROM refinement.counties_yfc_years group by stco) as b where a.stco = b.stco and a.percent = b.max_years_percent) as counties_yfc_years WHERE counties_yfc_bfnc.stco = counties_yfc_fnc.stco AND counties_yfc_fnc.stco = counties_yfc_years.stco order by counties_yfc_bfnc.max_bfnc_percent"
-        print query
-        cur.execute(query)
-        conn.commit()
+
+
+
+
+def addColorMap(inraster,template):
+    ##Add Colormap
+    ##Usage: AddColormap_management in_raster {in_template_raster} {input_CLR_file}
+
+    try:
+        import arcpy
+        # arcpy.env.workspace = r'C:/Users/Bougie/Documents/ArcGIS/Default.gdb'
+        
+        ##Assign colormap using template image
+        arcpy.AddColormap_management(inraster, "#", template)
+        
+
+    except:
+        print "Add Colormap example failed."
+        print arcpy.GetMessages()
+
+
+def createYearbinaries():
+    #DESCRIPTION:subset the trajectoires by year to create binary ytc or ytc raster by year that represent the conversion to/from crop between succesive years
+    arcpy.env.workspace=defineGDBpath([yxc.gdb,yxc.name])
     
+    #copy trajectory raster so it can be modified iteritively
+    output = yxc.name+yxc.res+'_'+yxc.datarange
+    print 'output: ', output
+    # arcpy.CopyRaster_management(defineGDBpath(['pre', 'trajectories']) + 'traj_cdl_b', traj_years)
+    
+    #Connect to postgres database to get values from traj dataset 
+    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
+    df = pd.read_sql_query('select * from pre.traj_cdl'+yxc.res+'_b_'+yxc.datarange+' as a JOIN pre.traj_cdl'+yxc.res+'_b_'+yxc.datarange+'_lookup as b ON a.traj_array = b.traj_array WHERE b.'+yxc.name+' IS NOT NULL',con=engine)
+    print 'df--',df
+    
+    # loop through rows in the dataframe
+    for index, row in df.iterrows():
+        #get the arbitrary value assigned to the specific trajectory
+        value=str(row['Value'])
+        print 'value: ', value
+
+        #cy is acronym for conversion year
+        cy = str(row[yxc.name])
+        print 'cy:', cy
+        
+        # allow raster to be overwritten
+        arcpy.env.overwriteOutput = True
+        print "overwrite on? ", arcpy.env.overwriteOutput
+    
+        #establish the condition
+        cond = "Value = " + value
+        print 'cond: ', cond
+        
+        # set everthing not equal to the unique trajectory value to null label this abitray value equal to conversion year
+        OutRas = Con(output, cy, output, cond)
+   
+        OutRas.save(output)
+
+    #build pyramids t the end
+    gen.buildPyramids(output)
+
+
+
+
+def removeArbitraryValuesFromYearbinaries():
+    #DESCRIPTION: remove the arbitrary values from the 'yfc_years_'+mmu dataset
+
+    #define gdb workspace
+    arcpy.env.workspace=defineGDBpath([yxc.gdb,yxc.name])
+
+    # allow raster to be overwritten
+    # arcpy.env.overwriteOutput = True
+    # print "overwrite on? ", arcpy.env.overwriteOutput
+    
+    #get raster from geodatabse
+    raster_input = yxc.name+yxc.res+'_'+yxc.datarange
+    output = yxc.name+yxc.res+'_'+yxc.datarange+'_clean'
+
+    ##only keep year values in map
+    cond = "Value < 2009" 
+    print 'cond: ', cond
+        
+    # set mmu raster to null where value is less 2013 (i.e. get rid of attribute values)
+    outSetNull = SetNull(raster_input, raster_input,  cond)
+    
+    #Save the output 
+    outSetNull.save(output)
+
+    #build pyramids t the end
+    gen.buildPyramids(output)
+
+
+
+def attachCDL(subtype):
+    # DESCRIPTION:attach the appropriate cdl value to each year binary dataset
+
+    # NOTE: Need to copy the yxc_clean dataset and rename it with subtype after it
+    arcpy.env.workspace=defineGDBpath([yxc.gdb,yxc.name])
+ 
+    wc = '*'+subtype
+    print wc
+
+    for raster in arcpy.ListDatasets(wc, "Raster"): 
       
-    ###### call functions #####################
-    table_list = ['bfnc','fnc','years']
+        for year in  yxc.conversionyears:
+            print 'raster: ', raster
+            print 'year: ', year
 
-    createEmptyTable(table_list)
-    gen.transposeTable(['refinement','refinement'],'counties_yfc_years')
-    CreateTableAS(table_list)
-    dropTable(table_list)
-    createReferenceTable()
+            # allow raster to be overwritten
+            arcpy.env.overwriteOutput = True
+            print "overwrite on? ", arcpy.env.overwriteOutput
+        
+            #establish the condition
+            cond = "Value = " + str(year)
+            print 'cond: ', cond
 
-def createKMLfile_initial():
-    # Set environment settings
-    
-
-    def rasterToPoly():
-        arcpy.env.workspace = defineGDBpath(['post','yfc'])
-        for raster in arcpy.ListDatasets('*_fnl', "Raster"): 
-            print 'raster:', raster
-
-            # Set local variables
-            in_raster = raster
-            out_polygon_features = defineGDBpath(['refinement','refinement']) + raster + '_shp'
-            simplify = "NO_SIMPLIFY"
-            raster_field = "VALUE"
-
-            # Execute RasterToPolygon
-            arcpy.RasterToPolygon_conversion(in_raster, out_polygon_features, simplify, raster_field)
-
-    def stackMutipleFC():
-        arcpy.env.workspace = defineGDBpath(['refinement','refinement'])
-
-        # # Set local variables
-        in_features = arcpy.ListFeatureClasses("*_shp")
-        print in_features
-        out_feature_class = "stacked_features"
-        join_attributes = "NO_FID"
-        cluster_tolerance = 0.0003
-        arcpy.Union_analysis (in_features, out_feature_class, join_attributes, cluster_tolerance)
-
-    def clipFCtoCounty():
-        arcpy.env.workspace = defineGDBpath(['refinement','refinement'])
-        # Use the ListFeatureClasses function to return a list of shapefiles.
-        fc = 'focus_counties'
-
-        cursor = arcpy.da.SearchCursor(fc, ['atlas_stco'])
-        for row in cursor:
-            print(row[0])
+            cdl_file= getAssociatedCDL(subtype, year)
+            print 'associated cdl file: ', cdl_file
             
-            layer = "layer_" + row[0]
-            where_clause = "atlas_stco = '" + row[0] + "'"
+            # # set everthing not equal to the unique trajectory value to null label this abitray value equal to conversion year
+            OutRas = Con(raster, cdl_file, raster, cond)
+       
+            OutRas.save(raster)
 
-     
+        #build pyramids t the end
+        gen.buildPyramids(raster)
 
 
-            # Set local variables
-            in_features = 'stacked_features'
-            clip_features = arcpy.MakeFeatureLayer_management(fc,layer, where_clause)
-            out_feature_class = "stco_"+row[0]
-            xy_tolerance = ""
+def getAssociatedCDL(subtype, year):
+#function for to get correct cdl for the attachCDL() function
+#NOTE: this is an aux function for attachCDL()
+    if subtype == 'bfc' or  subtype == 'bfnc':
+        # NOTE: subtract 1 from every year in list
+        cdl_file = defineGDBpath(['ancillary','cdl'])+'cdl'+ yxc.res + '_' + str(year - 1)
+        return cdl_file
 
-            # Execute Clip
-            arcpy.Clip_analysis(in_features, clip_features, out_feature_class, xy_tolerance)
+    elif subtype == 'fc' or  subtype == 'fnc':
+        cdl_file = defineGDBpath(['ancillary','cdl'])+'cdl'+ yxc.res + '_' + str(year)
+        return cdl_file
 
-    def featureToKML():
-        arcpy.env.workspace = defineGDBpath(['refinement','refinement'])
-        # Use the ListFeatureClasses function to return a list of shapefiles.
-        filename = "stco_*"
-        featureclasses = arcpy.ListFeatureClasses(filename)
 
-        # Copy shapefiles to a file geodatabase
-        for fc in featureclasses:
-            print fc
+def reclassifyChangeTraj(gdb_args_in, raster):
+    # Description: reclass cdl rasters based on the specific arc_reclassify_table 
 
-            # create directories to hold kml file and associated images
-            stco_dir = rootpath + 'refinement/yfc/' + fc + '/'
-            if not os.path.exists(stco_dir):
-                os.makedirs(stco_dir)
-            # Set local variables
-            # Make a layer from the feature class
-            arcpy.MakeFeatureLayer_management(fc,fc)
-
-            out_kmz_file =  stco_dir + fc + '.kmz'
-            arcpy.LayerToKML_conversion (fc, out_kmz_file)
-    
-    ###### call functions #####################
-    # rasterToPoly()
-    # stackMutipleFC()
-    # clipFCtoCounty()
-    featureToKML()
-
-def createKMLfile():
     # Set environment settings
-    arcpy.env.workspace = defineGDBpath(['refinement','refinement'])
+    arcpy.env.workspace = defineGDBpath(g[yxc.gdb,yxc.name])
+
+    output = raster + '_r2'
     
-    def featureToKML(wc):
-        arcpy.env.workspace = defineGDBpath(['refinement','refinement'])
-        # Use the ListFeatureClasses function to return a list of shapefiles.
-        fc = arcpy.FeatureSet("combine_post_yfc_fc")
-        # featureclasses = arcpy.ListFeatureClasses(filename)
+    return_string=getReclassifyValuesString()
 
-        # Copy shapefiles to a file geodatabase
-      
+    # # Execute Reclassify
+    arcpy.gp.Reclassify_sa(raster, "Value", return_string, output, "DATA")
 
-        # # create directories to hold kml file and associated images
-        stco_dir = rootpath + 'refinement/yfc/gridcode_' + wc + '/'
-        if not os.path.exists(stco_dir):
-            os.makedirs(stco_dir)
-        
-        #Set local variables
-        layer = "gridcode_" + wc
-        where_clause = "gridcode = " + wc 
+    # #create pyraminds
+    gen.buildPyramids(output)
 
-        # # Make a layer from the feature class
-        arcpy.MakeFeatureLayer_management(fc, layer, where_clause)
 
-        out_kmz_file =  stco_dir + 'gridcode_' + wc  + '.kmz'
-        arcpy.LayerToKML_conversion(layer, out_kmz_file)
+
+
+
+def getReclassifyValuesString():
+    #Note: this is a aux function that the reclassifyRaster() function references
+    cur = conn.cursor()
+    #DDL: add column to hold arrays
+    cur.execute('select value::text from refinement.traj_ytc30_8to12_table as a JOIN refinement.traj_ytc30_8to12_table_lookup as b ON a.traj_array = b.traj_array')
     
-    ###### call functions #####################
-    # rasterToPoly()
-    # stackMutipleFC()
-    # clipFCtoCounty()
-    featureToKML('3')
+    #create empty list
+    reclassifylist=[]
+
+    # fetch all rows from table
+    rows = cur.fetchall()
+    print 'number of records in lookup table', len(rows)
+    
+    # interate through rows tuple to format the values into an array that is is then appended to the reclassifylist
+    for row in rows:
+        ww = [row[0] + ' ' + yxc.traj_change]
+        reclassifylist.append(ww)
+    
+    #flatten the nested array and then convert it to a string with a ";" separator to match arcgis format 
+    columnList = ';'.join(sum(reclassifylist, []))
+    print columnList
+    
+    #return list to reclassifyRaster() fct
+    return columnList
+
+
+def applyTrajNLCD(gdb_args_in):
+    arcpy.env.workspace = defineGDBpath([yxc.gdb,yxc.name])
+    
+    raster1 = 'traj_nlcd30_b_01and06'
+    raster2 = 'traj_ytc30_8to12'
+    output = 'traj_ytc30_8to12_r1'
     
 
-def falseConversion():
+
+    #establish the condition
+    # cond = "Value = " + yxc.traj_nlcd
+    # print 'cond: ', cond
+    # Con(Raster("elevation") > 2000, "elevation")
+    # set everthing not equal to the unique trajectory value to null label this abitray value equal to conversion year
+    OutRas = Con(((Raster(raster1) == 2) & (Raster(raster2) >= 0)) , 2400, raster2)
+
+    OutRas.save(output)
+
+    gen.buildPyramids(output)
 
 
-    def reclassifyRaster():
-        # Description: reclass cdl rasters based on the specific arc_reclassify_table 
-
-        # Set environment settings
-        arcpy.env.workspace = defineGDBpath(['ancillary','cdl'])
-
-        for raster in arcpy.ListDatasets('*', "Raster"): 
-            print 'raster:', raster
-
-            outraster = raster.replace("_", "_r_")
-
-            print outraster 
-
-            #define the output
-            output = defineGDBpath(['pre','reclass'])+outraster
-            print 'output: ', output
-
-            return_string=getReclassifyValuesString()
-
-            # Execute Reclassify
-            arcpy.gp.Reclassify_sa(raster, "Value", return_string, output, "NODATA")
 
 
-    def getReclassifyValuesString():
-        #Note: this is a aux function that the reclassifyRaster() function references
-        cur = conn.cursor()
+def createMTR(gdb_args_in, traj_dataset, gdb_args_out):
+    ## replace the arbitrary values in the trajectories dataset with the mtr values 1-5.
+    arcpy.env.workspace = defineGDBpath([yxc.gdb,yxc.name])
 
-        #DDL: add column to hold arrays
-        cur.execute('SELECT value::text,test FROM misc.lookup_cdl WHERE test IS NOT NULL ORDER BY value');
+    for raster in arcpy.ListDatasets(traj_dataset+'*', "Raster"): 
+        print 'raster:', raster
+        raster_out = raster+'_mtr'
+        output = defineGDBpath(gdb_args_out)+raster_out
+        print 'output:', output
+
+        reclassArray = createReclassifyList(traj_dataset) 
+
+        outReclass = Reclassify(raster, "Value", RemapRange(reclassArray), "NODATA")
         
-        #create empty list
-        reclassifylist=[]
+        outReclass.save(output)
 
-        # fetch all rows from table
-        rows = cur.fetchall()
-        
-        # interate through rows tuple to format the values into an array that is is then appended to the reclassifylist
-        for row in rows:
-            ww = [row[0] + ' ' + row[1]]
-            reclassifylist.append(ww)
-
-        #flatten the nested array and then convert it to a string with a ";" separator to match arcgis format 
-        columnList = ';'.join(sum(reclassifylist, []))
-        print columnList
-        
-        #return list to reclassifyRaster() fct
-        return columnList
-
-
-    def createTrajectories(wc):
-
-        # Set environment settings
-        arcpy.env.workspace = defineGDBpath(['pre','reclass'])
-        
-        #get a lsit of all rasters in sepcified database
-        rasterList = arcpy.ListDatasets('cdl_'+wc+'*', "Raster")
-        
-        #sort the rasterlist by accending years
-        rasterList.sort(reverse=False)
-        
-        #prepend nlcd raster name 
-        rasterList.insert(0, 'nlcd_b_2011')
-        print 'rasterList: ',rasterList
-
-        #Execute Combine
-        outCombine = Combine(rasterList)
-        print 'outCombine: ', outCombine
-        
-        output = defineGDBpath(['pre','trajectories'])+'traj_'+wc
-        
-        #Save the output 
-        outCombine.save(output)
-
-
-    def addGDBTable2postgres(gdb_args,tablename,pg_shema):
-
-
-        # path to the table you want to import into postgres
-        input = defineGDBpath(gdb_args)+tablename
-
-        # Execute AddField twice for two new fields
-        fields = [f.name for f in arcpy.ListFields(input)]
-        
-        # converts a table to NumPy structured array.
-        arr = arcpy.da.TableToNumPyArray(input,fields)
-        print arr
-        
-        # convert numpy array to pandas dataframe
-        df = pd.DataFrame(data=arr)
-
-        print df
-        
-        # use pandas method to import table into psotgres
-        df.to_sql(tablename, engine, schema=pg_shema)
-
-
-    def PG_DDLandDML(degree_lc):
-
-        #define cursor
-        cur = conn.cursor()
-        
-        # add column to table to hold arrays
-        cur.execute('ALTER TABLE pre.traj_' + degree_lc + ' ADD COLUMN traj_array integer[];');
-        
-        # insert values into array column
-        cur.execute('UPDATE pre.traj_' + degree_lc + ' SET traj_array = ARRAY[nlcd_b_2011,cdl_' + degree_lc + '_2010,cdl_' + degree_lc + '_2011,cdl_' + degree_lc + '_2012,cdl_' + degree_lc + '_2013,cdl_' + degree_lc + '_2014,cdl_' + degree_lc + '_2015,cdl_' + degree_lc + '_2016];');
-        
-        #commit the changes
-        conn.commit()
-        print "Records created successfully";
-
-        #close..........
-        conn.close()
-
-
-    def createTrajMask(degree_lc):
-        arcpy.env.workspace = defineGDBpath(['pre','trajectories'])
-
-        df = pd.read_sql_query("select a.\"Value\",b.mtr from pre.traj_"+degree_lc+" as a JOIN pre.traj_r_lookup as b ON a.traj_array = b.traj_array",con=engine)
-        
-        print df
-        a = df.values
-        print a
-        print type(a)
-
-        l=a.tolist()
-        print type(l)
-        print l
-
-        for raster in arcpy.ListDatasets('*'+degree_lc, "Raster"): 
-            print 'in raster: ', raster
-            output = raster+'_msk'
-            print 'output raster: ', output
-            outReclass = Reclassify(raster, "Value", RemapRange(l), "NODATA")
-            
-            outReclass.save(output)
+        gen.buildPyramids(output)
 
 
 
-    def mosaicRasters():
+def createReclassifyList(traj_dataset):
+    #this is a sub function for createMTR().  references the mtr value in psotgres to create a list containing arbitray trajectory value and associated new mtr value
 
-        ##STILL NEED TO DEVLOP
-        arcpy.env.workspace = defineGDBpath(['pre','trajectories'])
+    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
+    df = pd.read_sql_query('SELECT "Value", mtr from pre.' + traj_dataset + ' as a JOIN pre.' + traj_dataset + '_lookup as b ON a.traj_array = b.traj_array',con=engine)
+    print df
+    fulllist=[[0,0,"NODATA"]]
+    for index, row in df.iterrows():
+        templist=[]
+        value=row['Value'] 
+        mtr=row['mtr']  
+        templist.append(int(value))
+        templist.append(int(mtr))
+        fulllist.append(templist)
+    print 'fulllist: ', fulllist
+    return fulllist
 
-        # Execute Con
-        outCon = Con(IsNull('traj_r_msk'), 'traj_b', 'traj_r_msk')
 
-        outCon.save("traj")
+
+
+################ Instantiate the class to create yxc object  ########################
+
+
+yxc = ConversionObject(
+      'ytc',
+      '56',
+      ## data range---i.e. all the cdl years you are referencing 
+      [2008,2012]
+      )
+
+
     
-    ######  call functions  #############################
-    reclassifyRaster()
-    createTrajectories("r")
-    addGDBTable2postgres(['pre','trajectories'],'traj_r','pre')
-    PG_DDLandDML('r')
-    createTrajMask('r')
-    mosaicRasters()
+##################  core  ##########################################
+# createMTR(['pre','trajectories'],"traj_cdl56_b_8to12", ['refinement_8to12','mtr'])
+
+
+
+
+
+############### post  #####################################################
+# createYearbinaries()
+# removeArbitraryValuesFromYearbinaries()
+
+
+for subtype in yxc.subtypelist:
+    print subtype
+    attachCDL(subtype)
+
+
+
+
+
+##### refinement using traj_nlcd
+# applyTrajNLCD(['refinement','refinement_current'])
+
+
+# #####refinement using traj_change
+# reclassifyChangeTraj(['refinement','refinement_current'], 'traj_ytc30_8to12_r1')
 
 
 
@@ -398,12 +381,27 @@ def falseConversion():
 
 
 
-##########################################################
-######  call main functions  #############################
-##########################################################
 
-# getQuanitiativeFocusCounties()
-# createKMLfile()
-# falseConversion()
 
-parallel_nibble.getRasters()
+
+
+
+
+
+
+
+
+
+
+
+
+###### NOTE FOR COPY RASTER """""""""""""""""""""
+## 1 test snap 
+## 2 test import stats from other image??
+## 3 try other creating stats from multiple methods
+
+
+
+
+
+

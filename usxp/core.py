@@ -273,6 +273,4 @@ def nibble(maskSize,arg_list1,arg_list2,filename):
 
 
 
-###################  refinement  ##########################################
 
-createMTR(['pre','trajectories'],"traj_cdl30_b_8to12", ['refinement','refinement_current'])
