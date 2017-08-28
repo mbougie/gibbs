@@ -133,17 +133,17 @@ def addTrajArrayField(tablename, fields):
 
 
 
-addGDBTable2postgres(['refinement','refinement_current'],'*ytc30*','refinement')
+addGDBTable2postgres(['refinement_2008to2012','trajectories'],'*ytc56*','refinement')
 
 
 
 
 
 
-# create table refinement.traj_ytc30_8to12_table_lookup as  
+# create table refinement.traj_ytc56_2008to2012_table_lookup as  
 
 # select distinct traj_array
-# from refinement.traj_ytc30_8to12_table 
+# from refinement.traj_ytc56_2008to2012_table 
 # where 61 = ANY(traj_array) 
 # OR 122 = ANY(traj_array)
 # OR 123 = ANY(traj_array)
@@ -151,6 +151,3 @@ addGDBTable2postgres(['refinement','refinement_current'],'*ytc30*','refinement')
 # OR '{37,36}' = traj_array
 # OR '{152,36}' = traj_array
 # OR '{176,36}' = traj_array
-
-
-

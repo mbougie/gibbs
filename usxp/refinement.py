@@ -58,10 +58,9 @@ class ConversionObject:
 
         if self.name == 'ytc':
             self.mtr = '3'
-            # self.subtypelist = ['fc','bfc']
-            self.subtypelist = ['bfc']
-            self.traj_nlcd = str(24 * 10000)
-            self.traj_change = str(1 * 10000)
+            self.subtypelist = ['fc','bfc']
+            self.traj_nlcd = 24
+            self.traj_change = 1
             
 
         elif self.name == 'yfc':
@@ -70,40 +69,47 @@ class ConversionObject:
             self.reclass = '24'
 
 
-        # for subtype in self.subtypelist:
-        #     print subtype
-        #     self.subtype = subtype
 
-        #     #call function for each subtype in list
-        #     # print self.subtype
-            
+
+##############  Declare functions  ######################################################
     
+def createMTR(gdb_args_in, traj_dataset, gdb_args_out):
+    ## replace the arbitrary values in the trajectories dataset with the mtr values 1-5.
+    arcpy.env.workspace = defineGDBpath(gdb_args_in)
 
+    for raster in arcpy.ListDatasets(traj_dataset+'*', "Raster"): 
+        print 'raster:', raster
+        raster_out = raster+'_mtr'
+        output = defineGDBpath(gdb_args_out)+raster_out
+        print 'output:', output
 
+        reclassArray = createReclassifyList(traj_dataset) 
+
+        # outReclass = Reclassify(raster, "Value", RemapRange(reclassArray), "NODATA")
         
+        # outReclass.save(output)
+
+        # gen.buildPyramids(output)
 
 
 
+def createReclassifyList(traj_dataset):
+    #this is a sub function for createMTR().  references the mtr value in psotgres to create a list containing arbitray trajectory value and associated new mtr value
 
+    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
+    df = pd.read_sql_query('SELECT "Value", mtr from pre.' + traj_dataset + ' as a JOIN pre.' + traj_dataset + '_lookup as b ON a.traj_array = b.traj_array',con=engine)
+    print df
+    fulllist=[[0,0,"NODATA"]]
+    for index, row in df.iterrows():
+        templist=[]
+        value=row['Value'] 
+        mtr=row['mtr']  
+        templist.append(int(value))
+        templist.append(int(mtr))
+        fulllist.append(templist)
+    print 'fulllist: ', fulllist
+    return fulllist
 
-
-
-
-def addColorMap(inraster,template):
-    ##Add Colormap
-    ##Usage: AddColormap_management in_raster {in_template_raster} {input_CLR_file}
-
-    try:
-        import arcpy
-        # arcpy.env.workspace = r'C:/Users/Bougie/Documents/ArcGIS/Default.gdb'
-        
-        ##Assign colormap using template image
-        arcpy.AddColormap_management(inraster, "#", template)
-        
-
-    except:
-        print "Add Colormap example failed."
-        print arcpy.GetMessages()
 
 
 def createYearbinaries():
@@ -184,7 +190,7 @@ def attachCDL(subtype):
     # NOTE: Need to copy the yxc_clean dataset and rename it with subtype after it
     arcpy.env.workspace=defineGDBpath([yxc.gdb,yxc.name])
  
-    wc = '*'+subtype
+    wc = '*'+yxc.res+'*'+subtype
     print wc
 
     for raster in arcpy.ListDatasets(wc, "Raster"): 
@@ -213,9 +219,11 @@ def attachCDL(subtype):
         gen.buildPyramids(raster)
 
 
+
 def getAssociatedCDL(subtype, year):
 #function for to get correct cdl for the attachCDL() function
 #NOTE: this is an aux function for attachCDL()
+
     if subtype == 'bfc' or  subtype == 'bfnc':
         # NOTE: subtract 1 from every year in list
         cdl_file = defineGDBpath(['ancillary','cdl'])+'cdl'+ yxc.res + '_' + str(year - 1)
@@ -226,13 +234,38 @@ def getAssociatedCDL(subtype, year):
         return cdl_file
 
 
-def reclassifyChangeTraj(gdb_args_in, raster):
+
+def applyTrajNLCD():
+    # allow raster to be overwritten
+    arcpy.env.overwriteOutput = True
+    print "overwrite on? ", arcpy.env.overwriteOutput
+
+    #returns noncrop to crop
+    arcpy.env.workspace = defineGDBpath(['pre','trajectories'])
+    
+    raster1 = 'traj_nlcd'+yxc.res+'_b_2001and2006'
+    print raster1
+    raster2 = 'traj_cdl56_b_2008to2012_rfnd'
+    output = 'try2'
+    
+    # set everthing not equal to the unique trajectory value to null label this abitray value equal to conversion year
+    OutRas = Con((Raster(raster1) == 2) , 23, raster2)
+
+    OutRas.save(output)
+
+    gen.buildPyramids( output)
+
+
+
+
+def reclassifyChangeTraj():
     # Description: reclass cdl rasters based on the specific arc_reclassify_table 
 
     # Set environment settings
-    arcpy.env.workspace = defineGDBpath(g[yxc.gdb,yxc.name])
+    arcpy.env.workspace = defineGDBpath([yxc.gdb,'trajectories'])
 
-    output = raster + '_r2'
+    raster = 'traj_'+yxc.name+yxc.res +'_'+yxc.datarange+'_r1'
+    output = raster + '_r2_'
     
     return_string=getReclassifyValuesString()
 
@@ -250,10 +283,10 @@ def getReclassifyValuesString():
     #Note: this is a aux function that the reclassifyRaster() function references
     cur = conn.cursor()
     #DDL: add column to hold arrays
-    cur.execute('select value::text from refinement.traj_ytc30_8to12_table as a JOIN refinement.traj_ytc30_8to12_table_lookup as b ON a.traj_array = b.traj_array')
+    cur.execute('select value from refinement.traj_'+yxc.name+yxc.res+'_'+yxc.datarange+'_table as a JOIN refinement.traj_'+yxc.name+yxc.res+'_'+yxc.datarange+'_table_lookup as b ON a.traj_array = b.traj_array')
     
     #create empty list
-    reclassifylist=[]
+    fulllist=[[0,0,"NODATA"]]
 
     # fetch all rows from table
     rows = cur.fetchall()
@@ -261,51 +294,28 @@ def getReclassifyValuesString():
     
     # interate through rows tuple to format the values into an array that is is then appended to the reclassifylist
     for row in rows:
-        ww = [row[0] + ' ' + yxc.traj_change]
-        reclassifylist.append(ww)
-    
-    #flatten the nested array and then convert it to a string with a ";" separator to match arcgis format 
-    columnList = ';'.join(sum(reclassifylist, []))
-    print columnList
-    
-    #return list to reclassifyRaster() fct
-    return columnList
-
-
-def applyTrajNLCD(gdb_args_in):
-    arcpy.env.workspace = defineGDBpath([yxc.gdb,yxc.name])
-    
-    raster1 = 'traj_nlcd30_b_01and06'
-    raster2 = 'traj_ytc30_8to12'
-    output = 'traj_ytc30_8to12_r1'
-    
-
-
-    #establish the condition
-    # cond = "Value = " + yxc.traj_nlcd
-    # print 'cond: ', cond
-    # Con(Raster("elevation") > 2000, "elevation")
-    # set everthing not equal to the unique trajectory value to null label this abitray value equal to conversion year
-    OutRas = Con(((Raster(raster1) == 2) & (Raster(raster2) >= 0)) , 2400, raster2)
-
-    OutRas.save(output)
-
-    gen.buildPyramids(output)
+        templist=[]
+        templist.append(row[0])
+        templist.append(yxc.traj_change)
+        fulllist.append(templist)
+    print fulllist
+    return fulllist
 
 
 
 
-def createMTR(gdb_args_in, traj_dataset, gdb_args_out):
+def createMask(gdb_path, traj_dataset, reclassArray):
     ## replace the arbitrary values in the trajectories dataset with the mtr values 1-5.
-    arcpy.env.workspace = defineGDBpath([yxc.gdb,yxc.name])
+    arcpy.env.workspace = defineGDBpath(gdb_path)
 
-    for raster in arcpy.ListDatasets(traj_dataset+'*', "Raster"): 
+    for raster in arcpy.ListDatasets(traj_dataset, "Raster"): 
         print 'raster:', raster
-        raster_out = raster+'_mtr'
-        output = defineGDBpath(gdb_args_out)+raster_out
+        output = defineGDBpath([yxc.gdb,'masks'])+traj_dataset+'_mask'
+        # output = defineGDBpath(gdb_args_out)+raster_out
         print 'output:', output
 
-        reclassArray = createReclassifyList(traj_dataset) 
+        # reclassArray = createReclassifyList(traj_dataset) 
+        # reclassArray = [[0, 0, 'NODATA'], [10000, 1], [2400, 23]]
 
         outReclass = Reclassify(raster, "Value", RemapRange(reclassArray), "NODATA")
         
@@ -314,30 +324,7 @@ def createMTR(gdb_args_in, traj_dataset, gdb_args_out):
         gen.buildPyramids(output)
 
 
-
-def createReclassifyList(traj_dataset):
-    #this is a sub function for createMTR().  references the mtr value in psotgres to create a list containing arbitray trajectory value and associated new mtr value
-
-    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
-    df = pd.read_sql_query('SELECT "Value", mtr from pre.' + traj_dataset + ' as a JOIN pre.' + traj_dataset + '_lookup as b ON a.traj_array = b.traj_array',con=engine)
-    print df
-    fulllist=[[0,0,"NODATA"]]
-    for index, row in df.iterrows():
-        templist=[]
-        value=row['Value'] 
-        mtr=row['mtr']  
-        templist.append(int(value))
-        templist.append(int(mtr))
-        fulllist.append(templist)
-    print 'fulllist: ', fulllist
-    return fulllist
-
-
-
-
 ################ Instantiate the class to create yxc object  ########################
-
-
 yxc = ConversionObject(
       'ytc',
       '56',
@@ -346,34 +333,40 @@ yxc = ConversionObject(
       )
 
 
-    
-##################  core  ##########################################
-# createMTR(['pre','trajectories'],"traj_cdl56_b_8to12", ['refinement_8to12','mtr'])
+
+
+
+##################  call functions  ############################################
+   
+###  core  ###################
+# createMTR(['pre','trajectories'],"traj_cdl56_b_2008to2012", ['refinement_2008to2012','mtr'])
 
 
 
 
 
-############### post  #####################################################
+###  post  ####################
 # createYearbinaries()
 # removeArbitraryValuesFromYearbinaries()
 
 
 for subtype in yxc.subtypelist:
     print subtype
-    attachCDL(subtype)
+    # attachCDL(subtype)
 
 
+###  refinement using traj_nlcd  ###################
+# applyTrajNLCD()
 
 
+###  refinement using traj_change  #################
+# reclassifyChangeTraj()
 
-##### refinement using traj_nlcd
-# applyTrajNLCD(['refinement','refinement_current'])
+#apply the refined mask to the trajectories
+# applyMasktoTraj()
 
-
-# #####refinement using traj_change
-# reclassifyChangeTraj(['refinement','refinement_current'], 'traj_ytc30_8to12_r1')
-
+# createMask(['pre','trajectories'], 'traj_nlcd56_b_2001and2006', [[0, 0, 'NODATA'], [2, 23]])
+createMask([yxc.gdb,'trajectories'], 'traj_ytc56_2008to2012', getReclassifyValuesString())
 
 
 

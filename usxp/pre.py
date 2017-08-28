@@ -239,10 +239,10 @@ yxc = ConversionObject(
 
 ######  call functions  #############################
 ##-----reclassifyRaster()------------------
-# reclassifyRaster(['ancillary','nlcd'], "30", "*", "b", ['pre','binaries'])
+reclassifyRaster(['ancillary','nlcd'], "56", "*", "b", ['pre','binaries'])
 
 # ##-----createTrajectories()-----------------------------------------------
-createTrajectories(['pre','binaries'], "nlcd30", ['refinement','refinement_current'], 'traj_nlcd30_b_0106')
+# createTrajectories(['pre','binaries'], "nlcd30", ['refinement','refinement_current'], 'traj_nlcd30_b_0106')
 
 
 # # ##-----addGDBTable2postgres()
