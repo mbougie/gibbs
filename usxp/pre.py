@@ -124,9 +124,10 @@ def reclassifyRaster(gdb_args_in, res, wc, reclass_degree, gdb_args_out):
 def getReclassifyValuesString(ds, reclass_degree):
     #Note: this is a aux function that the reclassifyRaster() function references
     cur = conn.cursor()
-
+    
+    query = 'SELECT value::text,'+reclass_degree+' FROM misc.lookup_'+ds+' WHERE '+reclass_degree+' IS NOT NULL ORDER BY value'
     #DDL: add column to hold arrays
-    cur.execute('SELECT value::text,'+reclass_degree+' FROM misc.lookup_'+ds+' WHERE '+reclass_degree+' IS NOT NULL ORDER BY value');
+    cur.execute(query);
     
     #create empty list
     reclassifylist=[]
@@ -163,18 +164,20 @@ def createTrajectories(gdb_args_in,wc,gdb_args_out,outname):
     
 
     ####NOTE GENERIC!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    # rasterlist = ['cdl30_b_2008', 'cdl30_b_2009', 'cdl30_b_2010', 'cdl30_b_2011', 'cdl30_b_2012']
+    rasterlist = ['cdl30_b_2008', 'cdl30_b_2009', 'cdl30_b_2010', 'cdl30_b_2011', 'cdl30_b_2012']
     print rasterlist
-    # Execute Combine
+    
+    ###Execute Combine
     outCombine = Combine(rasterlist)
     print 'outCombine: ', outCombine
     
     output = defineGDBpath(gdb_args_out)+outname
     print 'output', output
-    # #Save the output 
+    
+    ###Save the output 
     outCombine.save(output)
 
-    #create pyraminds
+    ###create pyraminds
     gen.buildPyramids(output)
 
 
@@ -238,15 +241,15 @@ yxc = ConversionObject(
 
 
 ######  call functions  #############################
-##-----reclassifyRaster()------------------
-reclassifyRaster(['ancillary','nlcd'], "56", "*", "b", ['pre','binaries'])
+###-----reclassifyRaster()------------------
+# reclassifyRaster(['ancillary','cdl'], "30", "*2008*", "b", ['pre','binaries'])
 
-# ##-----createTrajectories()-----------------------------------------------
-# createTrajectories(['pre','binaries'], "nlcd30", ['refinement','refinement_current'], 'traj_nlcd30_b_0106')
+###-----createTrajectories()-----------------------------------------------
+createTrajectories(['pre','binaries'], "cdl30", ['pre','trajectories'], 'traj_cdl30_b_2008to2012')
 
 
-# # ##-----addGDBTable2postgres()
-# addGDBTable2postgres(['pre','trajectories'],'traj_cdl30_b_8to12','pre')
+###-----addGDBTable2postgres()
+addGDBTable2postgres(['pre','trajectories'],'traj_cdl30_b_2008to2012','pre')
 
 
 

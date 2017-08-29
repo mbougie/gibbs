@@ -85,11 +85,11 @@ def createMTR(gdb_args_in, traj_dataset, gdb_args_out):
 
         reclassArray = createReclassifyList(traj_dataset) 
 
-        # outReclass = Reclassify(raster, "Value", RemapRange(reclassArray), "NODATA")
+        outReclass = Reclassify(raster, "Value", RemapRange(reclassArray), "NODATA")
         
-        # outReclass.save(output)
+        outReclass.save(output)
 
-        # gen.buildPyramids(output)
+        gen.buildPyramids(output)
 
 
 
@@ -327,7 +327,7 @@ def createMask(gdb_path, traj_dataset, reclassArray):
 ################ Instantiate the class to create yxc object  ########################
 yxc = ConversionObject(
       'ytc',
-      '56',
+      '30',
       ## data range---i.e. all the cdl years you are referencing 
       [2008,2012]
       )
@@ -339,7 +339,7 @@ yxc = ConversionObject(
 ##################  call functions  ############################################
    
 ###  core  ###################
-# createMTR(['pre','trajectories'],"traj_cdl56_b_2008to2012", ['refinement_2008to2012','mtr'])
+createMTR(['pre','trajectories'],"traj_cdl30_b_2008to2012", ['refinement_2008to2012','mtr'])
 
 
 
@@ -366,7 +366,7 @@ for subtype in yxc.subtypelist:
 # applyMasktoTraj()
 
 # createMask(['pre','trajectories'], 'traj_nlcd56_b_2001and2006', [[0, 0, 'NODATA'], [2, 23]])
-createMask([yxc.gdb,'trajectories'], 'traj_ytc56_2008to2012', getReclassifyValuesString())
+# createMask([yxc.gdb,'trajectories'], 'traj_ytc56_2008to2012', getReclassifyValuesString())
 
 
 
