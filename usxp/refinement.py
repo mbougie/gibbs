@@ -19,8 +19,8 @@ import general as gen
 case=['Bougie','Gibbs']
 
 #import extension
-arcpy.CheckOutExtension("Spatial")
-arcpy.env.parallelProcessingFactor = "95%"
+# arcpy.CheckOutExtension("Spatial")
+# arcpy.env.parallelProcessingFactor = "95%"
 
 
 try:
@@ -113,13 +113,15 @@ def createReclassifyList(traj_dataset):
 
 
 def createYearbinaries():
+    arcpy.CheckInExtension("Spatial")
     #DESCRIPTION:subset the trajectoires by year to create binary ytc or ytc raster by year that represent the conversion to/from crop between succesive years
     arcpy.env.workspace=defineGDBpath([yxc.gdb,yxc.name])
     
     #copy trajectory raster so it can be modified iteritively
     output = yxc.name+yxc.res+'_'+yxc.datarange
+
     print 'output: ', output
-    # arcpy.CopyRaster_management(defineGDBpath(['pre', 'trajectories']) + 'traj_cdl_b', traj_years)
+    # arcpy.CopyRaster_management(defineGDBpath(['pre', 'trajectories']) + 'traj_cdl'+yxc.res+'_b_'+yxc.datarange, output)
     
     #Connect to postgres database to get values from traj dataset 
     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
@@ -128,6 +130,7 @@ def createYearbinaries():
     
     # loop through rows in the dataframe
     for index, row in df.iterrows():
+        arcpy.CheckOutExtension("Spatial")
         #get the arbitrary value assigned to the specific trajectory
         value=str(row['Value'])
         print 'value: ', value
@@ -259,6 +262,7 @@ def applyTrajNLCD():
 
 
 def reclassifyChangeTraj():
+    arcpy.CheckOutExtension("Spatial")
     # Description: reclass cdl rasters based on the specific arc_reclassify_table 
 
     # Set environment settings
@@ -339,14 +343,14 @@ yxc = ConversionObject(
 ##################  call functions  ############################################
    
 ###  core  ###################
-createMTR(['pre','trajectories'],"traj_cdl30_b_2008to2012", ['refinement_2008to2012','mtr'])
+# createMTR(['pre','trajectories'],"traj_cdl30_b_2008to2012", ['refinement_2008to2012','mtr'])
 
 
 
 
 
 ###  post  ####################
-# createYearbinaries()
+createYearbinaries()
 # removeArbitraryValuesFromYearbinaries()
 
 

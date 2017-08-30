@@ -185,22 +185,27 @@ def mosaicCDL(year,res):
     print tif_array
     if not tif_array:
         print("List is empty")
-    # stringit = 'D:/projects/ksu/control/cdl\\AR\\cdl_30m_r_ar_2001_albers.tif; D:/projects/ksu/control/cdl\\IA\\cdl_30m_r_ia_2001_albers.tif; D:/projects/ksu/control/cdl\\IL\\cdl_30m_r_il_2001_albers.tif; D:/projects/ksu/control/cdl\\IN\\cdl_30m_r_in_2001_albers.tif; D:/projects/ksu/control/cdl\\MO\\cdl_30m_r_mo_2001_albers.tif; D:/projects/ksu/control/cdl\\MS\\cdl_30m_r_ms_2001_albers.tif; D:/projects/ksu/control/cdl\\ND\\cdl_30m_r_nd_2001_albers.tif; D:/projects/ksu/control/cdl\\NE\\cdl_30m_r_ne_2001_albers.tif'
+   
     else:
         filename = 'cdl'+res+'_'+year
-        createEmptyRaster(filename)
+        # createEmptyRaster(filename)
 
 
         if len(tif_array) == 1:
             stringit = tif_array[0]
             print stringit
-            arcpy.Mosaic_management(inputs=stringit, target="D:/projects/ksu/cdl.gdb/"+filename, background_value=0, nodata_value=0)
+            # arcpy.Mosaic_management(inputs=stringit, target="D:/projects/ksu/cdl.gdb/"+filename, background_value=0, nodata_value=0)
+
+            projectRaster("D:/projects/ksu/cdl.gdb/"+filename)
+            
+
 
         elif len(tif_array) > 1:
             stringit = ';'.join(tif_array)
             print stringit
-            arcpy.Mosaic_management(inputs=stringit, target="D:/projects/ksu/cdl.gdb/"+filename, background_value=0, nodata_value=0)
-
+            # arcpy.Mosaic_management(inputs=stringit, target="D:/projects/ksu/cdl.gdb/"+filename, background_value=0, nodata_value=0)
+            
+            projectRaster("D:/projects/ksu/cdl.gdb/"+filename)
 
 
 
@@ -223,19 +228,24 @@ def getFilesRecursively(year, res):
 
 
 def createEmptyRaster(filename):
-    arcpy.CreateRasterDataset_management(out_path="D:/projects/ksu/cdl.gdb", out_name=filename, pixel_type="8_BIT_UNSIGNED",\
-                                     raster_spatial_reference="PROJCS['Albers_Conical_Equal_Area',GEOGCS['GCS_North_American_1983',DATUM['D_North_American_1983',SPHEROID['GRS_1980',6378137.0,298.257222101]],PRIMEM['Greenwich',0.0],UNIT['Degree',0.0174532925199433]],PROJECTION['Albers'],PARAMETER['false_easting',0.0],PARAMETER['false_northing',0.0],PARAMETER['central_meridian',-96.0],PARAMETER['standard_parallel_1',29.5],PARAMETER['standard_parallel_2',45.5],PARAMETER['latitude_of_origin',23.0],UNIT['Meters',1.0]]",\
-                                     number_of_bands=1)
+    #create an empty raster to hold mosaic dataset
+    arcpy.CreateRasterDataset_management(out_path="D:/projects/ksu/cdl.gdb", out_name=filename, pixel_type="8_BIT_UNSIGNED", number_of_bands=1)
 
 
-
-
-def ProjectSF(state, infc, outfc):
-    os.chdir('C:/Users/Bougie/Desktop/Gibbs/Intact_land/SDSU_CLU_project/CLU Data/'+ state)
-    outfc_path = defineGDBpath(['intact_land',state]) + outfc
+def projectRaster(filename):
+    dataset = "C:/Users/Bougie/Desktop/Gibbs/data/usxp/ancillary/cdl.gdb/cdl30_2013"
+    spatial_ref = arcpy.Describe(dataset).spatialReference
+    print spatial_ref.name
 
     # run project tool
-    arcpy.Project_management(infc, outfc_path, "PROJCS['Albers_Conical_Equal_Area',GEOGCS['GCS_North_American_1983',DATUM['D_North_American_1983',SPHEROID['GRS_1980',6378137.0,298.257222101]],PRIMEM['Greenwich',0.0],UNIT['Degree',0.0174532925199433]],PROJECTION['Albers'],PARAMETER['false_easting',0.0],PARAMETER['false_northing',0.0],PARAMETER['central_meridian',-96.0],PARAMETER['standard_parallel_1',29.5],PARAMETER['standard_parallel_2',45.5],PARAMETER['latitude_of_origin',23.0],UNIT['Meters',1.0]]", "", "PROJCS['NAD_1983_UTM_Zone_15N',GEOGCS['GCS_North_American_1983',DATUM['D_North_American_1983',SPHEROID['GRS_1980',6378137.0,298.257222101]],PRIMEM['Greenwich',0.0],UNIT['Degree',0.0174532925199433]],PROJECTION['Transverse_Mercator'],PARAMETER['False_Easting',500000.0],PARAMETER['False_Northing',0.0],PARAMETER['Central_Meridian',-93.0],PARAMETER['Scale_Factor',0.9996],PARAMETER['Latitude_Of_Origin',0.0],UNIT['Meter',1.0]]", "NO_PRESERVE_SHAPE", "", "NO_VERTICAL")
+    arcpy.ProjectRaster_management(filename, filename+'_acea2', "PROJCS['Albers_Conical_Equal_Area',GEOGCS['GCS_North_American_1983',DATUM['D_North_American_1983',SPHEROID['GRS_1980',6378137.0,298.257222101]],PRIMEM['Greenwich',0.0],UNIT['Degree',0.0174532925199433]],PROJECTION['Albers'],PARAMETER['false_easting',0.0],PARAMETER['false_northing',0.0],PARAMETER['central_meridian',-96.0],PARAMETER['standard_parallel_1',29.5],PARAMETER['standard_parallel_2',45.5],PARAMETER['latitude_of_origin',23.0],UNIT['Meters',1.0]]", "NEAREST", "30 30", "", "", "PROJCS['LUnits_meters',GEOGCS['GCS_North_American_1983',DATUM['D_North_American_1983',SPHEROID['GRS_1980',6378137.0,298.257222101]],PRIMEM['Greenwich',0.0],UNIT['Degree',0.0174532925199433]],PROJECTION['Albers'],PARAMETER['false_easting',0.0],PARAMETER['false_northing',0.0],PARAMETER['central_meridian',-96.0],PARAMETER['standard_parallel_1',29.5],PARAMETER['standard_parallel_2',45.5],PARAMETER['latitude_of_origin',23.0],UNIT['Meter',1.0]]")
+
+    # cdl30_2004 = "D:\\projects\\ksu\\cdl.gdb\\cdl30_2004"
+    # cdl30_2004_acea = "D:\\projects\\ksu\\cdl.gdb\\cdl30_2004_acea"
+
+    # Process: Project Raster
+    # arcpy.ProjectRaster_management(filename, filename+'_acea', "PROJCS['Albers_Conical_Equal_Area',GEOGCS['GCS_North_American_1983',DATUM['D_North_American_1983',SPHEROID['GRS_1980',6378137.0,298.257222101]],PRIMEM['Greenwich',0.0],UNIT['Degree',0.0174532925199433]],PROJECTION['Albers'],PARAMETER['false_easting',0.0],PARAMETER['false_northing',0.0],PARAMETER['central_meridian',-96.0],PARAMETER['standard_parallel_1',29.5],PARAMETER['standard_parallel_2',45.5],PARAMETER['latitude_of_origin',23.0],UNIT['Meters',1.0]]", "NEAREST", "30 30", "", "", "PROJCS['LUnits_meters',GEOGCS['GCS_North_American_1983',DATUM['D_North_American_1983',SPHEROID['GRS_1980',6378137.0,298.257222101]],PRIMEM['Greenwich',0.0],UNIT['Degree',0.0174532925199433]],PROJECTION['Albers'],PARAMETER['false_easting',0.0],PARAMETER['false_northing',0.0],PARAMETER['central_meridian',-96.0],PARAMETER['standard_parallel_1',29.5],PARAMETER['standard_parallel_2',45.5],PARAMETER['latitude_of_origin',23.0],UNIT['Meter',1.0]]")
+
 
 
 
@@ -249,9 +259,17 @@ def ProjectSF(state, infc, outfc):
 
 
 
-
-years = ['2001','2002','2003','2004','2005','2006','2007']
+# years = ['2001','2002','2003','2004','2005','2006','2007']
+years = ['2004']
+res_list = ['30']
 for year in years:
-    mosaicCDL(year,'30')
+    for res in res_list:
+        mosaicCDL(year,res)
 
 
+
+
+
+# dataset = "C:/Users/Bougie/Desktop/Gibbs/data/usxp/ancillary/cdl.gdb/cdl30_2013"
+# spatial_ref = arcpy.Describe(dataset).spatialReference
+# print spatial_ref.name
