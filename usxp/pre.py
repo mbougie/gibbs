@@ -164,7 +164,8 @@ def createTrajectories(gdb_args_in,wc,gdb_args_out,outname):
     
 
     ####NOTE GENERIC!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    rasterlist = ['cdl30_b_2008', 'cdl30_b_2009', 'cdl30_b_2010', 'cdl30_b_2011', 'cdl30_b_2012']
+    # rasterlist = ['cdl30_b_2008', 'cdl30_b_2009', 'cdl30_b_2010', 'cdl30_b_2011', 'cdl30_b_2012']
+    rasterlist = ['cdl30_b_2008', 'cdl30_b_2010', 'cdl30_b_2011', 'cdl30_b_2012']
     print rasterlist
     
     ###Execute Combine
@@ -249,7 +250,7 @@ createTrajectories(['pre','binaries'], "cdl30", ['pre','trajectories'], 'traj_cd
 
 
 ###-----addGDBTable2postgres()
-addGDBTable2postgres(['pre','trajectories'],'traj_cdl30_b_2008to2012','pre')
+# addGDBTable2postgres(['pre','trajectories'],'traj_cdl30_b_2008to2012','pre')
 
 
 

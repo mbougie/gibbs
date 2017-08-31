@@ -18,10 +18,6 @@ import general as gen
 #Note: need to change this each time on different machine
 case=['Bougie','Gibbs']
 
-#import extension
-# arcpy.CheckOutExtension("Spatial")
-# arcpy.env.parallelProcessingFactor = "95%"
-
 
 try:
     conn = psycopg2.connect("dbname='usxp' user='mbougie' host='144.92.235.105' password='Mend0ta!'")
@@ -59,14 +55,14 @@ class ConversionObject:
         if self.name == 'ytc':
             self.mtr = '3'
             self.subtypelist = ['fc','bfc']
-            self.traj_nlcd = 24
-            self.traj_change = 1
+            # self.traj_nlcd = 24
+            # self.traj_change = 1
             
 
         elif self.name == 'yfc':
             self.mtr = '4'
             self.subtypelist = ['fnc','bfnc']
-            self.reclass = '24'
+            # self.reclass = '24'
 
 
 
@@ -113,16 +109,17 @@ def createReclassifyList(traj_dataset):
 
 
 def createYearbinaries():
-    arcpy.CheckInExtension("Spatial")
     #DESCRIPTION:subset the trajectoires by year to create binary ytc or ytc raster by year that represent the conversion to/from crop between succesive years
     arcpy.env.workspace=defineGDBpath([yxc.gdb,yxc.name])
     
-    #copy trajectory raster so it can be modified iteritively
     output = yxc.name+yxc.res+'_'+yxc.datarange
-
     print 'output: ', output
+
+    ###copy trajectory raster so it can be modified iteritively
     # arcpy.CopyRaster_management(defineGDBpath(['pre', 'trajectories']) + 'traj_cdl'+yxc.res+'_b_'+yxc.datarange, output)
     
+    arcpy.CheckOutExtension("Spatial")
+
     #Connect to postgres database to get values from traj dataset 
     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
     df = pd.read_sql_query('select * from pre.traj_cdl'+yxc.res+'_b_'+yxc.datarange+' as a JOIN pre.traj_cdl'+yxc.res+'_b_'+yxc.datarange+'_lookup as b ON a.traj_array = b.traj_array WHERE b.'+yxc.name+' IS NOT NULL',con=engine)
@@ -130,7 +127,6 @@ def createYearbinaries():
     
     # loop through rows in the dataframe
     for index, row in df.iterrows():
-        arcpy.CheckOutExtension("Spatial")
         #get the arbitrary value assigned to the specific trajectory
         value=str(row['Value'])
         print 'value: ', value
@@ -164,9 +160,7 @@ def removeArbitraryValuesFromYearbinaries():
     #define gdb workspace
     arcpy.env.workspace=defineGDBpath([yxc.gdb,yxc.name])
 
-    # allow raster to be overwritten
-    # arcpy.env.overwriteOutput = True
-    # print "overwrite on? ", arcpy.env.overwriteOutput
+    arcpy.CheckOutExtension("Spatial")
     
     #get raster from geodatabse
     raster_input = yxc.name+yxc.res+'_'+yxc.datarange
@@ -192,40 +186,46 @@ def attachCDL(subtype):
 
     # NOTE: Need to copy the yxc_clean dataset and rename it with subtype after it
     arcpy.env.workspace=defineGDBpath([yxc.gdb,yxc.name])
+
+    inputraster = yxc.name+yxc.res+'_'+yxc.datarange
+    output = inputraster+'_'+subtype
+    
+    ###copy binary years raster so it can be modified iteritively
+    arcpy.CopyRaster_management(inputraster, output)
+
+    #note:checkout out spatial extension after creating a copy or issues
+    arcpy.CheckOutExtension("Spatial")
  
     wc = '*'+yxc.res+'*'+subtype
     print wc
+  
+    for year in  yxc.conversionyears:
+        print 'output: ', output
+        print 'year: ', year
 
-    for raster in arcpy.ListDatasets(wc, "Raster"): 
-      
-        for year in  yxc.conversionyears:
-            print 'raster: ', raster
-            print 'year: ', year
+        # allow output to be overwritten
+        arcpy.env.overwriteOutput = True
+        print "overwrite on? ", arcpy.env.overwriteOutput
+    
+        #establish the condition
+        cond = "Value = " + str(year)
+        print 'cond: ', cond
 
-            # allow raster to be overwritten
-            arcpy.env.overwriteOutput = True
-            print "overwrite on? ", arcpy.env.overwriteOutput
+        cdl_file= getAssociatedCDL(subtype, year)
+        print 'associated cdl file: ', cdl_file
         
-            #establish the condition
-            cond = "Value = " + str(year)
-            print 'cond: ', cond
+        # # set everthing not equal to the unique trajectory value to null label this abitray value equal to conversion year
+        OutRas = Con(output, cdl_file, output, cond)
+   
+        OutRas.save(output)
 
-            cdl_file= getAssociatedCDL(subtype, year)
-            print 'associated cdl file: ', cdl_file
-            
-            # # set everthing not equal to the unique trajectory value to null label this abitray value equal to conversion year
-            OutRas = Con(raster, cdl_file, raster, cond)
-       
-            OutRas.save(raster)
-
-        #build pyramids t the end
-        gen.buildPyramids(raster)
+    #build pyramids t the end
+    gen.buildPyramids(output)
 
 
 
 def getAssociatedCDL(subtype, year):
-#function for to get correct cdl for the attachCDL() function
-#NOTE: this is an aux function for attachCDL()
+#this is an aux function for attachCDL() function to get correct cdl for the attachCDL() function
 
     if subtype == 'bfc' or  subtype == 'bfnc':
         # NOTE: subtract 1 from every year in list
@@ -238,46 +238,10 @@ def getAssociatedCDL(subtype, year):
 
 
 
-def applyTrajNLCD():
-    # allow raster to be overwritten
-    arcpy.env.overwriteOutput = True
-    print "overwrite on? ", arcpy.env.overwriteOutput
-
-    #returns noncrop to crop
-    arcpy.env.workspace = defineGDBpath(['pre','trajectories'])
-    
-    raster1 = 'traj_nlcd'+yxc.res+'_b_2001and2006'
-    print raster1
-    raster2 = 'traj_cdl56_b_2008to2012_rfnd'
-    output = 'try2'
-    
-    # set everthing not equal to the unique trajectory value to null label this abitray value equal to conversion year
-    OutRas = Con((Raster(raster1) == 2) , 23, raster2)
-
-    OutRas.save(output)
-
-    gen.buildPyramids( output)
+def createChangeTrajectories():
+    print 'new function'
 
 
-
-
-def reclassifyChangeTraj():
-    arcpy.CheckOutExtension("Spatial")
-    # Description: reclass cdl rasters based on the specific arc_reclassify_table 
-
-    # Set environment settings
-    arcpy.env.workspace = defineGDBpath([yxc.gdb,'trajectories'])
-
-    raster = 'traj_'+yxc.name+yxc.res +'_'+yxc.datarange+'_r1'
-    output = raster + '_r2_'
-    
-    return_string=getReclassifyValuesString()
-
-    # # Execute Reclassify
-    arcpy.gp.Reclassify_sa(raster, "Value", return_string, output, "DATA")
-
-    # #create pyraminds
-    gen.buildPyramids(output)
 
 
 
@@ -311,6 +275,8 @@ def getReclassifyValuesString():
 def createMask(gdb_path, traj_dataset, reclassArray):
     ## replace the arbitrary values in the trajectories dataset with the mtr values 1-5.
     arcpy.env.workspace = defineGDBpath(gdb_path)
+
+    # arcpy.CheckOutExtension("Spatial")
 
     for raster in arcpy.ListDatasets(traj_dataset, "Raster"): 
         print 'raster:', raster
@@ -348,57 +314,21 @@ yxc = ConversionObject(
 
 
 
-
 ###  post  ####################
-createYearbinaries()
+# createYearbinaries()
 # removeArbitraryValuesFromYearbinaries()
 
 
 for subtype in yxc.subtypelist:
     print subtype
-    # attachCDL(subtype)
+    attachCDL(subtype)
 
 
-###  refinement using traj_nlcd  ###################
-# applyTrajNLCD()
 
 
-###  refinement using traj_change  #################
-# reclassifyChangeTraj()
-
-#apply the refined mask to the trajectories
-# applyMasktoTraj()
+#createChangeTrajectories()
 
 # createMask(['pre','trajectories'], 'traj_nlcd56_b_2001and2006', [[0, 0, 'NODATA'], [2, 23]])
 # createMask([yxc.gdb,'trajectories'], 'traj_ytc56_2008to2012', getReclassifyValuesString())
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-###### NOTE FOR COPY RASTER """""""""""""""""""""
-## 1 test snap 
-## 2 test import stats from other image??
-## 3 try other creating stats from multiple methods
-
-
-
-
 
 

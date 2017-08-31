@@ -15,6 +15,8 @@ import general as gen
 
 '''######## DEFINE THESE EACH TIME ##########'''
 
+# db = 'usxp'
+db = 'ksu'
 
 #Note: need to change this each time on different machine
 case=['Bougie','Gibbs']
@@ -23,14 +25,14 @@ case=['Bougie','Gibbs']
 arcpy.CheckOutExtension("Spatial")
 
 try:
-    conn = psycopg2.connect("dbname='usxp' user='mbougie' host='144.92.235.105' password='Mend0ta!'")
+    conn = psycopg2.connect("dbname= "+db+" user='mbougie' host='144.92.235.105' password='Mend0ta!'")
 except:
     print "I am unable to connect to the database"
 
 ###################  declare functions  #######################################################
-#establish root path for this the main project (i.e. usxp)
-#establish root path for this the main project (i.e. usxp)
-rootpath = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/data/usxp/'
+# rootpath = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/data/usxp/'
+rootpath = 'D:/projects/'
+
 
 ### establish gdb path  ####
 def defineGDBpath(arg_list):
@@ -80,7 +82,7 @@ def addGDBTable2postgres(gdb_args,wc,pg_shema):
 	print 'running addGDBTable2postgres() function....'
 	####description: adds tables in geodatabse to postgres
 	# set the engine.....
-	engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
+	engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/'+db)
 
 	arcpy.env.workspace = defineGDBpath(gdb_args)
 
@@ -89,6 +91,7 @@ def addGDBTable2postgres(gdb_args,wc,pg_shema):
 
 		# Execute AddField twice for two new fields
 		fields = [f.name for f in arcpy.ListFields(table)]
+		print fields
 
 		# converts a table to NumPy structured array.
 		arr = arcpy.da.TableToNumPyArray(table,fields)
@@ -133,7 +136,7 @@ def addTrajArrayField(tablename, fields):
 
 
 
-addGDBTable2postgres(['refinement_2008to2012','trajectories'],'*ytc56*','refinement')
+addGDBTable2postgres(['ksu','samples'],'*','yo')
 
 
 
