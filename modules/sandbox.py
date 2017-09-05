@@ -15,8 +15,7 @@ import general as gen
 
 '''######## DEFINE THESE EACH TIME ##########'''
 
-# db = 'usxp'
-db = 'ksu'
+
 
 #Note: need to change this each time on different machine
 case=['Bougie','Gibbs']
@@ -24,14 +23,15 @@ case=['Bougie','Gibbs']
 #import extension
 arcpy.CheckOutExtension("Spatial")
 
-try:
-    conn = psycopg2.connect("dbname= "+db+" user='mbougie' host='144.92.235.105' password='Mend0ta!'")
-except:
-    print "I am unable to connect to the database"
+
 
 ###################  declare functions  #######################################################
-# rootpath = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/data/usxp/'
-rootpath = 'D:/projects/'
+
+db = 'usxp'
+rootpath = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/data/usxp/'
+
+# db = 'ksu'
+# rootpath = 'D:/projects/'
 
 
 ### establish gdb path  ####
@@ -39,6 +39,24 @@ def defineGDBpath(arg_list):
     gdb_path = rootpath + arg_list[0]+'/'+arg_list[1]+'.gdb/'
     print 'gdb path: ', gdb_path 
     return gdb_path
+
+
+
+
+
+
+try:
+    conn = psycopg2.connect("dbname= "+db+" user='mbougie' host='144.92.235.105' password='Mend0ta!'")
+except:
+    print "I am unable to connect to the database"
+
+
+
+
+
+
+
+
 
 
 # gen.importCSVtoPG()
@@ -108,13 +126,13 @@ def addGDBTable2postgres(gdb_args,wc,pg_shema):
 		df.to_sql(table, engine, schema=pg_shema)
 
 		#add trajectory field to table
-		addTrajArrayField(table, fields)
+		# addTrajArrayField(table, fields, pg_shema)
 
 
 
 
 
-def addTrajArrayField(tablename, fields):
+def addTrajArrayField(tablename, fields, schema):
     #this is a sub function for addGDBTable2postgres()
     
     cur = conn.cursor()
@@ -124,10 +142,10 @@ def addTrajArrayField(tablename, fields):
     print columnList
 
     #DDL: add column to hold arrays
-    cur.execute('ALTER TABLE refinement.' + tablename + ' ADD COLUMN traj_array integer[];');
+    cur.execute('ALTER TABLE ' + schema + '.' + tablename + ' ADD COLUMN traj_array integer[];');
     
     #DML: insert values into new array column
-    cur.execute('UPDATE refinement.' + tablename + ' SET traj_array = ARRAY['+columnList+'];');
+    cur.execute('UPDATE '+ schema + '.' + tablename + ' SET traj_array = ARRAY['+columnList+'];');
     
     conn.commit()
     print "Records created successfully";
@@ -136,7 +154,7 @@ def addTrajArrayField(tablename, fields):
 
 
 
-addGDBTable2postgres(['ksu','samples'],'*','yo')
+addGDBTable2postgres(['ancillary','data_2008_2012'],'*','counts')
 
 
 

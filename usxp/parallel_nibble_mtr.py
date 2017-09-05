@@ -1,4 +1,6 @@
 import arcpy
+from arcpy import env
+from arcpy.sa import *
 import multiprocessing
 import os
 import glob
@@ -33,16 +35,13 @@ def defineGDBpath(arg_list):
 
 class ConversionObject:
 
-    def __init__(self, directory, maintype):
-        self.directory = directory
-        self.maintype = maintype
-        self.gdb_path=defineGDBpath([self.directory, self.maintype])
-        #still awkward!!!!!
-        self.ras_name = 'traj_cdl30_b_8to12_n8h_mtr'
-        self.in_raster = arcpy.Raster(defineGDBpath([self.directory, 'mtr']) + self.ras_name)
-        print self.in_raster
-        self.in_mask_raster = arcpy.Raster(self.gdb_path + self.ras_name + '_8w_msk23')
-        self.out_fishnet = self.gdb_path + 'fishnet_refined'
+    def __init__(self, directory, gdb, raster_name, masksize, res):
+        self.gdb_path = defineGDBpath([directory, gdb])
+        self.raster_name = raster_name
+        self.in_raster = defineGDBpath([directory, 'mtr']) + raster_name
+        self.in_mask_raster = self.gdb_path + raster_name + '_8w_msk' + masksize
+        self.res = res
+        self.out_fishnet = defineGDBpath(['ancillary', 'temp']) + 'fishnet_mtr'
 
 
 
@@ -102,6 +101,8 @@ def execute_task(in_extentDict):
     # print fc_count
 	outname = "tile_" + str(fc_count) +'.tif'
 
+	#create Directory
+
 	outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/", r"tiles", outname)
 
 	ras_out.save(outpath)
@@ -112,9 +113,10 @@ def mosiacRasters():
 	tilelist = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*.tif")
 	print tilelist 
 	######mosiac tiles together into a new raster
-	nbl_raster = yxc.ras_name + '_8w_nbl'
+	nbl_raster = yxc.raster_name + '_nbl'
+	print 'nbl_raster: ', nbl_raster
 
-	arcpy.MosaicToNewRaster_management(tilelist,yxc.gdb_path, nbl_raster, yxc.in_raster.spatialReference, "8_BIT_UNSIGNED", "30", "1", "LAST","FIRST")
+	arcpy.MosaicToNewRaster_management(tilelist, yxc.gdb_path, nbl_raster, Raster(yxc.in_raster).spatialReference, "8_BIT_UNSIGNED", yxc.res, "1", "LAST","FIRST")
 
 	##Overwrite the existing attribute table file
 	arcpy.BuildRasterAttributeTable_management(yxc.gdb_path + nbl_raster, "Overwrite")
@@ -129,17 +131,20 @@ def mosiacRasters():
 
 #### Define conversion object ######
 yxc = ConversionObject(
-	  'core_8to12',
-	  'mmu'
+	  'core_2008to2012',
+	  'mmu',
+	  'traj_cdl56_b_2008to2012_rfnd_n8h_mtr',
+	  '23',
+	  '56'
       )
 
 
 if __name__ == '__main__':
 
-	###need to create a unique fishnet for each dataset
-	#create_fishnet()
+	#need to create a unique fishnet for each dataset
+	####create_fishnet()
 
-	###get extents of individual features and add it to a dictionary
+	#get extents of individual features and add it to a dictionary
 	# extDict = {}
 	# count = 1 
 

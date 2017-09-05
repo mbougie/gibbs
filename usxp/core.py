@@ -35,6 +35,20 @@ def defineGDBpath(arg_list):
     print 'gdb path: ', gdb_path 
     return gdb_path
 
+try:
+    conn = psycopg2.connect("dbname='usxp' user='mbougie' host='144.92.235.105' password='Mend0ta!'")
+except:
+    print "I am unable to connect to the database"
+
+#################### class to create yxc object  ####################################################
+class ConversionObject:
+
+    def __init__(self, res, years):
+        self.res = res
+        self.datarange = str(years[0])+'to'+str(years[1])
+        print self.datarange
+        self.gdb = 'core_' + self.datarange
+
 
 
 def addColorMap(inraster,template):
@@ -78,7 +92,7 @@ def createReclassifyList(traj_dataset):
     #this is a sub function for createMTR().  references the mtr value in psotgres to create a list containing arbitray trajectory value and associated new mtr value
 
     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
-    df = pd.read_sql_query('SELECT "Value", mtr from pre.' + traj_dataset + ' as a JOIN pre.' + traj_dataset + '_lookup as b ON a.traj_array = b.traj_array',con=engine)
+    df = pd.read_sql_query('SELECT "Value", mtr from pre.traj_cdl' + yxc.res + '_b_' + yxc.datarange + ' as a JOIN pre.traj_cdl' + yxc.res + '_b_' + yxc.datarange + '_lookup as b ON a.traj_array = b.traj_array',con=engine)
     print df
     fulllist=[[0,0,"NODATA"]]
     for index, row in df.iterrows():
@@ -169,7 +183,7 @@ def regionGroup(gdb_args_in, wc):
     filter_combos = {'8w':["EIGHT", "WITHIN"]}
     for k, v in filter_combos.iteritems():
         print k,v
-        for raster in arcpy.ListDatasets("*"+wc+"*", "Raster"): 
+        for raster in arcpy.ListDatasets(wc, "Raster"): 
             print 'raster: ', raster
     
             raster_out=raster+'_'+k
@@ -178,7 +192,7 @@ def regionGroup(gdb_args_in, wc):
             
             print 'output: ',output
             # Execute RegionGroup
-            outRegionGrp = RegionGroup(raster, v[0], v[1],"NO_LINK")
+            outRegionGrp = RegionGroup(Raster(raster), v[0], v[1],"NO_LINK")
 
             # Save the output 
             print 'save the output'
@@ -191,7 +205,7 @@ def regionGroup(gdb_args_in, wc):
 
 
 
-def clipByMMUmask(gdb_args_in, wc, masks_list):
+def clipByMMUmask(gdb_args_in, wc, masksize):
     #define workspace
     arcpy.env.workspace=defineGDBpath(gdb_args_in)
 
@@ -213,18 +227,18 @@ def clipByMMUmask(gdb_args_in, wc, masks_list):
         --------------------------------------------------------------------------
         '''
 
-        for count in masks_list:
-            cond = "Count < " + count
-            print 'cond: ',cond
+        # for count in masks_list:
+        cond = "Count < " + str(gen.getPixelCount(yxc.res, masksize))
+        print 'cond: ',cond
 
-            output = raster+'_msk'+ count
-    
-            print output
+        output = raster+'_msk'+ str(masksize)
 
-            outSetNull = SetNull(raster, 1, cond)
+        print output
 
-            # Save the output 
-            outSetNull.save(output)
+        # outSetNull = SetNull(raster, 1, cond)
+
+        # # Save the output 
+        # outSetNull.save(output)
 
 
 
@@ -257,18 +271,99 @@ def nibble(maskSize,arg_list1,arg_list2,filename):
 
 
 
+def addGDBTable2postgres(gdb_args,wc,pg_shema):
+    print 'running addGDBTable2postgres() function....'
+    ####description: adds tables in geodatabse to postgres
+    # set the engine.....
+    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
+
+    arcpy.env.workspace = defineGDBpath(gdb_args)
+
+    for table in arcpy.ListTables(wc): 
+        print 'table: ', table
+
+        # Execute AddField twice for two new fields
+        fields = [f.name for f in arcpy.ListFields(table)]
+        print fields
+
+        # converts a table to NumPy structured array.
+        arr = arcpy.da.TableToNumPyArray(table,fields)
+        print arr
+
+        # convert numpy array to pandas dataframe
+        df = pd.DataFrame(data=arr)
+
+        print df
+
+        df.columns = map(str.lower, df.columns)
+
+        # use pandas method to import table into psotgres
+        # df.to_sql(table, engine, schema=pg_shema)
+
+        #add trajectory field to table
+        addAcresField(table, pg_shema)
+
+
+
+
+
+def addAcresField(tablename, schema):
+    #this is a sub function for addGDBTable2postgres()
+    
+    cur = conn.cursor()
+    
+    #DDL: add column to hold arrays
+    cur.execute('ALTER TABLE ' + schema + '.' + tablename + ' ADD COLUMN acres bigint;');
+    
+    #DML: insert values into new array column
+    cur.execute('UPDATE '+ schema + '.' + tablename + ' SET acres = count * ' + gen.getPixelConversion2Acres(yxc.res));
+    
+    conn.commit()
+    print "Records created successfully";
+    conn.close()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+################ Instantiate the class to create yxc object  ########################
+yxc = ConversionObject(
+      '56',
+      ## data range---i.e. all the cdl years you are referencing 
+      [2008,2012]
+      )
+
+
+
 #############################  Call Functions ######################################
 ##------filter gdb--------------
-# majorityFilter(['pre','trajectories'],"traj_cdl30_b_8to12", ['core_8to12','filter'])
+# majorityFilter(['pre','trajectories'],"traj_cdl56_b_2008to2012_rfnd", ['core_2008to2012','filter'])
 
 ##------mtr gdb-----------------
-# createMTR(['core_8to12','filter'], "traj_cdl30_b_8to12", ['core_8to12','mtr'])
+# createMTR(['core_2008to2012','filter'], "traj_cdl56_b_2008to2012_rfnd", ['core_2008to2012','mtr'])
 
 ##------mmu gdb-----------------
-# regionGroup(['core_8to12','mtr'], "cdl30")
-# clipByMMUmask(['core_8to12','mmu'], 'cdl30', ['23'])
-# nibble('23',['core','mmu'],['core','mtr'],'traj_rfnd_n8h_mtr')
+# regionGroup(['core_2008to2012','mtr'], "*cdl56*")
+clipByMMUmask(['core_2008to2012','mmu'], 'cdl56', 15)
 
+
+
+
+##########  NEW     ###################################
+# addGDBTable2postgres(['core_2008to2012','mmu'],'*','counts')
 
 
 

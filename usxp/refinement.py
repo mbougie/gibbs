@@ -183,12 +183,16 @@ def removeArbitraryValuesFromYearbinaries():
 
 def attachCDL(subtype):
     # DESCRIPTION:attach the appropriate cdl value to each year binary dataset
+    print "-----------------attachCDL() function-------------------------------"
 
     # NOTE: Need to copy the yxc_clean dataset and rename it with subtype after it
     arcpy.env.workspace=defineGDBpath([yxc.gdb,yxc.name])
 
-    inputraster = yxc.name+yxc.res+'_'+yxc.datarange
+    inputraster = yxc.name+yxc.res+'_'+yxc.datarange+'_clean'
+    print "inputraster: ", inputraster
+    
     output = inputraster+'_'+subtype
+    print "output: ", output
     
     ###copy binary years raster so it can be modified iteritively
     arcpy.CopyRaster_management(inputraster, output)
@@ -322,8 +326,6 @@ yxc = ConversionObject(
 for subtype in yxc.subtypelist:
     print subtype
     attachCDL(subtype)
-
-
 
 
 #createChangeTrajectories()

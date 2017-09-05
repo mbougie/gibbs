@@ -97,6 +97,25 @@ def commitPG(query):
 
 
 
+def getPixelConversion2Acres(resolution):
+    if resolution == '56':
+        coef = '0.774922476'
+        return coef
+    elif resolution == '30':
+        coef = '0.222395'
+        return coef
+
+
+def getPixelCount(resolution, acres):
+    if resolution == '56':
+        pixels = acres/0.774922476
+        print pixels
+        return pixels
+    elif resolution == '30':
+        pixels = acres/0.222395
+        print pixels
+        return pixels
+
 
 def getAcres(pixel_count, resolution):
     if resolution == 56:
@@ -600,11 +619,11 @@ def fieldCalculator2(gdb_path, wc):
     # print fc
 
     # # Define field name and expression
-    # field = 'acres'
-    field = 'percent'
-
-    # expression = '!Count!*0.222395'
-    expression = sum('!Count!')
+    field = 'acres'
+    # field = 'percent'
+    coef = getPixelConversion2Acres(resolution)
+    expression = '!Count!*' + coef
+    # expression = sum('!Count!')
 
     # # Create a new field with a new name
     # arcpy.AddField_management(fc,field,"TEXT")
