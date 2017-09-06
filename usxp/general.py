@@ -6,7 +6,7 @@ from arcpy import env
 from arcpy.sa import *
 import os
 import glob
-
+import math
 
 
 
@@ -98,6 +98,7 @@ def commitPG(query):
 
 
 def getPixelConversion2Acres(resolution):
+
     if resolution == '56':
         coef = '0.774922476'
         return coef
@@ -107,12 +108,25 @@ def getPixelConversion2Acres(resolution):
 
 
 def getPixelCount(resolution, acres):
+    # '''
+    #  -------------------- CONDITION  ------------------------------------------
+    #  CONVERSION: 900square miles = 0.222395 acres
+
+    #  acres   count
+    #  5       23
+    #  10      45
+    #  15      68
+
+    #  example: masks=['23','45','68']
+
+    #  --------------------------------------------------------------------------
+    #  '''
     if resolution == '56':
-        pixels = acres/0.774922476
+        pixels = math.ceil(acres/0.774922476)
         print pixels
         return pixels
     elif resolution == '30':
-        pixels = acres/0.222395
+        pixels = math.ceil(acres/0.222395)
         print pixels
         return pixels
 

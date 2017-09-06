@@ -133,39 +133,39 @@ def mosiacRasters():
 yxc = ConversionObject(
 	  'core_2008to2012',
 	  'mmu',
-	  'traj_cdl56_b_2008to2012_rfnd_n8h_mtr',
-	  '23',
+	  'traj_cdl56_b_2008to2012_rfnd_k3_mtr',
+	  '15',
 	  '56'
       )
 
 
 if __name__ == '__main__':
 
-	#need to create a unique fishnet for each dataset
+	##need to create a unique fishnet for each dataset
 	####create_fishnet()
 
-	#get extents of individual features and add it to a dictionary
-	# extDict = {}
-	# count = 1 
+	###get extents of individual features and add it to a dictionary
+	extDict = {}
+	count = 1 
 
-	# for row in arcpy.da.SearchCursor(yxc.out_fishnet, ["SHAPE@"]):
-	# 	extent_curr = row[0].extent
-	# 	ls = []
-	# 	ls.append(extent_curr.XMin)
-	# 	ls.append(extent_curr.YMin)
-	# 	ls.append(extent_curr.XMax)
-	# 	ls.append(extent_curr.YMax)
-	# 	extDict[count] = ls
-	# 	count+=1
+	for row in arcpy.da.SearchCursor(yxc.out_fishnet, ["SHAPE@"]):
+		extent_curr = row[0].extent
+		ls = []
+		ls.append(extent_curr.XMin)
+		ls.append(extent_curr.YMin)
+		ls.append(extent_curr.XMax)
+		ls.append(extent_curr.YMax)
+		extDict[count] = ls
+		count+=1
     
-	# print 'kk', extDict
-	# print'll',  extDict.items()
+	print 'extDict', extDict
+	print'extDict.items()',  extDict.items()
 
-	# #######create a process and pass dictionary of extent to execute task
-	# pool = Pool(processes=cpu_count())
-	# pool.map(execute_task, extDict.items())
-	# pool.close()
-	# pool.join
+	#######create a process and pass dictionary of extent to execute task
+	pool = Pool(processes=cpu_count())
+	pool.map(execute_task, extDict.items())
+	pool.close()
+	pool.join
 
 	mosiacRasters()
     

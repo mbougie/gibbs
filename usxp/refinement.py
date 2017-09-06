@@ -276,7 +276,7 @@ def getReclassifyValuesString():
 
 
 
-def createMask(gdb_path, traj_dataset, reclassArray):
+def createMask_trajytc(gdb_path, traj_dataset, reclassArray):
     ## replace the arbitrary values in the trajectories dataset with the mtr values 1-5.
     arcpy.env.workspace = defineGDBpath(gdb_path)
 
@@ -298,10 +298,59 @@ def createMask(gdb_path, traj_dataset, reclassArray):
         gen.buildPyramids(output)
 
 
+
+
+def createMask_nlcdtraj(gdb_path, traj_dataset):
+    ## replace the arbitrary values in the trajectories dataset with the mtr values 1-5.
+    arcpy.env.workspace = defineGDBpath(gdb_path)
+
+    # arcpy.CheckOutExtension("Spatial")
+
+    for raster in arcpy.ListDatasets(traj_dataset, "Raster"): 
+        print 'raster:', raster
+        output = defineGDBpath([yxc.gdb,'masks'])+traj_dataset+'_mask'
+        # output = defineGDBpath(gdb_args_out)+raster_out
+        print 'output:', output
+        
+        inRaster1 = Raster(raster)
+        inRaster2 = Raster(defineGDBpath([yxc.gdb,'mtr'])+'traj_cdl'+yxc.res+'_b_'+yxc.datarange+'_mtr')
+
+        # where condition is true set to 23 else set pixel value to NULL
+        outCon = Con(((inRaster1 == 2) & (inRaster2 == 3)), 23)
+
+        outCon.save(output)
+
+        gen.buildPyramids(output)
+
+
+
+
+
+def createNewMosaic():
+    
+    traj = defineGDBpath(['pre','trajectories']) + 'traj_cdl'+yxc.res+'_b_'+yxc.datarange
+    nlcd_mask = defineGDBpath(['refinement_2008to2012','masks']) + 'traj_nlcd'+yxc.res+'_b_2001and2006_mask'
+    trajYTC_mask = defineGDBpath(['refinement_2008to2012','masks']) + 'traj_'+yxc.name+yxc.res+'_'+yxc.datarange+'_mask'
+    
+
+    filelist = [traj, nlcd_mask, trajYTC_mask]
+    print filelist
+    filestring = ';'.join(filelist)
+    print filestring
+
+    output = traj+'_rfnd_yo'
+
+    #mosaicRasters():
+    arcpy.MosaicToNewRaster_management(filestring, defineGDBpath(['pre','trajectories']), output, Raster(traj).spatialReference, "8_BIT_UNSIGNED", yxc.res, "1", "LAST","FIRST")
+
+
+
+
+
 ################ Instantiate the class to create yxc object  ########################
 yxc = ConversionObject(
       'ytc',
-      '30',
+      '56',
       ## data range---i.e. all the cdl years you are referencing 
       [2008,2012]
       )
@@ -325,12 +374,14 @@ yxc = ConversionObject(
 
 for subtype in yxc.subtypelist:
     print subtype
-    attachCDL(subtype)
+    # attachCDL(subtype)
 
 
 #createChangeTrajectories()
 
-# createMask(['pre','trajectories'], 'traj_nlcd56_b_2001and2006', [[0, 0, 'NODATA'], [2, 23]])
-# createMask([yxc.gdb,'trajectories'], 'traj_ytc56_2008to2012', getReclassifyValuesString())
+ # createMask_nlcdtraj(['pre','trajectories'], 'traj_nlcd56_b_2001and2006')
+# createMask_trajytc([yxc.gdb,'trajectories'], 'traj_ytc56_2008to2012', getReclassifyValuesString())
 
 
+### DOESNT WORK YET!!!!!!!!!!!!!!!!!!!
+#createNewMosaic()
