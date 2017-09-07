@@ -40,8 +40,8 @@ try:
 except:
     print "I am unable to connect to the database"
 
-#################### class to create yxc object  ####################################################
-class ConversionObject:
+#################### class to create core object  ####################################################
+class CoreObject:
 
     def __init__(self, res, years, wc, mmu):
         self.res = res
@@ -75,11 +75,11 @@ def addColorMap(inraster,template):
 
 def createMTR():
     ## replace the arbitrary values in the trajectories dataset with the mtr values 1-5.
-    arcpy.env.workspace = defineGDBpath([yxc.directory,'filter'])
+    arcpy.env.workspace = defineGDBpath([core.directory,'filter'])
     
-    for raster in arcpy.ListDatasets(yxc.wc, "Raster"): 
+    for raster in arcpy.ListDatasets(core.wc, "Raster"): 
         print 'raster:', raster
-        output = defineGDBpath([yxc.directory,'mtr'])+raster+'_mtr'
+        output = defineGDBpath([core.directory,'mtr'])+raster+'_mtr'
         print 'output:', output
 
         reclassArray = createReclassifyList() 
@@ -96,7 +96,7 @@ def createReclassifyList():
     #this is a sub function for createMTR().  references the mtr value in psotgres to create a list containing arbitray trajectory value and associated new mtr value
 
     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
-    df = pd.read_sql_query('SELECT "Value", mtr from pre.traj_cdl' + yxc.res + '_b_' + yxc.datarange + ' as a JOIN pre.traj_cdl' + yxc.res + '_b_' + yxc.datarange + '_lookup as b ON a.traj_array = b.traj_array',con=engine)
+    df = pd.read_sql_query('SELECT "Value", mtr from pre.traj_cdl' + core.res + '_b_' + core.datarange + ' as a JOIN pre.traj_cdl' + core.res + '_b_' + core.datarange + '_lookup as b ON a.traj_array = b.traj_array',con=engine)
     print df
     fulllist=[[0,0,"NODATA"]]
     for index, row in df.iterrows():
@@ -118,9 +118,9 @@ def majorityFilter():
         print k,v
 
         # Execute MajorityFilter
-        outMajFilt = MajorityFilter(yxc.traj_path, v[0], v[1])
+        outMajFilt = MajorityFilter(core.traj_path, v[0], v[1])
         
-        output = defineGDBpath([yxc.directory,'filter'])+yxc.traj_name+'_'+k
+        output = defineGDBpath([core.directory,'filter'])+core.traj_name+'_'+k
         print 'output: ',output
         
         #save processed raster to new file
@@ -157,60 +157,19 @@ def focalStats(gdb_args_in, dataset, gdb_args_out):
 
 
 
-def focalStats_initial(index,dir_in,dir_out):
-
-    #NOT CONVERTED TO GDB YET!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    
-    arcpy.CheckOutExtension("Spatial")
-    env.workspace = 'C:/Users/Bougie/Documents/ArcGIS/Default.gdb'
-
-    print dir_in,dir_out
-    ds = DirStructure(dir_in, dir_out)
-
-    filter_combos = {'k3':[3, 3, "CELL"],'k5':[5, 5, "CELL"]}
-    for k, v in filter_combos.iteritems():
-        print k,v
-        os.chdir(ds.dir_in)
-        for file in glob.glob("*.img"):
-            #fnf=file name fragments
-            fnf=(os.path.splitext(file)[0]).split(".")
-            
-            #create file structure
-            fs = FileStructure(fnf[0]+'_'+k, '.img')
-
-            neighborhood = NbrRectangle(v[0], v[1], v[2])
-
-            # Check out the ArcGIS Spatial Analyst extension license
-            arcpy.CheckOutExtension("Spatial")
-
-            # Execute FocalStatistics
-            outFocalStatistics = FocalStatistics(ds.dir_in+file, neighborhood, "MAJORITY")
-
-            output = ds.dir_out+fs.file_out
-
-            # Save the output 
-            outFocalStatistics.save(output)
-
-            # addColorMap(output,'C:/Users/bougie/Desktop/gibbs/production_pre/rasters/colormaps/filter_and_mmu.clr')
-
-
-
-
-
-
 ####################  mmu functions  ##########################################
 
 def regionGroup():
     #define workspace
-    arcpy.env.workspace=defineGDBpath([yxc.directory, 'mtr'])
+    arcpy.env.workspace=defineGDBpath([core.directory, 'mtr'])
 
     filter_combos = {'8w':["EIGHT", "WITHIN"]}
     for k, v in filter_combos.iteritems():
         print k,v
-        for raster in arcpy.ListDatasets(yxc.wc, "Raster"): 
+        for raster in arcpy.ListDatasets(core.wc, "Raster"): 
             print 'raster: ', raster
             
-            output=defineGDBpath([yxc.directory,'mmu'])+raster+'_'+k
+            output=defineGDBpath([core.directory,'mmu'])+raster+'_'+k
             print 'output: ',output
 
             # Execute RegionGroup
@@ -227,20 +186,19 @@ def regionGroup():
 
 
 
-def clipByMMUmask(gdb_args_in, wc, masksize):
+def clipByMMUmask():
     #define workspace
-    arcpy.env.workspace=defineGDBpath(gdb_args_in)
+    arcpy.env.workspace=defineGDBpath([core.directory, 'mmu'])
 
-
-    for raster in arcpy.ListDatasets('*'+wc+'*8w', "Raster"): 
+    for raster in arcpy.ListDatasets(core.wc, "Raster"): 
 
         print 'raster: ', raster
 
         # for count in masks_list:
-        cond = "Count < " + str(gen.getPixelCount(yxc.res, masksize))
+        cond = "Count < " + str(gen.getPixelCount(core.res, core.mmu))
         print 'cond: ',cond
 
-        output = raster+'_msk'+ str(masksize)
+        output = raster+'_msk'+ str(core.mmu)
 
         print output
 
@@ -248,33 +206,6 @@ def clipByMMUmask(gdb_args_in, wc, masksize):
 
         # Save the output 
         outSetNull.save(output)
-
-
-
-# def nibble(maskSize,arg_list1,arg_list2,filename):
-#     #define workspace
-#     arcpy.env.workspace=defineGDBpath(arg_list1)
-
-#     #find mask raster in gdb
-#     for mask in arcpy.ListDatasets('*_msk'+maskSize, "Raster"): 
-#         print 'mask: ',  mask
-
-#         #create file structure
-#         output = mask+'_nbl'
-#         print 'output: ', output
-    
-#         ####  create the paths to the mask files  ############# 
-#         raster_in=defineGDBpath(arg_list2)+filename
-#         print 'raster_in: ', raster_in
-      
-#         ###  Execute Nibble  #####################
-#         nibbleOut = Nibble(Raster(raster_in), mask, "DATA_ONLY")
-
-#         ###  Save the output  ################### 
-#         nibbleOut.save(output)
-
-#     #     addColorMap(output,'C:/Users/bougie/Desktop/gibbs/colormaps/mmu.clr')
-
 
 
 
@@ -307,7 +238,7 @@ def addGDBTable2postgres(gdb_args,wc,pg_shema):
         df.columns = map(str.lower, df.columns)
 
         # use pandas method to import table into psotgres
-        # df.to_sql(table, engine, schema=pg_shema)
+        df.to_sql(table, engine, schema=pg_shema)
 
         #add trajectory field to table
         addAcresField(table, pg_shema)
@@ -325,7 +256,7 @@ def addAcresField(tablename, schema):
     cur.execute('ALTER TABLE ' + schema + '.' + tablename + ' ADD COLUMN acres bigint;');
     
     #DML: insert values into new array column
-    cur.execute('UPDATE '+ schema + '.' + tablename + ' SET acres = count * ' + gen.getPixelConversion2Acres(yxc.res));
+    cur.execute('UPDATE '+ schema + '.' + tablename + ' SET acres = count * ' + gen.getPixelConversion2Acres(core.res));
     
     conn.commit()
     print "Records created successfully";
@@ -348,32 +279,35 @@ def addAcresField(tablename, schema):
 
 
 
-################ Instantiate the class to create yxc object  ########################
-yxc = ConversionObject(
-      '56',
-      ## data range---i.e. all the cdl years you are referencing 
+################ Instantiate the class to create core object  ########################
+core = CoreObject(
+      #resolution
+      '30',
+      #data range---i.e. all the cdl years you are referencing 
       [2008,2012],
+      #filter used
       'n8h',
-       15
+      #mmu
+       5
       )
 
 
 
 #############################  Call Functions ######################################
 ##------filter gdb--------------
-# majorityFilter()
+majorityFilter()
 
 ##------mtr gdb-----------------
-# createMTR()
+createMTR()
 
-# ##------mmu gdb-----------------
+##------mmu gdb-----------------
 regionGroup()
-# clipByMMUmask()
+clipByMMUmask()
 
-
+##find way to call the parrell_nibble function here
 
 ##########  NEW     ###################################
-# addGDBTable2postgres(['core_2008to2012','mmu'],'*','counts')
+# addGDBTable2postgres(['core_2008to2012','mmu'],'*30*nbl_table','counts')
 
 
 

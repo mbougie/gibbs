@@ -33,13 +33,14 @@ def defineGDBpath(arg_list):
 
 #######  define raster and mask  ####################
 
-class ConversionObject:
+class NibbleObject:
 
-    def __init__(self, directory, gdb, raster_name, masksize, res):
+    def __init__(self, directory, gdb, raster_name, mmu, res):
         self.gdb_path = defineGDBpath([directory, gdb])
         self.raster_name = raster_name
         self.in_raster = defineGDBpath([directory, 'mtr']) + raster_name
-        self.in_mask_raster = self.gdb_path + raster_name + '_8w_msk' + masksize
+        self.mask_name = raster_name + '_8w_msk' + mmu
+        self.in_mask_raster = self.gdb_path + self.mask_name
         self.res = res
         self.out_fishnet = defineGDBpath(['ancillary', 'temp']) + 'fishnet_mtr'
 
@@ -47,13 +48,13 @@ class ConversionObject:
 
 def create_fishnet():
 	#delete previous fishnet feature class
-	arcpy.Delete_management(yxc.out_fishnet)
+	arcpy.Delete_management(nibble.out_fishnet)
 
     #acquire parameters for creatfisnet function
-	XMin = yxc.in_raster.extent.XMin
-	YMin = yxc.in_raster.extent.YMin
-	XMax = yxc.in_raster.extent.XMax
-	YMax = yxc.in_raster.extent.YMax
+	XMin = nibble.in_raster.extent.XMin
+	YMin = nibble.in_raster.extent.YMin
+	XMax = nibble.in_raster.extent.XMax
+	YMax = nibble.in_raster.extent.YMax
 
 	origCord = "{} {}".format(XMin, YMin)
 	YAxisCord = "{} {}".format(XMin, YMax)
@@ -67,20 +68,20 @@ def create_fishnet():
 
 	geotype = "POLYGON"
 
-	arcpy.env.outputCoordinateSystem = yxc.in_raster.spatialReference
-	print yxc.in_raster.spatialReference.name
+	arcpy.env.outputCoordinateSystem = nibble.in_raster.spatialReference
+	print nibble.in_raster.spatialReference.name
 
     #call CreateFishnet_management function
-	arcpy.CreateFishnet_management(yxc.out_fishnet, origCord, YAxisCord, cellSizeW, cellSizeH, numRows, numCols, cornerCord, "NO_LABELS", "", geotype)
+	arcpy.CreateFishnet_management(nibble.out_fishnet, origCord, YAxisCord, cellSizeW, cellSizeH, numRows, numCols, cornerCord, "NO_LABELS", "", geotype)
 
     
   
 
 def execute_task(in_extentDict):
 	fc_count = in_extentDict[0]
-	print fc_count
+	# print fc_count
 	procExt = in_extentDict[1]
-	print procExt
+	# print procExt
 	XMin = procExt[0]
 	YMin = procExt[1]
 	XMax = procExt[2]
@@ -88,12 +89,12 @@ def execute_task(in_extentDict):
 
 	#set environments
 	 #The brilliant thing here is that using the extents with the full dataset!!!!!!   DONT EVEN NEED TO CLIP THE FULL RASTER TO THE FISHNET BECASUE 
-	arcpy.env.snapRaster = yxc.in_raster
-	arcpy.env.cellsize = yxc.in_raster
+	arcpy.env.snapRaster = nibble.in_raster
+	arcpy.env.cellsize = nibble.in_raster
 	arcpy.env.extent = arcpy.Extent(XMin, YMin, XMax, YMax)
 
 	###  Execute Nibble  #####################
-	ras_out = arcpy.sa.Nibble(yxc.in_raster, yxc.in_mask_raster, "DATA_ONLY")
+	ras_out = arcpy.sa.Nibble(nibble.in_raster, nibble.in_mask_raster, "DATA_ONLY")
 
 	#clear out the extent for next time
 	arcpy.ClearEnvironment("extent")
@@ -113,16 +114,16 @@ def mosiacRasters():
 	tilelist = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*.tif")
 	print tilelist 
 	######mosiac tiles together into a new raster
-	nbl_raster = yxc.raster_name + '_nbl'
+	nbl_raster = nibble.mask_name + '_nbl'
 	print 'nbl_raster: ', nbl_raster
 
-	arcpy.MosaicToNewRaster_management(tilelist, yxc.gdb_path, nbl_raster, Raster(yxc.in_raster).spatialReference, "8_BIT_UNSIGNED", yxc.res, "1", "LAST","FIRST")
+	arcpy.MosaicToNewRaster_management(tilelist, nibble.gdb_path, nbl_raster, Raster(nibble.in_raster).spatialReference, "8_BIT_UNSIGNED", nibble.res, "1", "LAST","FIRST")
 
 	##Overwrite the existing attribute table file
-	arcpy.BuildRasterAttributeTable_management(yxc.gdb_path + nbl_raster, "Overwrite")
+	arcpy.BuildRasterAttributeTable_management(nibble.gdb_path + nbl_raster, "Overwrite")
 
 	## Overwrite pyramids
-	gen.buildPyramids(yxc.gdb_path + nbl_raster)
+	gen.buildPyramids(nibble.gdb_path + nbl_raster)
 
 
 
@@ -130,25 +131,30 @@ def mosiacRasters():
 
 
 #### Define conversion object ######
-yxc = ConversionObject(
+nibble = NibbleObject(
+	  #directory
 	  'core_2008to2012',
+	  #gdb
 	  'mmu',
-	  'traj_cdl56_b_2008to2012_rfnd_k3_mtr',
+	  #mtr raster
+	  'traj_cdl56_b_2008to2012_rfnd_n8h_mtr',
+	  #mmu
 	  '15',
+	  #resolution
 	  '56'
       )
 
 
 if __name__ == '__main__':
 
-	##need to create a unique fishnet for each dataset
-	####create_fishnet()
+	#need to create a unique fishnet for each dataset
+	###create_fishnet()
 
-	###get extents of individual features and add it to a dictionary
+	##get extents of individual features and add it to a dictionary
 	extDict = {}
 	count = 1 
 
-	for row in arcpy.da.SearchCursor(yxc.out_fishnet, ["SHAPE@"]):
+	for row in arcpy.da.SearchCursor(nibble.out_fishnet, ["SHAPE@"]):
 		extent_curr = row[0].extent
 		ls = []
 		ls.append(extent_curr.XMin)
@@ -158,8 +164,8 @@ if __name__ == '__main__':
 		extDict[count] = ls
 		count+=1
     
-	print 'extDict', extDict
-	print'extDict.items()',  extDict.items()
+	# print 'extDict', extDict
+	# print'extDict.items()',  extDict.items()
 
 	#######create a process and pass dictionary of extent to execute task
 	pool = Pool(processes=cpu_count())
