@@ -1,17 +1,12 @@
 from sqlalchemy import create_engine
 import numpy as np, sys, os
-# from osgeo import gdal
-# from osgeo.gdalconst import *
-# from pandas import read_sql_query
 import pandas as pd
-# import tables
-import collections
-from collections import namedtuple
-# import openpyxl
+# import collections
+# from collections import namedtuple
 import arcpy
 from arcpy import env
 from arcpy.sa import *
-import glob
+# import glob
 import psycopg2
 import general as gen
 
@@ -43,14 +38,24 @@ except:
 #################### class to create core object  ####################################################
 class CoreObject:
 
-    def __init__(self, res, years, wc, mmu):
+    def __init__(self, res, years, filter, mmu):
         self.res = res
-        self.datarange = str(years[0])+'to'+str(years[1])
-        print self.datarange
-        self.directory = 'core_' + self.datarange
+        self.years = years
+
+        if self.years[1] == 2016:
+            self.datarange = str(self.years[0])+'to'+str(self.years[1]-1)
+            print 'self.datarange:', self.datarange
+            
+        else:
+
+            self.datarange = str(self.years[0])+'to'+str(self.years[1])
+            print 'self.datarange:', self.datarange
+
+
         self.traj_name = "traj_cdl"+self.res+"_b_"+self.datarange+"_rfnd"
         self.traj_path = defineGDBpath(['pre','trajectories'])+self.traj_name
-        self.wc = "*"+wc+"*"
+        self.filter = filter
+        self.wc = "*"+res+"*"+self.datarange+"*"
         self.mmu = mmu
 
 
@@ -75,16 +80,19 @@ def addColorMap(inraster,template):
 
 def createMTR():
     ## replace the arbitrary values in the trajectories dataset with the mtr values 1-5.
-    arcpy.env.workspace = defineGDBpath([core.directory,'filter'])
-    
+    arcpy.env.workspace = defineGDBpath(['core','filter'])
+
+
     for raster in arcpy.ListDatasets(core.wc, "Raster"): 
-        print 'raster:', raster
-        output = defineGDBpath([core.directory,'mtr'])+raster+'_mtr'
+
+        print 'raster: ', raster
+
+        output = defineGDBpath(['core','mtr'])+raster+'_mtr'
         print 'output:', output
 
         reclassArray = createReclassifyList() 
 
-        outReclass = Reclassify(raster, "Value", RemapRange(reclassArray), "NODATA")
+        outReclass = Reclassify(Raster(raster), "Value", RemapRange(reclassArray), "NODATA")
         
         outReclass.save(output)
 
@@ -94,9 +102,10 @@ def createMTR():
 
 def createReclassifyList():
     #this is a sub function for createMTR().  references the mtr value in psotgres to create a list containing arbitray trajectory value and associated new mtr value
-
     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
-    df = pd.read_sql_query('SELECT "Value", mtr from pre.traj_cdl' + core.res + '_b_' + core.datarange + ' as a JOIN pre.traj_cdl' + core.res + '_b_' + core.datarange + '_lookup as b ON a.traj_array = b.traj_array',con=engine)
+    query = 'SELECT "Value", mtr from pre.traj_cdl' + core.res + '_b_' + core.datarange + ' as a JOIN pre.traj_cdl' + core.res + '_b_' + core.datarange + '_lookup as b ON a.traj_array = b.traj_array'
+    print 'query:', query
+    df = pd.read_sql_query(query, con=engine)
     print df
     fulllist=[[0,0,"NODATA"]]
     for index, row in df.iterrows():
@@ -117,11 +126,11 @@ def majorityFilter():
     for k, v in filter_combos.iteritems():
         print k,v
 
+        output = defineGDBpath(['core','filter'])+core.traj_name+'_'+k
+        print 'output: ',output
+
         # Execute MajorityFilter
         outMajFilt = MajorityFilter(core.traj_path, v[0], v[1])
-        
-        output = defineGDBpath([core.directory,'filter'])+core.traj_name+'_'+k
-        print 'output: ',output
         
         #save processed raster to new file
         outMajFilt.save(output)
@@ -161,15 +170,17 @@ def focalStats(gdb_args_in, dataset, gdb_args_out):
 
 def regionGroup():
     #define workspace
-    arcpy.env.workspace=defineGDBpath([core.directory, 'mtr'])
+    arcpy.env.workspace=defineGDBpath(['core', 'mtr'])
 
-    filter_combos = {'8w':["EIGHT", "WITHIN"]}
-    for k, v in filter_combos.iteritems():
-        print k,v
-        for raster in arcpy.ListDatasets(core.wc, "Raster"): 
-            print 'raster: ', raster
-            
-            output=defineGDBpath([core.directory,'mmu'])+raster+'_'+k
+    for raster in arcpy.ListDatasets(core.wc, "Raster"): 
+
+        print 'raster: ', raster
+
+        filter_combos = {'8w':["EIGHT", "WITHIN"]}
+        for k, v in filter_combos.iteritems():
+            print k,v
+
+            output=defineGDBpath(['core','mmu'])+raster+'_'+k
             print 'output: ',output
 
             # Execute RegionGroup
@@ -188,7 +199,7 @@ def regionGroup():
 
 def clipByMMUmask():
     #define workspace
-    arcpy.env.workspace=defineGDBpath([core.directory, 'mmu'])
+    arcpy.env.workspace=defineGDBpath(['core', 'mmu'])
 
     for raster in arcpy.ListDatasets(core.wc, "Raster"): 
 
@@ -284,7 +295,7 @@ core = CoreObject(
       #resolution
       '30',
       #data range---i.e. all the cdl years you are referencing 
-      [2008,2012],
+      [2010,2016],
       #filter used
       'n8h',
       #mmu
@@ -295,13 +306,13 @@ core = CoreObject(
 
 #############################  Call Functions ######################################
 ##------filter gdb--------------
-majorityFilter()
+# majorityFilter()
 
 ##------mtr gdb-----------------
-createMTR()
+# createMTR()
 
 ##------mmu gdb-----------------
-regionGroup()
+# regionGroup()
 clipByMMUmask()
 
 ##find way to call the parrell_nibble function here

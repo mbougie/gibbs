@@ -57,6 +57,29 @@ arcpy.env.parallelProcessingFactor = "95%"
 rootpath = 'D:/projects/ksu/control/CLU_fields_by_county/'
 
 
+
+def mosiacCLU():
+    ##get the sub-directories names
+    for subdir in os.listdir(rootpath):
+        # if subdir == 'AR_shps':
+        print subdir
+        filelist = []
+        for file in glob.glob(rootpath+subdir+'/*.shp'):
+            print file
+            filelist.append(file)
+        print filelist
+
+
+
+
+
+
+
+
+
+
+
+
 def main():
     ###get the sub-directories names
     # for subdir in os.listdir(rootpath):
@@ -253,5 +276,7 @@ def createEmptyRaster(filename):
 
 
 #####  call main function ##################
-main()
+# main()
+
+mosiacCLU()
 

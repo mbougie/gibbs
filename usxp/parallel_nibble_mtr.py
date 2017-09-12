@@ -13,8 +13,6 @@ import general as gen
 arcpy.env.overwriteOutput = True
 arcpy.env.scratchWorkspace = "in_memory" 
 
-working_dir = "C:/Users/Bougie/Desktop/Gibbs/tiles/"
-
 case=['Bougie','Gibbs']
 
 #import extension
@@ -137,11 +135,11 @@ nibble = NibbleObject(
 	  #gdb
 	  'mmu',
 	  #mtr raster
-	  'traj_cdl56_b_2008to2012_rfnd_n8h_mtr',
+	  'traj_cdl30_b_2008to2012_rfnd_n8h_mtr',
 	  #mmu
-	  '15',
+	  '5',
 	  #resolution
-	  '56'
+	  '30'
       )
 
 

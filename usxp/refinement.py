@@ -38,36 +38,49 @@ def defineGDBpath(arg_list):
 
 
 #################### class to create yxc object  ####################################################
-class ConversionObject:
+class RefineObject:
 
     def __init__(self, name, res, years):
         self.name = name
-        # self.subtype = subtype
         self.res = res
-        self.datarange = str(years[0])+'to'+str(years[1])
-        print self.datarange
-        self.directory = 'refinement_' + self.datarange
+        self.years = years
+        self.yearcount=len(range(self.years[0], self.years[1]+1))
+
+        if self.years[1] == 2016:
+            self.datarange = str(self.years[0])+'to'+str(self.years[1]-1)
+            print 'self.datarange:', self.datarange
+            self.conversionyears = range(self.years[0]+1, self.years[1])
+            print 'self.conversionyears:', self.conversionyears
+        else:
+            self.datarange = str(self.years[0])+'to'+str(self.years[1])
+            print 'self.datarange:', self.datarange
+            self.conversionyears = range(self.years[0]+1, self.years[1] + 1)
+            print 'self.conversionyears:', self.conversionyears
+
+        self.traj_dataset = "traj_cdl"+self.res+"_b_"+self.datarange
+        
      
         # self.mmu_Raster=Raster(defineGDBpath([gdb,'mtr']) + 'traj_cdl'+res+'_b_8to12_mtr')
-        def getConversionyears():
-            if self.datarange == '2008to2012':
-                self.conversionyears = range(years[0]+1, years[1] + 1)
-                print self.conversionyears
-            elif self.datarange == '2008to2016':
-                self.conversionyears = range(years[0]+1, years[1])
-                print self.conversionyears
+        # def getConversionyears():
+        #     if self.datarange == '2008to2012':
+        #         self.conversionyears = range(self.years[0]+1, self.years[1] + 1)
+        #         print self.conversionyears
+        #     elif self.datarange == '2008to2016':
+        #         self.conversionyears = range(self.years[0]+1, self.years[1])
+        #         print self.conversionyears
 
         def getYXCAttributes():
             if self.name == 'ytc':
                 self.mtr = '3'
-                self.subtypelist = ['fc','sc','bfc']
+                # self.subtypelist = ['sc']
+                self.subtypelist = ['bfc','fc','sc']
                 print 'yo', self.subtypelist
                 self.traj_change = 1
 
         
             elif self.name == 'yfc':
                 self.mtr = '4'
-                self.subtypelist = ['fnc','bfnc']
+                self.subtypelist = ['bfnc','fnc']
                 print 'yo', self.subtypelist
                 # self.traj_change = 2
 
@@ -75,38 +88,37 @@ class ConversionObject:
 
         
         #call functions 
-        getConversionyears()
+        # getConversionyears()
         getYXCAttributes()
+
+
+        def getCDLlist(self):
+            cdl_list = []
+            for year in self.data_years:
+                cdl_dataset = 'cdl'+self.res+'_b_'+str(year)
+                cdl_list.append(cdl_dataset)
+            print'cdl_list: ', cdl_list
+            return cdl_list
+
+
+
+
 
 
 
 ##############  Declare functions  ######################################################
-    
-def createMTR(gdb_args_in, traj_dataset, gdb_args_out):
-    ## replace the arbitrary values in the trajectories dataset with the mtr values 1-5.
-    arcpy.env.workspace = defineGDBpath(gdb_args_in)
+# createMTR("traj_cdl30_b_2008to2012", ['refinement_2008to2012','mtr'])   
+def createMTR():
+        # DESCRIPTION:attach the appropriate cdl value to each year binary dataset
+    print "-----------------createMTR() function-------------------------------"
 
-    for raster in arcpy.ListDatasets(traj_dataset+'*', "Raster"): 
-        print 'raster:', raster
-        raster_out = raster+'_mtr'
-        output = defineGDBpath(gdb_args_out)+raster_out
-        print 'output:', output
-
-        reclassArray = createReclassifyList(traj_dataset) 
-
-        outReclass = Reclassify(raster, "Value", RemapRange(reclassArray), "NODATA")
-        
-        outReclass.save(output)
-
-        gen.buildPyramids(output)
-
-
-
-    def createReclassifyList(traj_dataset):
+    def createReclassifyList():
         #this is a sub function for createMTR().  references the mtr value in psotgres to create a list containing arbitray trajectory value and associated new mtr value
 
         engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
-        df = pd.read_sql_query('SELECT "Value", mtr from pre.' + traj_dataset + ' as a JOIN pre.' + traj_dataset + '_lookup as b ON a.traj_array = b.traj_array',con=engine)
+        query = 'SELECT * from pre.' + refine.traj_dataset + ' as a JOIN pre.' + refine.traj_dataset + '_lookup as b ON a.traj_array = b.traj_array'
+        print 'query:', query
+        df = pd.read_sql_query(query, con=engine)
         print df
         fulllist=[[0,0,"NODATA"]]
         for index, row in df.iterrows():
@@ -120,22 +132,41 @@ def createMTR(gdb_args_in, traj_dataset, gdb_args_out):
         return fulllist
 
 
+            ## replace the arbitrary values in the trajectories dataset with the mtr values 1-5.
+    defineGDBpath(['pre','trajectories'])
+
+    raster = defineGDBpath(['pre','trajectories'])+refine.traj_dataset
+    print 'raster:', raster
+
+    output = defineGDBpath(['refine','mtr'])+refine.traj_dataset+'_mtr'
+    print 'output:', output
+
+    reclassArray = createReclassifyList() 
+
+    outReclass = Reclassify(raster, "Value", RemapRange(reclassArray), "NODATA")
+    
+    outReclass.save(output)
+
+    gen.buildPyramids(output)
+
+
 
 def createYearbinaries():
+    print "-----------------createYearbinaries() function-------------------------------"
     #DESCRIPTION:subset the trajectoires by year to create binary ytc or ytc raster by year that represent the conversion to/from crop between succesive years
-    arcpy.env.workspace=defineGDBpath([yxc.directory,yxc.name])
+    arcpy.env.workspace=defineGDBpath(['refine',refine.name])
     
-    output = yxc.name+yxc.res+'_'+yxc.datarange
+    output = refine.name+refine.res+'_'+refine.datarange
     print 'output: ', output
 
     ###copy trajectory raster so it can be modified iteritively
-    # arcpy.CopyRaster_management(defineGDBpath(['pre', 'trajectories']) + 'traj_cdl'+yxc.res+'_b_'+yxc.datarange, output)
+    arcpy.CopyRaster_management(defineGDBpath(['pre', 'trajectories']) + 'traj_cdl'+refine.res+'_b_'+refine.datarange, output)
     
     arcpy.CheckOutExtension("Spatial")
 
     #Connect to postgres database to get values from traj dataset 
     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
-    df = pd.read_sql_query('select * from pre.traj_cdl'+yxc.res+'_b_'+yxc.datarange+' as a JOIN pre.traj_cdl'+yxc.res+'_b_'+yxc.datarange+'_lookup as b ON a.traj_array = b.traj_array WHERE b.'+yxc.name+' IS NOT NULL',con=engine)
+    df = pd.read_sql_query('select * from pre.traj_cdl'+refine.res+'_b_'+refine.datarange+' as a JOIN pre.traj_cdl'+refine.res+'_b_'+refine.datarange+'_lookup as b ON a.traj_array = b.traj_array WHERE b.'+refine.name+' IS NOT NULL',con=engine)
     print 'df--',df
     
     # loop through rows in the dataframe
@@ -145,7 +176,7 @@ def createYearbinaries():
         print 'value: ', value
 
         #cy is acronym for conversion year
-        cy = str(row[yxc.name])
+        cy = str(row[refine.name])
         print 'cy:', cy
         
         # allow raster to be overwritten
@@ -164,20 +195,23 @@ def createYearbinaries():
     #build pyramids t the end
     gen.buildPyramids(output)
 
+    removeArbitraryValuesFromYearbinaries()
+
 
 
 
 def removeArbitraryValuesFromYearbinaries():
+    print "-----------------removeArbitraryValuesFromYearbinaries() function-------------------------------"
     #DESCRIPTION: remove the arbitrary values from the 'yfc_years_'+mmu dataset
 
     #define gdb workspace
-    arcpy.env.workspace=defineGDBpath([yxc.directory,yxc.name])
+    arcpy.env.workspace=defineGDBpath(['refine',refine.name])
 
     arcpy.CheckOutExtension("Spatial")
     
     #get raster from geodatabse
-    raster_input = yxc.name+yxc.res+'_'+yxc.datarange
-    output = yxc.name+yxc.res+'_'+yxc.datarange+'_clean'
+    raster_input = refine.name+refine.res+'_'+refine.datarange
+    output = refine.name+refine.res+'_'+refine.datarange+'_clean'
 
     ##only keep year values in map
     cond = "Value < 2009" 
@@ -198,25 +232,44 @@ def attachCDL(subtype):
     # DESCRIPTION:attach the appropriate cdl value to each year binary dataset
     print "-----------------attachCDL() function-------------------------------"
 
-    # NOTE: Need to copy the yxc_clean dataset and rename it with subtype after it
-    arcpy.env.workspace=defineGDBpath([yxc.directory,yxc.name])
 
-    inputraster = yxc.name+yxc.res+'_'+yxc.datarange+'_clean'
+    def getAssociatedCDL(subtype, year):
+        #this is an aux function for attachCDL() function to get correct cdl for the attachCDL() function
+
+        if subtype == 'bfc' or  subtype == 'bfnc':
+            # NOTE: subtract 1 from every year in list
+            cdl_file = defineGDBpath(['ancillary','cdl'])+'cdl'+ refine.res + '_' + str(year - 1)
+            return cdl_file
+
+        elif subtype == 'fc' or  subtype == 'fnc':
+            cdl_file = defineGDBpath(['ancillary','cdl'])+'cdl'+ refine.res + '_' + str(year)
+            return cdl_file
+
+        elif subtype == 'sc':
+            cdl_file = defineGDBpath(['ancillary','cdl'])+'cdl'+ refine.res + '_' + str(year + 1)
+            return cdl_file
+
+
+
+    # NOTE: Need to copy the yxc_clean dataset and rename it with subtype after it
+    arcpy.env.workspace=defineGDBpath(['refine',refine.name])
+
+    inputraster = refine.name+refine.res+'_'+refine.datarange+'_clean'
     print "inputraster: ", inputraster
     
     output = inputraster+'_'+subtype
     print "output: ", output
     
-    ###copy binary years raster so it can be modified iteritively
+    ##copy binary years raster so it can be modified iteritively
     arcpy.CopyRaster_management(inputraster, output)
 
     #note:checkout out spatial extension after creating a copy or issues
     arcpy.CheckOutExtension("Spatial")
  
-    wc = '*'+yxc.res+'*'+subtype
+    wc = '*'+refine.res+'*'+subtype
     print wc
   
-    for year in  yxc.conversionyears:
+    for year in  refine.conversionyears:
         print 'output: ', output
         print 'year: ', year
 
@@ -231,7 +284,7 @@ def attachCDL(subtype):
         cdl_file= getAssociatedCDL(subtype, year)
         print 'associated cdl file: ', cdl_file
         
-        # # set everthing not equal to the unique trajectory value to null label this abitray value equal to conversion year
+        #set everthing not equal to the unique trajectory value to null label this abitray value equal to conversion year
         OutRas = Con(output, cdl_file, output, cond)
    
         OutRas.save(output)
@@ -241,47 +294,30 @@ def attachCDL(subtype):
 
 
 
-    def getAssociatedCDL(subtype, year):
-    #this is an aux function for attachCDL() function to get correct cdl for the attachCDL() function
-
-        if subtype == 'bfc' or  subtype == 'bfnc':
-            # NOTE: subtract 1 from every year in list
-            cdl_file = defineGDBpath(['ancillary','cdl'])+'cdl'+ yxc.res + '_' + str(year - 1)
-            return cdl_file
-
-        elif subtype == 'fc' or  subtype == 'fnc':
-            cdl_file = defineGDBpath(['ancillary','cdl'])+'cdl'+ yxc.res + '_' + str(year)
-            return cdl_file
-
-
-
-
-def createChangeTrajectories(gdb_args_in,wc,gdb_args_out,outname):
+def createChangeTrajectories():
+    print "-----------------createChangeTrajectories() function-------------------------------"
     # Description: "Combines multiple rasters so that a unique output value is assigned to each unique combination of input values" -arcGIS def
     #the rasters where combined in chronoloigal order with the recalssifed nlcd raster being in the inital spot.
 
     # Set environment settings
-    arcpy.env.workspace = defineGDBpath(gdb_args_in)
+    arcpy.env.workspace = defineGDBpath(['refine',refine.name])
     
-    #get a lsit of all rasters in sepcified database
-    rasterlist = arcpy.ListRasters('*'+wc+'*')
-    print rasterlist
-    rasterlist.sort(reverse=False)
-    print rasterlist
-    
+    def getRasterList():
+        orderedlist = []
+        for subtype in refine.subtypelist:
+            orderedlist.append(refine.name+refine.res+'_'+refine.datarange+'_clean_'+subtype)
+        print orderedlist
+        return orderedlist
 
-    ####NOTE GENERIC!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    # rasterlist = ['cdl30_b_2008', 'cdl30_b_2009', 'cdl30_b_2010', 'cdl30_b_2011', 'cdl30_b_2012']
-    rasterlist = ['cdl30_b_2008', 'cdl30_b_2010', 'cdl30_b_2011', 'cdl30_b_2012']
-    print rasterlist
+
+
     
-    ###Execute Combine
-    outCombine = Combine(rasterlist)
-    print 'outCombine: ', outCombine
-    
-    output = defineGDBpath(gdb_args_out)+outname
+    output = defineGDBpath(['refine','trajectories'])+'traj_'+refine.name+refine.res+'_'+refine.datarange
     print 'output', output
-    
+
+    # ##Execute Combine
+    outCombine = Combine(getRasterList())
+  
     ###Save the output 
     outCombine.save(output)
 
@@ -292,43 +328,49 @@ def createChangeTrajectories(gdb_args_in,wc,gdb_args_out,outname):
 
 def createMask_nlcdtraj():
 
-    traj_nlcd = Raster(defineGDBpath(['pre','trajectories'])+'traj_nlcd'+yxc.res+'_b_2001and2006')
-    refinement_mtr = Raster(defineGDBpath([yxc.directory,'mtr'])+'traj_cdl'+yxc.res+'_b_'+yxc.datarange+'_mtr')
-    output = defineGDBpath([yxc.directory,'masks'])+'traj_nlcd'+yxc.res+'_b_2001and2006_mask'
+    nlcd1 = Raster(defineGDBpath(['ancillary','nlcd'])+'nlcd30_2006')
+    nlcd2 = Raster(defineGDBpath(['ancillary','nlcd'])+'nlcd30_2011')
+    refinement_mtr = Raster(defineGDBpath(['refine','mtr'])+'traj_cdl'+refine.res+'_b_'+refine.datarange+'_mtr')
+    output = defineGDBpath(['refine','masks'])+'traj_nlcd'+refine.res+'_b_2006and2011_mask'
     print 'output:', output
 
     # If condition is true set pixel to 23 else set pixel value to NULL
     #NOTE: both of the hardcoded values are ok because uniform accross resolutions and they are constant
-    outCon = Con(((traj_nlcd == 2) & (refinement_mtr == 3)), getArbitraryCropValue())
+    outCon = Con(((nlcd1 == 82) & (nlcd2 == 82) & (refinement_mtr == 3)), getArbitraryCropValue())
 
     outCon.save(output)
 
     gen.buildPyramids(output)
 
 
-    def getArbitraryCropValue():
-        #def this is a sub function for createMask_nlcdtraj()
-        #this is to return the arbitrary value assocaited with full crop over entire years span
+def getArbitraryCropValue():
+    #def this is a sub function for createMask_nlcdtraj()
+    #this is to return the arbitrary value assocaited with full crop over entire years span
 
-        cur = conn.cursor()
-       
-        cur.execute("SELECT \"Value\" FROM pre.traj_cdl"+yxc.res+"_b_"+yxc.datarange+" Where traj_array = '{1,1,1,1,1}' ")
+    yotest = [1] * refine.yearcount
+    print yotest
+    columnList = ','.join(str(e) for e in yotest)
+    print 'columnlist', columnList
 
-        # fetch all rows from table
-        rows = cur.fetchall()
-        print 'arbitrary value in ' + 'pre.traj_cdl'+yxc.res+'_b_'+yxc.datarange+':', rows[0][0]
-        return rows[0][0]
+    cur = conn.cursor()
+   
+    cur.execute("SELECT \"Value\" FROM pre.traj_cdl"+refine.res+"_b_"+refine.datarange+" Where traj_array = '{"+columnList+"}' ")
+
+    # fetch all rows from table
+    rows = cur.fetchall()
+    print 'arbitrary value in ' + 'pre.traj_cdl'+refine.res+'_b_'+refine.datarange+':', rows[0][0]
+    return rows[0][0]
 
 
 
-# createMask_trajytc([yxc.directory,'trajectories'], 'traj_ytc56_2008to2012', getReclassifyValuesString())
+# createMask_trajytc(['refine','trajectories'], 'traj_ytc56_2008to2012', getReclassifyValuesString())
 def createMask_trajytc():
-    # traj_yxc = Raster(defineGDBpath(['pre','trajectories'])+'traj_nlcd'+yxc.res+'_b_2001and2006')
-    traj_ytc = defineGDBpath([yxc.directory,'trajectories'])+'traj_'+yxc.name+yxc.res+'_'+yxc.datarange
-    # output = defineGDBpath([yxc.directory,'masks'])+'traj_nlcd'+yxc.res+'_b_2001and2006_mask'
+    # traj_yxc = Raster(defineGDBpath(['pre','trajectories'])+'traj_nlcd'+refine.res+'_b_2001and2006')
+    traj_ytc = defineGDBpath(['refine','trajectories'])+'traj_'+refine.name+refine.res+'_'+refine.datarange
+    # output = defineGDBpath(['refine','masks'])+'traj_nlcd'+refine.res+'_b_2001and2006_mask'
     # print 'output:', output
 
-    output = defineGDBpath([yxc.directory,'masks'])+'traj_'+yxc.name+yxc.res+'_'+yxc.datarange+'_mask'
+    output = defineGDBpath(['refine','masks'])+'traj_'+refine.name+refine.res+'_'+refine.datarange+'_mask'
     # output = defineGDBpath(gdb_args_out)+raster_out
     print 'output:', output
 
@@ -339,7 +381,6 @@ def createMask_trajytc():
     outReclass.save(output)
 
     gen.buildPyramids(output)
-    # getReclassifyValuesString()
 
 
 
@@ -348,15 +389,15 @@ def createReclassifyList():
     cur = conn.cursor()
    
     query = (
-    "SELECT DISTINCT Value "
-    "FROM refinement.traj_"+yxc.name+yxc.res+"_"+yxc.datarange+"_table "
-    "WHERE 61 = ANY(traj_array) "
-    "OR 122 = ANY(traj_array) "
-    "OR 123 = ANY(traj_array) "
-    "OR 124 = ANY(traj_array) "
-    "OR '{37,36}' = traj_array "
-    "OR '{152,36}' = traj_array "
-    "OR '{176,36}' = traj_array"
+    "SELECT DISTINCT \"Value\" "
+    "FROM refinement.traj_"+refine.name+refine.res+"_"+refine.datarange+" "
+    "WHERE 122 = traj_array[1] "
+    "OR 123 = traj_array[1] "
+    "OR 124 = traj_array[1] "
+    "OR 61 = traj_array[2] "
+    "OR '{37,36,36}' = traj_array "
+    "OR '{152,36,36}' = traj_array "
+    "OR '{176,36,36}' = traj_array"
     )
 
     print query
@@ -373,7 +414,7 @@ def createReclassifyList():
     for row in rows:
         templist=[]
         templist.append(row[0])
-        templist.append(yxc.traj_change)
+        templist.append(refine.traj_change)
         fulllist.append(templist)
     print fulllist
     return fulllist
@@ -381,49 +422,23 @@ def createReclassifyList():
 
  
 
-def createNewMosaic():
+def createRefinedTrajectory():
     
-    traj = defineGDBpath(['pre','trajectories']) + 'traj_cdl'+yxc.res+'_b_'+yxc.datarange
-    nlcd_mask = defineGDBpath(['refinement_2008to2012','masks']) + 'traj_nlcd'+yxc.res+'_b_2001and2006_mask'
-    trajYTC_mask = defineGDBpath(['refinement_2008to2012','masks']) + 'traj_'+yxc.name+yxc.res+'_'+yxc.datarange+'_mask'
-    output = 'traj_cdl'+yxc.res+'_b_'+yxc.datarange+'_rfnd'
+    traj = defineGDBpath(['pre','trajectories']) + 'traj_cdl'+refine.res+'_b_'+refine.datarange
+    nlcd_mask = defineGDBpath(['refine','masks']) + 'traj_nlcd'+refine.res+'_b_2006and2011_mask'
+    trajYTC_mask = defineGDBpath(['refine','masks']) + 'traj_'+refine.name+refine.res+'_'+refine.datarange+'_mask'
+    output = 'traj_cdl'+refine.res+'_b_'+refine.datarange+'_rfnd'
+    print 'output:', output
     
     # create a filelist to format the argument for MosaicToNewRaster_management() function
     filelist = [traj, nlcd_mask, trajYTC_mask]
     print filelist
 
     #mosaicRasters():
-    arcpy.MosaicToNewRaster_management(filelist, defineGDBpath(['pre','trajectories']), output, Raster(traj).spatialReference, "8_BIT_UNSIGNED", yxc.res, "1", "LAST","FIRST")
+    arcpy.MosaicToNewRaster_management(filelist, defineGDBpath(['pre','trajectories']), output, Raster(traj).spatialReference, "8_BIT_UNSIGNED", refine.res, "1", "LAST","FIRST")
 
 
 def addGDBTable2postgres():
-    # set the engine.....
-    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
-    
-    tablename = 'traj_ytc30_2008to2012_table'
-    # path to the table you want to import into postgres
-    input = defineGDBpath([yxc.directory, 'trajectories'])+tablename
-
-    # Execute AddField twice for two new fields
-    fields = [f.name for f in arcpy.ListFields(input)]
-   
-    # converts a table to NumPy structured array.
-    arr = arcpy.da.TableToNumPyArray(input,fields)
-    print arr
-    
-    # convert numpy array to pandas dataframe
-    df = pd.DataFrame(data=arr)
-
-    print df
-    
-    # use pandas method to import table into psotgres
-    # df.to_sql(tablename, engine, schema='refinement')
-    
-    #add trajectory field to table
-    addTrajArrayField(tablename, fields, 'refinement')
-
-
-
     def addTrajArrayField(tablename, fields, schema):
         #this is a sub function for addGDBTable2postgres()
         
@@ -444,12 +459,40 @@ def addGDBTable2postgres():
         conn.close()
 
 
+    # set the engine.....
+    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
+    
+    tablename = "traj_"+refine.name+refine.res+"_"+refine.datarange
+    # path to the table you want to import into postgres
+    input = defineGDBpath(['refine', 'trajectories'])+tablename
+
+    # Execute AddField twice for two new fields
+    fields = [f.name for f in arcpy.ListFields(input)]
+   
+    # converts a table to NumPy structured array.
+    arr = arcpy.da.TableToNumPyArray(input,fields)
+    print arr
+    
+    # convert numpy array to pandas dataframe
+    df = pd.DataFrame(data=arr)
+
+    print df
+    
+    # use pandas method to import table into psotgres
+    df.to_sql(tablename, engine, schema='refinement')
+    
+    #add trajectory field to table
+    addTrajArrayField(tablename, fields, 'refinement')
+
+
+
+
 ################ Instantiate the class to create yxc object  ########################
-yxc = ConversionObject(
+refine = RefineObject(
       'ytc',
       '30',
       ## data range---i.e. all the cdl years you are referencing 
-      [2008,2012]
+      [2012,2016]
       )
 
 
@@ -459,35 +502,36 @@ yxc = ConversionObject(
 ##################  call functions  ############################################
    
 ###  create the mtr directly from the trajectories without filtering  ###################
-# createMTR(['pre','trajectories'],"traj_cdl30_b_2008to2012", ['refinement_2008to2012','mtr'])
+createMTR()
 
 
 ### create the year conversions #####################
-# createYearbinaries()
-# removeArbitraryValuesFromYearbinaries()
+createYearbinaries()
 
 
 ### attach the cld values to the years binaries  #######################
-for subtype in yxc.subtypelist:
+for subtype in refine.subtypelist:
     print subtype
-    # attachCDL(subtype)
+    attachCDL(subtype)
 
 
 ### create change trajectories for subcategories in yxc 
-#createChangeTrajectories()
+# createChangeTrajectories()
 
 
-###  sebd traj_yxc[res]_[datarange] attribute to postgres database in the refinement schema   ########################
+###  add traj_yxc[res]_[datarange] attribute to postgres database in the refinement schema   ########################
 # addGDBTable2postgres()
 
 
 ### create mask  #####################
+##NOTE NEED TO GENERALIZE THIS FUNCTION!!!!!!!!!!!!!!!
 # createMask_nlcdtraj()
+
 # createMask_trajytc()
 
 
 ### create the refined trajectory ########################
-createNewMosaic()
+# createRefinedTrajectory()
 
 
 

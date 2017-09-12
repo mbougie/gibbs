@@ -37,49 +37,45 @@ def defineGDBpath(arg_list):
     return gdb_path
 
 
-#################### class to create yxc object  ####################################################
-class ConversionObject:
+#################### class to create pre object  ####################################################
 
-    def __init__(self, name, subtype, conversionyears):
-        self.name = name
-        self.subtype = subtype
-        self.conversionyears = range(conversionyears[0], conversionyears[1] + 1)
-        # self.mmu_gdb=defineGDBpath(['core','mmu'])
-        # self.mmu='traj_cdl_b_n8h_mtr_8w_msk23_nbl'
-        # self.mmu_Raster=Raster(self.mmu_gdb + self.mmu)
+
+class ProcessingObject:
+
+    def __init__(self, res, years):
+        self.res = res
+        self.years = years
+        self.data_years = range(self.years[0], self.years[1] + 1)
         
 
-        # if self.name == 'ytc':
-        #     self.mtr = '3'
-        # elif self.name == 'yfc':
-        #     self.mtr = '4'
+        if self.years[1] == 2016:
+            self.datarange = str(self.years[0])+'to'+str(self.years[1]-1)
+            print 'self.datarange:', self.datarange
+            
+        else:
+
+            self.datarange = str(self.years[0])+'to'+str(self.years[1])
+            print 'self.datarange:', self.datarange
+
+
+        self.traj_dataset = "traj_cdl"+self.res+"_b_"+self.datarange
+
+
+
+
+    def getCDLlist(self):
+        cdl_list = []
+        for year in self.data_years:
+            cdl_dataset = 'cdl'+self.res+'_b_'+str(year)
+            cdl_list.append(cdl_dataset)
+        print'cdl_list: ', cdl_list
+        return cdl_list
+
+     
+
+     
     
-    #function for to get correct cdl for the attachCDL() function
-    def getAssociatedCDL(self, year):
-        if self.subtype == 'bfc' or  self.subtype == 'bfnc':
-            # subtract 1 from every year in list
-            cdl_file = defineGDBpath(['ancillary','cdl'])+'cdl_'+ str(year - 1)
-            return cdl_file
 
-        elif self.subtype == 'fc' or  self.subtype == 'fnc':
-            # subtract 1 from every year in list
-            cdl_file = defineGDBpath(['ancillary','cdl'])+'cdl_'+ str(year)
-            return cdl_file
-
-    def createCompareList(self):
-        cdl_binaries = []
-        for n in self.conversionyears:
-            cdl_binaries.append('cdl_b_'+str(n))
-        print cdl_binaries
-        return cdl_binaries
-        #     print n 
-
-        # # set(a) & set(b)
-
-        # if any(str(range(2008,2015)) in s for s in rasterList):
-        #    print 'hi'
-        # #sort the rasterlist by accending years
-        # rasterList.sort(reverse=False)
 
         
 
@@ -148,33 +144,19 @@ def getReclassifyValuesString(ds, reclass_degree):
     return columnList
 
 
-
-def createTrajectories(gdb_args_in,wc,gdb_args_out,outname):
+def createTrajectories():
     # Description: "Combines multiple rasters so that a unique output value is assigned to each unique combination of input values" -arcGIS def
     #the rasters where combined in chronoloigal order with the recalssifed nlcd raster being in the inital spot.
 
     # Set environment settings
-    arcpy.env.workspace = defineGDBpath(gdb_args_in)
+    arcpy.env.workspace = defineGDBpath(['pre','binaries'])
     
-    #get a lsit of all rasters in sepcified database
-    rasterlist = arcpy.ListRasters('*'+wc+'*')
-    print rasterlist
-    rasterlist.sort(reverse=False)
-    print rasterlist
-    
-
-    ####NOTE GENERIC!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    # rasterlist = ['cdl30_b_2008', 'cdl30_b_2009', 'cdl30_b_2010', 'cdl30_b_2011', 'cdl30_b_2012']
-    rasterlist = ['cdl30_b_2008', 'cdl30_b_2010', 'cdl30_b_2011', 'cdl30_b_2012']
-    print rasterlist
-    
-    ###Execute Combine
-    outCombine = Combine(rasterlist)
-    print 'outCombine: ', outCombine
-    
-    output = defineGDBpath(gdb_args_out)+outname
+    output = defineGDBpath(['pre','trajectories'])+pre.traj_dataset
     print 'output', output
     
+    ###Execute Combine
+    outCombine = Combine(pre.getCDLlist())
+  
     ###Save the output 
     outCombine.save(output)
 
@@ -183,13 +165,13 @@ def createTrajectories(gdb_args_in,wc,gdb_args_out,outname):
 
 
 
-def addGDBTable2postgres(gdb_args,tablename,pg_shema):
+def addGDBTable2postgres():
     # set the engine.....
     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
     
     # tablename = 'traj_'+wc
     # path to the table you want to import into postgres
-    input = defineGDBpath(gdb_args)+tablename
+    input = defineGDBpath(['pre','trajectories'])+pre.traj_dataset
 
     # Execute AddField twice for two new fields
     fields = [f.name for f in arcpy.ListFields(input)]
@@ -204,14 +186,14 @@ def addGDBTable2postgres(gdb_args,tablename,pg_shema):
     print df
     
     # use pandas method to import table into psotgres
-    df.to_sql(tablename, engine, schema=pg_shema)
+    df.to_sql(pre.traj_dataset, engine, schema='pre')
     
     #add trajectory field to table
-    addTrajArrayField(tablename, fields)
+    addTrajArrayField(fields)
 
 
 
-def addTrajArrayField(tablename, fields):
+def addTrajArrayField(fields):
     #this is a sub function for addGDBTable2postgres()
     
     cur = conn.cursor()
@@ -221,10 +203,10 @@ def addTrajArrayField(tablename, fields):
     print columnList
 
     #DDL: add column to hold arrays
-    cur.execute('ALTER TABLE pre.' + tablename + ' ADD COLUMN traj_array integer[];');
+    cur.execute('ALTER TABLE pre.' + pre.traj_dataset + ' ADD COLUMN traj_array integer[];');
     
     #DML: insert values into new array column
-    cur.execute('UPDATE pre.' + tablename + ' SET traj_array = ARRAY['+columnList+'];');
+    cur.execute('UPDATE pre.' + pre.traj_dataset + ' SET traj_array = ARRAY['+columnList+'];');
     
     conn.commit()
     print "Records created successfully";
@@ -233,12 +215,10 @@ def addTrajArrayField(tablename, fields):
 
 
 
-yxc = ConversionObject(
-  'ytc',
-  'bfc', 
-  [2008,2012]
+pre = ProcessingObject(
+  '30', 
+  [2012,2016]
   )
-
 
 
 ######  call functions  #############################
@@ -246,11 +226,11 @@ yxc = ConversionObject(
 # reclassifyRaster(['ancillary','cdl'], "30", "*2008*", "b", ['pre','binaries'])
 
 ###-----createTrajectories()-----------------------------------------------
-createTrajectories(['pre','binaries'], "cdl30", ['pre','trajectories'], 'traj_cdl30_b_2008to2012')
+createTrajectories()
 
 
 ###-----addGDBTable2postgres()
-# addGDBTable2postgres(['pre','trajectories'],'traj_cdl30_b_2008to2012','pre')
+addGDBTable2postgres()
 
 
 
