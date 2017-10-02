@@ -52,10 +52,12 @@ class CoreObject:
             print 'self.datarange:', self.datarange
 
 
-        self.traj_name = "traj_cdl"+self.res+"_b_"+self.datarange+"_rfnd"
+        # self.traj_name = "traj_cdl"+self.res+"_b_"+self.datarange+"_rfnd"
+        self.traj_name = "traj_cdl"+self.res+"_b_"+self.datarange
         self.traj_path = defineGDBpath(['pre','trajectories'])+self.traj_name
         self.filter = filter
-        self.wc = "*"+res+"*"+self.datarange+"*"
+        # self.wc = "*"+res+"*"+self.datarange+"*"
+        self.wc = "*"+res+"*"+self.datarange+"_nh8"
         self.mmu = mmu
 
 
@@ -103,7 +105,7 @@ def createMTR():
 def createReclassifyList():
     #this is a sub function for createMTR().  references the mtr value in psotgres to create a list containing arbitray trajectory value and associated new mtr value
     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
-    query = 'SELECT "Value", mtr from pre.traj_cdl' + core.res + '_b_' + core.datarange + ' as a JOIN pre.traj_cdl' + core.res + '_b_' + core.datarange + '_lookup as b ON a.traj_array = b.traj_array'
+    query = 'SELECT "Value", mtr from pre.traj_cdl' + core.res + '_b_' + core.datarange + ' as a JOIN pre.traj_' + core.datarange + '_lookup as b ON a.traj_array = b.traj_array'
     print 'query:', query
     df = pd.read_sql_query(query, con=engine)
     print df
@@ -164,33 +166,30 @@ def focalStats(gdb_args_in, dataset, gdb_args_out):
         gen.buildPyramids(output)
 
 
-
-
+# "traj_cdl"+self.res+"_b_"+self.datarange+"_rfnd"
+# self.traj_name
 ####################  mmu functions  ##########################################
 
 def regionGroup():
-    #define workspace
-    arcpy.env.workspace=defineGDBpath(['core', 'mtr'])
+    raster_name = core.traj_name + core.filter + '_mtr'
+    raster = defineGDBpath(['core', 'mtr']) + core.traj_name + core.filter + '_mtr'
+    print 'raster: ', raster
 
-    for raster in arcpy.ListDatasets(core.wc, "Raster"): 
+    filter_combos = {'8w':["EIGHT", "WITHIN"]}
+    for k, v in filter_combos.iteritems():
+        print k,v
 
-        print 'raster: ', raster
+        output=defineGDBpath(['core','mmu'])+raster_name+'_'+k
+        print 'output: ',output
 
-        filter_combos = {'8w':["EIGHT", "WITHIN"]}
-        for k, v in filter_combos.iteritems():
-            print k,v
+        # Execute RegionGroup
+        outRegionGrp = RegionGroup(Raster(raster), v[0], v[1],"NO_LINK")
 
-            output=defineGDBpath(['core','mmu'])+raster+'_'+k
-            print 'output: ',output
+        # Save the output 
+        print 'save the output'
+        outRegionGrp.save(output)
 
-            # Execute RegionGroup
-            outRegionGrp = RegionGroup(Raster(raster), v[0], v[1],"NO_LINK")
-
-            # Save the output 
-            print 'save the output'
-            outRegionGrp.save(output)
-
-            gen.buildPyramids(output)
+        gen.buildPyramids(output)
 
 
 
@@ -201,77 +200,83 @@ def clipByMMUmask():
     #define workspace
     arcpy.env.workspace=defineGDBpath(['core', 'mmu'])
 
-    for raster in arcpy.ListDatasets(core.wc, "Raster"): 
+    raster = defineGDBpath(['core', 'mmu']) + core.traj_name + core.filter+'_mtr_8w'
+    print 'raster: ', raster
 
-        print 'raster: ', raster
+    # for count in masks_list:
+    cond = "Count < " + str(gen.getPixelCount(core.res, core.mmu))
+    print 'cond: ',cond
 
-        # for count in masks_list:
-        cond = "Count < " + str(gen.getPixelCount(core.res, core.mmu))
-        print 'cond: ',cond
+    output = raster+'_msk'+ str(core.mmu)
 
-        output = raster+'_msk'+ str(core.mmu)
+    print output
 
-        print output
+    outSetNull = SetNull(raster, 1, cond)
 
-        outSetNull = SetNull(raster, 1, cond)
-
-        # Save the output 
-        outSetNull.save(output)
-
-
-
-
-
-def addGDBTable2postgres(gdb_args,wc,pg_shema):
-    print 'running addGDBTable2postgres() function....'
-    ####description: adds tables in geodatabse to postgres
-    # set the engine.....
-    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
-
-    arcpy.env.workspace = defineGDBpath(gdb_args)
-
-    for table in arcpy.ListTables(wc): 
-        print 'table: ', table
-
-        # Execute AddField twice for two new fields
-        fields = [f.name for f in arcpy.ListFields(table)]
-        print fields
-
-        # converts a table to NumPy structured array.
-        arr = arcpy.da.TableToNumPyArray(table,fields)
-        print arr
-
-        # convert numpy array to pandas dataframe
-        df = pd.DataFrame(data=arr)
-
-        print df
-
-        df.columns = map(str.lower, df.columns)
-
-        # use pandas method to import table into psotgres
-        df.to_sql(table, engine, schema=pg_shema)
-
-        #add trajectory field to table
-        addAcresField(table, pg_shema)
+    # Save the output 
+    outSetNull.save(output)
 
 
 
 
 
-def addAcresField(tablename, schema):
-    #this is a sub function for addGDBTable2postgres()
+# def addGDBTable2postgres():
+#     print 'running addGDBTable2postgres() function....'
+#     ####description: adds tables in geodatabse to postgres
+#     # set the engine.....
+#     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
+
+#     arcpy.env.workspace = defineGDBpath(['deliverables','xp_update_refined'])
     
-    cur = conn.cursor()
+#     # wc = '*'+core.res+'*'+core.datarange+'*'+core.filter+'*_msk5_nbl'
+#     wc = 'mtr'
+#     print wc
+
+
+#     for raster in arcpy.ListDatasets(wc, "Raster"): 
+
+#     # for table in arcpy.ListTables(wc): 
+#         print 'raster: ', raster
+        
+#         # Execute AddField twice for two new fields
+#         fields = [f.name for f in arcpy.ListFields(raster)]
+#         print fields
+
+#         # converts a table to NumPy structured array.
+#         arr = arcpy.da.TableToNumPyArray(raster,fields)
+#         print arr
+
+#         # convert numpy array to pandas dataframe
+#         df = pd.DataFrame(data=arr)
+
+#         print df
+
+#         df.columns = map(str.lower, df.columns)
+
+#         # use pandas method to import table into psotgres
+#         df.to_sql(raster, engine, schema='counts')
+
+#         #add trajectory field to table
+#         addAcresField(raster, 'counts')
+
+
+
+
+
+# def addAcresField(tablename, schema):
+#     #this is a sub function for addGDBTable2postgres()
     
-    #DDL: add column to hold arrays
-    cur.execute('ALTER TABLE ' + schema + '.' + tablename + ' ADD COLUMN acres bigint;');
+#     cur = conn.cursor()
     
-    #DML: insert values into new array column
-    cur.execute('UPDATE '+ schema + '.' + tablename + ' SET acres = count * ' + gen.getPixelConversion2Acres(core.res));
+#     #DDL: add column to hold arrays
+#     cur.execute('ALTER TABLE ' + schema + '.' + tablename + ' ADD COLUMN acres bigint;');
     
-    conn.commit()
-    print "Records created successfully";
-    conn.close()
+#     #DML: insert values into new array column
+#     cur.execute('UPDATE '+ schema + '.' + tablename + ' SET acres = count * ' + gen.getPixelConversion2Acres(core.res));
+    
+#     conn.commit()
+#     print "Records created successfully";
+#     conn.close()
 
 
 
@@ -293,32 +298,34 @@ def addAcresField(tablename, schema):
 ################ Instantiate the class to create core object  ########################
 core = CoreObject(
       #resolution
-      '30',
+      '56',
       #data range---i.e. all the cdl years you are referencing 
-      [2010,2016],
+      [2008,2016],
       #filter used
       'n8h',
       #mmu
-       5
+       15
       )
 
 
 
 #############################  Call Functions ######################################
 ##------filter gdb--------------
-# majorityFilter()
+majorityFilter()
 
 ##------mtr gdb-----------------
-# createMTR()
+createMTR()
 
 ##------mmu gdb-----------------
-# regionGroup()
+regionGroup()
 clipByMMUmask()
 
 ##find way to call the parrell_nibble function here
 
 ##########  NEW     ###################################
-# addGDBTable2postgres(['core_2008to2012','mmu'],'*30*nbl_table','counts')
+# addGDBTable2postgres()
+
+
 
 
 

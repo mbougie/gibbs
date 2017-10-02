@@ -12,7 +12,7 @@ from arcpy.sa import *
 import glob
 import psycopg2
 
-import general as g
+import general as gen
 
 
 
@@ -22,89 +22,32 @@ import general as g
 
 coef={'acres':1,'msq':0.000247105,'30m':0.222395,'56m':0.774922476}
 
-# class acres2(object):
-#     print pixel_count
-#     def __init__(self, pixel_count, resolution):
-#         self.resolution= resolution
-
-
-#     def conv(self, pixel_count, resolution):
-#         if resolution == 56:
-#             acres = pixel_count*0.774922476
-#             print acres
-#             return acres
-#         elif resolution == 30:
-#             return (pixel_count*0.222395)
-
-
-
-
-
-
-
-
-
-
-# str( !VAT_cdl_2010.Class_Name! ) +' ('+ str(!VAT_bfc.acres!) + ')'
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
 '''######## DEFINE THESE EACH TIME ##########'''
-#NOTE: need to declare if want to process ytc or yfc
-yxc = 'yfc'
-
-#the associated mtr value qwith the yxc
-yxc_mtr = {'ytc':'3', 'yfc':'4'}
-
 #Note: need to change this each time on different machine
 case=['Bougie','Gibbs']
 
 #import extension
 arcpy.CheckOutExtension("Spatial")
+arcpy.env.parallelProcessingFactor = "95%"
 
 
 
+
+rootpath = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/data/usxp/'
+
+### establish gdb path  ####
+def defineGDBpath(arg_list):
+    gdb_path = rootpath + arg_list[0]+'/'+arg_list[1]+'.gdb/'
+    print 'gdb path: ', gdb_path 
+    return gdb_path
 
 try:
     conn = psycopg2.connect("dbname='usxp' user='mbougie' host='144.92.235.105' password='Mend0ta!'")
 except:
     print "I am unable to connect to the database"
-
-
-
-arcpy.CheckOutExtension("Spatial")
-
-
-
-###################  declare functions  #######################################################
-def defineGDBpath(arg_list):
-    gdb_path = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/arcgis/geodatabases/'+arg_list[0]+'/'+arg_list[1]+'.gdb/'
-    print 'gdb path: ', gdb_path 
-    return gdb_path 
-
-
-##  datasets from core process ##########################################################
-mmu_gdb=defineGDBpath(['core','mmu'])
-mmu='traj_rfnd_n8h_mtr_8w_msk23_nbl'
-mmu_Raster=Raster(mmu_gdb + mmu)
 
 
 
@@ -393,3 +336,165 @@ def updateLookupTable():
 # addFIeldtoRaster(['post','yfc_test'],"*fnc_fnl")
 
 
+
+class CoreObject:
+
+    def __init__(self, wc):
+        # self.years = years
+
+        # if self.years[1] == 2016:
+        #     self.datarange = str(self.years[0])+'to'+str(self.years[1]-1)
+        #     print 'self.datarange:', self.datarange
+            
+        # else:
+
+        #     self.datarange = str(self.years[0])+'to'+str(self.years[1])
+        #     print 'self.datarange:', self.datarange
+
+
+        # # self.traj_name = "traj_cdl"+self.res+"_b_"+self.datarange+"_rfnd"
+        # # self.traj_path = defineGDBpath(['pre','trajectories'])+self.traj_name
+        # # self.filter = filter
+        # # self.wc = "*"+res+"*"+self.datarange+"*"
+        # self.mmu = mmu
+        self.wc = wc
+
+
+
+
+
+
+
+
+gdb_args = ['post','ytc']
+
+
+
+qaqc = CoreObject(
+      #wc
+      '*56_2008to2015_*nbl'
+      )
+
+
+
+
+
+
+
+def addGDBTable2postgres():
+    print 'running addGDBTable2postgres() function....'
+    ####description: adds tables in geodatabse to postgres
+    # set the engine.....
+    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
+
+    arcpy.env.workspace = defineGDBpath(gdb_args)
+    
+    # wc = '*'+qaqc.res+'*'+qaqc.datarange+'*'+qaqc.filter+'*_clean'+qaqc.mmu+'_nbl'
+    # wc = 'mtr'
+    # print wc
+
+
+    for raster in arcpy.ListDatasets(qaqc.wc, "Raster"): 
+
+    # for table in arcpy.ListTables(wc): 
+        print 'raster: ', raster
+        
+        # res = Raster(raster).spatialReference
+        res = arcpy.GetRasterProperties_management(raster, "CELLSIZEX")
+        #Get the elevation standard deviation value from geoprocessing result object
+        # elevSTD = res.getOutput(0)
+        # # print elevSTD
+        
+        # Execute AddField twice for two new fields
+        fields = [f.name for f in arcpy.ListFields(raster)]
+        print fields
+
+        # converts a table to NumPy structured array.
+        arr = arcpy.da.TableToNumPyArray(raster,fields)
+        print arr
+
+        # convert numpy array to pandas dataframe
+        df = pd.DataFrame(data=arr)
+
+        print df
+
+        df.columns = map(str.lower, df.columns)
+
+        # use pandas method to import table into psotgres
+        df.to_sql(raster, engine, schema='counts')
+
+        # add trajectory field to table
+        addAcresField(raster, 'counts', str(res.getOutput(0)))
+
+
+
+
+
+def addAcresField(tablename, schema, res):
+    #this is a sub function for addGDBTable2postgres()
+    
+    cur = conn.cursor()
+    
+    #DDL: add column to hold arrays
+    cur.execute('ALTER TABLE ' + schema + '.' + tablename + ' ADD COLUMN acres bigint;');
+    
+    #DML: insert values into new array column
+    cur.execute('UPDATE '+ schema + '.' + tablename + ' SET acres = count * ' + gen.getPixelConversion2Acres(res));
+    
+    conn.commit()
+    print "Records created successfully";
+
+
+
+
+
+def clipByMMUmask():
+    #define workspace
+    # arcpy.env.workspace=defineGDBpath(['core', 'mmu'])
+
+    raster = defineGDBpath(['ancillary','temp'])+'rg_mtr_v1'
+    print 'raster: ', raster
+
+    # for count in masks_list:
+    cond = "Count > 20"
+    print 'cond: ',cond
+
+    output = defineGDBpath(['ancillary','temp'])+'rg_mtr_v1_belowmmu'
+
+    print output
+
+    outSetNull = SetNull(raster, 1, cond)
+
+    # Save the output 
+    outSetNull.save(output)
+
+    gen.buildPyramids(output)
+
+
+
+
+
+def getIntersectionofRasters():
+
+    raster1 = Raster(defineGDBpath(['ancillary','data_2008_2012'])+'Multitemporal_Results_FF2')
+    raster2 = Raster(defineGDBpath(['ancillary','temp'])+'rg_mtr_v1_belowmmu')
+    output = defineGDBpath(['ancillary','temp'])+'rg_mtr_v1_belowmmu_mtr3'
+
+
+    outCon = Con(((raster1 == 3) & (raster2 == 1)), 100)
+
+    outCon.save(output)
+
+    gen.buildPyramids(output)
+
+
+
+
+
+
+
+
+##call functions
+# addGDBTable2postgres()
+# clipByMMUmask()
+getIntersectionofRasters()

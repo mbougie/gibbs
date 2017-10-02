@@ -18,9 +18,6 @@ import general as gen
 #Note: need to change this each time on different machine
 case=['Bougie','Gibbs']
 
-#import extension
-arcpy.CheckOutExtension("Spatial")
-arcpy.env.parallelProcessingFactor = "95%"
 
 ###################  Define the environment  #######################################################
 #establish root path for this the main project (i.e. usxp)
@@ -36,13 +33,24 @@ def defineGDBpath(arg_list):
 #################### class to create yxc object  ####################################################
 class ConversionObject:
 
-    def __init__(self, name, subtype, conversionyears):
+    def __init__(self, name, subtype, res, mmu, years):
         self.name = name
         self.subtype = subtype
-        self.conversionyears = range(conversionyears[0], conversionyears[1] + 1)
+        self.res = res
+        self.mmu = mmu
+        self.years = years
         self.mmu_gdb=defineGDBpath(['core','mmu'])
-        # self.mmu='traj_cdl_b_n8h_mtr_8w_msk23_nbl'
-        # self.mmu_Raster=Raster(self.mmu_gdb + self.mmu)
+
+        if self.years[1] == 2016:
+            self.datarange = str(self.years[0])+'to'+str(self.years[1]-1)
+            print 'self.datarange:', self.datarange
+            self.conversionyears = range(self.years[0]+1, self.years[1])
+            print 'self.conversionyears:', self.conversionyears
+        else:
+            self.datarange = str(self.years[0])+'to'+str(self.years[1])
+            print 'self.datarange:', self.datarange
+            self.conversionyears = range(self.years[0]+1, self.years[1] + 1)
+            print 'self.conversionyears:', self.conversionyears
         
 
         if self.name == 'ytc':
@@ -64,12 +72,6 @@ class ConversionObject:
 
         
 
-
-
-
-
-
-
 def addColorMap(inraster,template):
     ##Add Colormap
     ##Usage: AddColormap_management in_raster {in_template_raster} {input_CLR_file}
@@ -87,17 +89,23 @@ def addColorMap(inraster,template):
         print arcpy.GetMessages()
 
 
-def createYearbinaries(gdb_args_in):
+def createYearbinaries():
+    print "-----------------createYearbinaries() function-------------------------------"
     #DESCRIPTION:subset the trajectoires by year to create binary ytc or ytc raster by year that represent the conversion to/from crop between succesive years
-    arcpy.env.workspace=defineGDBpath(gdb_args_in)
+    arcpy.env.workspace=defineGDBpath(['post',post.name])
     
-    #copy trajectory raster so it can be modified iteritively
-    # traj_years = yxc.name+"_years"
-    # arcpy.CopyRaster_management(defineGDBpath(['pre', 'trajectories']) + 'traj_cdl_b', traj_years)
+    output = post.name+post.res+'_'+post.datarange
+    print 'output: ', output
     
+    # traj_cdl56_b_2008to2012_rfnd
+    ###copy trajectory raster so it can be modified iteritively
+    arcpy.CopyRaster_management(defineGDBpath(['pre', 'trajectories']) + 'traj_cdl'+post.res+'_b_'+post.datarange+'_rfnd', output)
+    
+    arcpy.CheckOutExtension("Spatial")
+
     #Connect to postgres database to get values from traj dataset 
     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
-    df = pd.read_sql_query('select * from pre.traj_cdl_b as a JOIN pre.traj_cdl_b_lookup as b ON a.traj_array = b.traj_array WHERE b.'+yxc.name+' IS NOT NULL',con=engine)
+    df = pd.read_sql_query('select * from pre.traj_cdl'+post.res+'_b_'+post.datarange+' as a JOIN pre.traj_' + post.datarange + '_lookup as b ON a.traj_array = b.traj_array WHERE b.'+post.name+' IS NOT NULL',con=engine)
     print 'df--',df
     
     # loop through rows in the dataframe
@@ -107,7 +115,7 @@ def createYearbinaries(gdb_args_in):
         print 'value: ', value
 
         #cy is acronym for conversion year
-        cy = str(row[yxc.name])
+        cy = str(row[post.name])
         print 'cy:', cy
         
         # allow raster to be overwritten
@@ -119,58 +127,76 @@ def createYearbinaries(gdb_args_in):
         print 'cond: ', cond
         
         # set everthing not equal to the unique trajectory value to null label this abitray value equal to conversion year
-        OutRas = Con(traj_years, cy, traj_years, cond)
+        OutRas = Con(output, cy, output, cond)
    
-        OutRas.save(traj_years)
+        OutRas.save(output)
+
+    #build pyramids t the end
+    gen.buildPyramids(output)
+
+    # removeArbitraryValuesFromYearbinaries()
 
 
 
-def clipByMMUmask(gdb_args_in):
-    #DESCRIPTION: clip the year mosiac raster by the mmu raster in the core geodatabase to only get the patches > 5 acres
 
-    #define gdb workspace
-    arcpy.env.workspace=defineGDBpath(gdb_args_in)
-    
-    #get the years raster from geodatabase
-    traj_years=yxc.name+'_years'
-
-    #create output file 
-    output = traj_years + '_' + yxc.mmu
-    print 'output: ', output
-    
-    #condition value is dependent of yxc (i.e. ytc = 3 and yfc = 4)
-    cond = "Value <> " + yxc.mtr
-    print 'cond: ', cond
-    
-    # set mmu raster to null where not equal to value and then attached the values fron traj_years tp these [value] patches
-    outSetNull = SetNull(yxc.mmu_Raster, traj_years,  cond)
-    
-    #Save the output 
-    outSetNull.save(output)
-
-
-
-def removeArbitraryValues(gdb_args_in):
+def removeArbitraryValuesFromYearbinaries():
+    print "-----------------removeArbitraryValuesFromYearbinaries() function-------------------------------"
     #DESCRIPTION: remove the arbitrary values from the 'yfc_years_'+mmu dataset
 
     #define gdb workspace
-    arcpy.env.workspace=defineGDBpath(gdb_args_in)
+    arcpy.env.workspace=defineGDBpath(['post',post.name])
+
+    arcpy.CheckOutExtension("Spatial")
     
     #get raster from geodatabse
-    raster_input = yxc.name + '_years_' + yxc.mmu
+    raster_input = post.name+post.res+'_'+post.datarange + '_mmu' + post.mmu
+    output = raster_input+'_clean'
 
-    #create output file 
-    raster_output = raster_input+'_msk'
-    print 'output: ', raster_output
+    print 'output:', output
 
-    cond = "Value < " + str(yxc.conversionyears[0])
+    ##only keep year values in map
+        
+    cond = "Value < " + str(post.years[0])
     print 'cond: ', cond
         
     # set mmu raster to null where value is less 2013 (i.e. get rid of attribute values)
     outSetNull = SetNull(raster_input, raster_input,  cond)
     
     #Save the output 
-    outSetNull.save(raster_output)
+    outSetNull.save(output)
+
+    gen.buildPyramids(output)
+
+
+
+def clipByMMUmask():
+    #DESCRIPTION: subset the mosiac years raster by mtr3 or mtr4
+
+    #define gdb workspace
+    arcpy.env.workspace=defineGDBpath(['post',post.name])
+    
+    #get the years raster from geodatabase
+    traj_years=post.name+post.res+'_'+post.datarange
+    print 'traj_years:', traj_years
+    mmu_Raster=defineGDBpath(['core','mmu'])+'traj_cdl'+post.res+'_b_'+post.datarange+'_rfnd_n8h_mtr_8w_msk'+post.mmu+'_nbl'
+    print 'mmu_Raster:', mmu_Raster
+    #create output file 
+    output = traj_years + '_mmu' + post.mmu
+    print 'output: ', output
+    
+    #condition value is dependent of yxc (i.e. ytc = 3 and yfc = 4)
+    cond = "Value <> " + post.mtr
+    print 'cond: ', cond
+    
+    # set mmu raster to null where not equal to value and then attached the values fron traj_years tp these [value] patches
+    outSetNull = SetNull(Raster(mmu_Raster), Raster(traj_years),  cond)
+    
+    #Save the output 
+    outSetNull.save(output)
+
+    gen.buildPyramids(output)
+
+
 
 
 
@@ -186,14 +212,14 @@ def attachCDL(gdb_args_in):
     # arcpy.env.snapRaster = "ytc_years_traj_cdl_b_n8h_mtr_8w_msk23_nbl"
 
     # # #copy raster
-    # arcpy.CopyRaster_management("ytc_years_traj_cdl_b_n8h_mtr_8w_msk23_nbl", "ytc_years_traj_cdl_b_n8h_mtr_8w_msk23_nbl_"+yxc.subtype)
+    # arcpy.CopyRaster_management("ytc_years_traj_cdl_b_n8h_mtr_8w_msk23_nbl", "ytc_years_traj_cdl_b_n8h_mtr_8w_msk23_nbl_"+post.subtype)
     
-    wc = '*'+yxc.subtype
+    wc = '*'+post.subtype
     print wc
 
     for raster in arcpy.ListDatasets(wc, "Raster"): 
       
-        for year in  yxc.conversionyears:
+        for year in  post.conversionyears:
             print 'raster: ', raster
             print 'year: ', year
 
@@ -205,7 +231,7 @@ def attachCDL(gdb_args_in):
             cond = "Value = " + str(year)
             print 'cond: ', cond
 
-            cdl_file= yxc.getAssociatedCDL(year)
+            cdl_file= post.getAssociatedCDL(year)
             print 'associated cdl file: ', cdl_file
             
             # # set everthing not equal to the unique trajectory value to null label this abitray value equal to conversion year
@@ -216,26 +242,22 @@ def attachCDL(gdb_args_in):
 
 
 ################ Instantiate the class to create yxc object  ########################
-yxc = ConversionObject(
+post = ConversionObject(
       'ytc',
-      'bfc',
+      'fc',
+      '56',
+      '15',
       ## these are the conversion years 
-      [2008,2012]
+      [2008,2016]
       )
 
 ################ call functions  #####################################################
-createYearbinaries(['refinement',yxc.name])
-# clipByMMUmask(['post',yxc.name])
-# removeArbitraryValues(['post',yxc.name])
-# attachCDL(['post',yxc.name])
+createYearbinaries()
+clipByMMUmask()
+removeArbitraryValuesFromYearbinaries()
+# attachCDL(['post',post.name])
 
 
-
-
-###### NOTE FOR COPY RASTER """""""""""""""""""""
-## 1 test snap 
-## 2 test import stats from other image??
-## 3 try other creating stats from multiple methods
 
 
 

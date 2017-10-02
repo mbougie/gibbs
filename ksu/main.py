@@ -45,10 +45,10 @@ arcpy.CheckOutExtension("Spatial")
 arcpy.env.parallelProcessingFactor = "95%"
 
 ###################  Define the environment  #######################################################
-#establish root path for this the main project (i.e. usxp)
+# establish root path for this the main project (i.e. usxp)
 # rootpath = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/data/usxp/'
 
-### establish gdb path  ####
+## establish gdb path  ####
 # def defineGDBpath(arg_list):
 #     gdb_path = rootpath + arg_list[0]+'/'+arg_list[1]+'.gdb/'
 #     print 'gdb path: ', gdb_path 
@@ -61,13 +61,15 @@ rootpath = 'D:/projects/ksu/control/CLU_fields_by_county/'
 def mosiacCLU():
     ##get the sub-directories names
     for subdir in os.listdir(rootpath):
-        # if subdir == 'AR_shps':
-        print subdir
-        filelist = []
-        for file in glob.glob(rootpath+subdir+'/*.shp'):
-            print file
-            filelist.append(file)
-        print filelist
+        if subdir == 'AR_shps':
+            print subdir
+            filelist = []
+            for file in glob.glob(rootpath+subdir+'/*.shp'):
+                print file
+                filelist.append(file)
+    print filelist
+
+    arcpy.Merge_management(filelist, 'D:/projects/ksu/ar_try.gdb/tryit')
 
 
 

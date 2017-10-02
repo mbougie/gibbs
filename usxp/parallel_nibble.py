@@ -33,15 +33,37 @@ def defineGDBpath(arg_list):
 
 class NibbleObject:
 
-    def __init__(self, directory, gdb, raster_name, mmu, res):
-        self.gdb_path = defineGDBpath([directory, gdb])
-        self.raster_name = raster_name
-        self.in_raster = defineGDBpath([directory, 'mtr']) + raster_name
-        self.mask_name = raster_name + '_8w_msk' + mmu
-        self.in_mask_raster = self.gdb_path + self.mask_name
+    def __init__(self, mmu, res, years, subtype):
         self.res = res
-        self.out_fishnet = defineGDBpath(['ancillary', 'temp']) + 'fishnet_mtr'
+        self.mmu = mmu
+        
+        self.years = years
+        self.subtype = subtype
 
+        if self.years[1] == 2016:
+			self.datarange = str(self.years[0])+'to'+str(self.years[1]-1)
+			print 'self.datarange:', self.datarange
+
+        else:
+			self.datarange = str(self.years[0])+'to'+str(self.years[1])
+			print 'self.datarange:', self.datarange
+        
+        if self.subtype == 'mtr':
+        	self.gdb_path = defineGDBpath(['core', 'mmu'])
+	        self.raster_name = 'traj_cdl'+self.res+'_b_'+self.datarange+'_rfnd_n8h_mtr'
+	        self.in_raster = defineGDBpath(['core', 'mtr']) + self.raster_name
+	        self.mask_name = self.raster_name + '_8w_msk' + self.mmu
+	        self.in_mask_raster = self.gdb_path + self.mask_name
+	        self.out_fishnet = defineGDBpath(['ancillary', 'temp']) + 'fishnet_' + self.subtype
+	        self.pixel_type = "8_BIT_UNSIGNED"
+        else:
+			self.gdb_path = defineGDBpath(['post', self.subtype])
+			self.raster_name = self.subtype+self.res+'_'+self.datarange+'_mmu'+self.mmu
+			self.in_raster = self.gdb_path + self.raster_name
+			self.mask_name = self.raster_name + '_clean'
+			self.in_mask_raster = self.gdb_path + self.mask_name
+			self.out_fishnet = defineGDBpath(['ancillary', 'temp']) + 'fishnet_' + self.subtype
+			self.pixel_type = "16_BIT_UNSIGNED"
 
 
 def create_fishnet():
@@ -115,7 +137,7 @@ def mosiacRasters():
 	nbl_raster = nibble.mask_name + '_nbl'
 	print 'nbl_raster: ', nbl_raster
 
-	arcpy.MosaicToNewRaster_management(tilelist, nibble.gdb_path, nbl_raster, Raster(nibble.in_raster).spatialReference, "8_BIT_UNSIGNED", nibble.res, "1", "LAST","FIRST")
+	arcpy.MosaicToNewRaster_management(tilelist, nibble.gdb_path, nbl_raster, Raster(nibble.in_raster).spatialReference, nibble.pixel_type, nibble.res, "1", "LAST","FIRST")
 
 	##Overwrite the existing attribute table file
 	arcpy.BuildRasterAttributeTable_management(nibble.gdb_path + nbl_raster, "Overwrite")
@@ -130,25 +152,23 @@ def mosiacRasters():
 
 #### Define conversion object ######
 nibble = NibbleObject(
-	  #directory
-	  'core_2008to2012',
-	  #gdb
-	  'mmu',
-	  #mtr raster
-	  'traj_cdl30_b_2008to2012_rfnd_n8h_mtr',
 	  #mmu
-	  '5',
+	  '15',
 	  #resolution
-	  '30'
+	  '56',
+	  #data-range
+	  [2008,2016],
+	  #subtype
+	  'ytc'
       )
 
 
 if __name__ == '__main__':
 
-	#need to create a unique fishnet for each dataset
-	###create_fishnet()
+	# need to create a unique fishnet for each dataset
+	##create_fishnet()
 
-	##get extents of individual features and add it to a dictionary
+	#get extents of individual features and add it to a dictionary
 	extDict = {}
 	count = 1 
 

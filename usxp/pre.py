@@ -45,20 +45,27 @@ class ProcessingObject:
     def __init__(self, res, years):
         self.res = res
         self.years = years
-        self.data_years = range(self.years[0], self.years[1] + 1)
+        # self.data_years = range(self.years[0], self.years[1] + 1)
         
 
-        if self.years[1] == 2016:
-            self.datarange = str(self.years[0])+'to'+str(self.years[1]-1)
-            print 'self.datarange:', self.datarange
-            
-        else:
+        self.yearcount=len(range(self.years[0], self.years[1]+1))
 
+        if self.years[1] == 2016:
             self.datarange = str(self.years[0])+'to'+str(self.years[1])
             print 'self.datarange:', self.datarange
-
+            self.conversionyears = range(self.years[0]+2, self.years[1])
+            print 'self.conversionyears:', self.conversionyears
+        else:
+            self.datarange = str(self.years[0])+'to'+str(self.years[1])
+            print 'self.datarange:', self.datarange
+            self.conversionyears = range(self.years[0]+2, self.years[1] + 1)
+            print 'self.conversionyears:', self.conversionyears
 
         self.traj_dataset = "traj_cdl"+self.res+"_b_"+self.datarange
+        # self.nlcd_years = nlcd_years
+
+
+        # self.traj_dataset = "traj_cdl"+self.res+"_b_"+self.datarange
 
 
 
@@ -214,26 +221,71 @@ def addTrajArrayField(fields):
 
 
 
+def labelTrajectories():
+    cur = conn.cursor()
+    table = 'pre.traj_cdl'+pre.res+'_b_'+pre.datarange
+    lookuptable = 'pre.traj_'''+pre.datarange+'_lookup_temp'
+    for year in pre.conversionyears:
+        pre_context = 'cdl'+pre.res+'_b_'+str(year - 2)
+        before_year ='cdl'+pre.res+'_b_'+str(year - 1)
+        year_cdl = 'cdl'+pre.res+'_b_'+str(year)
+        post_context = 'cdl'+pre.res+'_b_'+str(year + 1)
+        query = 'update '+lookuptable+' set ytc = '+str(year)+' where traj_array in (SELECT traj_array FROM '+table+' a INNER JOIN '+lookuptable+' b using(traj_array) Where '+pre_context+' = 0 AND '+before_year+'= 0 AND '+year_cdl+' = 1 AND '+post_context+' = 1 )'
+        print query
+        # cur.execute(query);
+
+        conn.commit()
+
+
+
+# update 
+#  pre.traj_2008to2015_lookup_temp set ytc = 2010 where traj_array in
+# (SELECT 
+#   traj_array 
+# FROM 
+#   pre.traj_cdl30_b_2008to2015 a INNER JOIN pre.traj_2008to2015_lookup_temp b using(traj_array)
+# Where cdl30_b_2008 = 0 AND
+#  cdl30_b_2009 = 0 AND
+#  cdl30_b_2010 = 1 AND
+#  cdl30_b_2011 = 1 AND
+#  mtr = 5)
+
+
+
+
+
+# NOTE---THIS ADDS COUNT FIELD FOR FASTER LOOKUP CREATION
+
+# # UPDATE pre.traj_cdl30_b_2008to2015_lookup as t1
+# # SET count = (SELECT (SELECT SUM(s) FROM UNNEST(traj_array) s) FROM pre.traj_cdl30_b_2008to2015_lookup as t2 WHERE t1.index = t2.index)
+
+# UPDATE pre.traj_cdl30_b_2008to2015_lookup SET mtr = 5 where mtr is null
+
+
 
 pre = ProcessingObject(
+  #resolution
   '30', 
-  [2012,2016]
+  #data-range
+  [2008,2016]
   )
 
 
 ######  call functions  #############################
 ###-----reclassifyRaster()------------------
-# reclassifyRaster(['ancillary','cdl'], "30", "*2008*", "b", ['pre','binaries'])
+# yearlist = ['2014','2015','2016']
+# for year in yearlist:
+#     reclassifyRaster(['ancillary','cdl'], "56", "*"+year+"*", "b", ['pre','binaries'])
 
 ###-----createTrajectories()-----------------------------------------------
-createTrajectories()
+# createTrajectories()
 
 
 ###-----addGDBTable2postgres()
-addGDBTable2postgres()
+# addGDBTable2postgres()
 
 
-
+labelTrajectories()
 
 
 

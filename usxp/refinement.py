@@ -40,7 +40,7 @@ def defineGDBpath(arg_list):
 #################### class to create yxc object  ####################################################
 class RefineObject:
 
-    def __init__(self, name, res, years):
+    def __init__(self, name, res, years, nlcd_years):
         self.name = name
         self.res = res
         self.years = years
@@ -58,6 +58,7 @@ class RefineObject:
             print 'self.conversionyears:', self.conversionyears
 
         self.traj_dataset = "traj_cdl"+self.res+"_b_"+self.datarange
+        self.nlcd_years = nlcd_years
         
      
         # self.mmu_Raster=Raster(defineGDBpath([gdb,'mtr']) + 'traj_cdl'+res+'_b_8to12_mtr')
@@ -116,7 +117,7 @@ def createMTR():
         #this is a sub function for createMTR().  references the mtr value in psotgres to create a list containing arbitray trajectory value and associated new mtr value
 
         engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
-        query = 'SELECT * from pre.' + refine.traj_dataset + ' as a JOIN pre.' + refine.traj_dataset + '_lookup as b ON a.traj_array = b.traj_array'
+        query = 'SELECT * from pre.' + refine.traj_dataset + ' as a JOIN pre.traj_' + refine.datarange + '_lookup as b ON a.traj_array = b.traj_array'
         print 'query:', query
         df = pd.read_sql_query(query, con=engine)
         print df
@@ -166,7 +167,9 @@ def createYearbinaries():
 
     #Connect to postgres database to get values from traj dataset 
     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
-    df = pd.read_sql_query('select * from pre.traj_cdl'+refine.res+'_b_'+refine.datarange+' as a JOIN pre.traj_cdl'+refine.res+'_b_'+refine.datarange+'_lookup as b ON a.traj_array = b.traj_array WHERE b.'+refine.name+' IS NOT NULL',con=engine)
+    query = 'select * from pre.traj_cdl'+refine.res+'_b_'+refine.datarange+' as a JOIN pre.traj_' + refine.datarange + '_lookup as b ON a.traj_array = b.traj_array WHERE b.'+refine.name+' IS NOT NULL'
+    print query
+    df = pd.read_sql_query(query, con=engine)
     print 'df--',df
     
     # loop through rows in the dataframe
@@ -270,7 +273,6 @@ def attachCDL(subtype):
     print wc
   
     for year in  refine.conversionyears:
-        print 'output: ', output
         print 'year: ', year
 
         # allow output to be overwritten
@@ -328,16 +330,23 @@ def createChangeTrajectories():
 
 def createMask_nlcdtraj():
 
-    nlcd1 = Raster(defineGDBpath(['ancillary','nlcd'])+'nlcd30_2006')
-    nlcd2 = Raster(defineGDBpath(['ancillary','nlcd'])+'nlcd30_2011')
+    nlcd1 = Raster(defineGDBpath(['ancillary','nlcd'])+'nlcd'+refine.res+'_'+refine.nlcd_years[0])
+    nlcd2 = Raster(defineGDBpath(['ancillary','nlcd'])+'nlcd'+refine.res+'_'+refine.nlcd_years[1])
     refinement_mtr = Raster(defineGDBpath(['refine','mtr'])+'traj_cdl'+refine.res+'_b_'+refine.datarange+'_mtr')
-    output = defineGDBpath(['refine','masks'])+'traj_nlcd'+refine.res+'_b_2006and2011_mask'
-    print 'output:', output
+   
 
     # If condition is true set pixel to 23 else set pixel value to NULL
     #NOTE: both of the hardcoded values are ok because uniform accross resolutions and they are constant
-    outCon = Con(((nlcd1 == 82) & (nlcd2 == 82) & (refinement_mtr == 3)), getArbitraryCropValue())
-
+    # outCon = Con((nlcd1 == 82) & (refinement_mtr == 3), getArbitraryCropValue(), Con((nlcd2 == 82) & (refinement_mtr == 3), getArbitraryCropValue()))
+    if join_operator == 'or':
+        output = defineGDBpath(['refine','masks'])+'traj_nlcd'+refine.res+'_b_'+refine.nlcd_years[0]+'or'+refine.nlcd_years[1]+'_'+refine.name+refine.datarange+'_mask'
+        print 'output:', output
+        outCon = Con((nlcd1 == 82) & (refinement_mtr == 3), getArbitraryCropValue(), Con((nlcd2 == 82) & (refinement_mtr == 3), getArbitraryCropValue()))
+    elif join_operator == 'and':
+        output = defineGDBpath(['refine','masks'])+'traj_nlcd'+refine.res+'_b_'+refine.nlcd_years[0]+'and'+refine.nlcd_years[1]+'_'+refine.name+refine.datarange+'_mask'
+        print 'output:', output
+        outCon = Con(((nlcd1 == 82) & (nlcd2 == 82) & (refinement_mtr == 3)), getArbitraryCropValue())
+    
     outCon.save(output)
 
     gen.buildPyramids(output)
@@ -425,17 +434,18 @@ def createReclassifyList():
 def createRefinedTrajectory():
     
     traj = defineGDBpath(['pre','trajectories']) + 'traj_cdl'+refine.res+'_b_'+refine.datarange
-    nlcd_mask = defineGDBpath(['refine','masks']) + 'traj_nlcd'+refine.res+'_b_2006and2011_mask'
+    nlcd_mask = defineGDBpath(['refine','masks']) + 'traj_nlcd'+refine.res+'_b_'+refine.nlcd_years[0]+'or'+refine.nlcd_years[1]+'_'+refine.name+refine.datarange+'_mask'
     trajYTC_mask = defineGDBpath(['refine','masks']) + 'traj_'+refine.name+refine.res+'_'+refine.datarange+'_mask'
     output = 'traj_cdl'+refine.res+'_b_'+refine.datarange+'_rfnd'
     print 'output:', output
     
     # create a filelist to format the argument for MosaicToNewRaster_management() function
     filelist = [traj, nlcd_mask, trajYTC_mask]
+    print '-----[traj, nlcd_mask, trajYTC_mask]-----'
     print filelist
 
     #mosaicRasters():
-    arcpy.MosaicToNewRaster_management(filelist, defineGDBpath(['pre','trajectories']), output, Raster(traj).spatialReference, "8_BIT_UNSIGNED", refine.res, "1", "LAST","FIRST")
+    arcpy.MosaicToNewRaster_management(filelist, defineGDBpath(['pre','trajectories']), output, Raster(traj).spatialReference, '16_BIT_UNSIGNED', refine.res, "1", "LAST","FIRST")
 
 
 def addGDBTable2postgres():
@@ -456,7 +466,7 @@ def addGDBTable2postgres():
         
         conn.commit()
         print "Records created successfully";
-        conn.close()
+        # conn.close()
 
 
     # set the engine.....
@@ -490,9 +500,11 @@ def addGDBTable2postgres():
 ################ Instantiate the class to create yxc object  ########################
 refine = RefineObject(
       'ytc',
-      '30',
-      ## data range---i.e. all the cdl years you are referencing 
-      [2012,2016]
+      '56',
+      ## cdl data range---i.e. all the cdl years you are referencing 
+      [2008,2016],
+      ## ncdl datasets
+      ['2001','2006']
       )
 
 
@@ -502,36 +514,40 @@ refine = RefineObject(
 ##################  call functions  ############################################
    
 ###  create the mtr directly from the trajectories without filtering  ###################
-createMTR()
+# createMTR()
 
 
 ### create the year conversions #####################
-createYearbinaries()
+# createYearbinaries()
 
 
 ### attach the cld values to the years binaries  #######################
 for subtype in refine.subtypelist:
     print subtype
-    attachCDL(subtype)
+    # attachCDL(subtype)
 
 
-### create change trajectories for subcategories in yxc 
+### create change trajectories for subcategories in yxc ---- OK
 # createChangeTrajectories()
 
 
-###  add traj_yxc[res]_[datarange] attribute to postgres database in the refinement schema   ########################
-# addGDBTable2postgres()
+###  add traj_yxc[res]_[datarange] attribute to postgres database in the refinement schema ----- ok
+# addGDBTable2postgres() 
 
 
 ### create mask  #####################
 ##NOTE NEED TO GENERALIZE THIS FUNCTION!!!!!!!!!!!!!!!
+
+###----hard coded still. Also has questionable inner method!
 # createMask_nlcdtraj()
 
-# createMask_trajytc()
+###----?????  ---ok but has questionable inner method!
+createMask_trajytc()
 
 
 ### create the refined trajectory ########################
-# createRefinedTrajectory()
+###----hard coded still
+createRefinedTrajectory()
 
 
 
