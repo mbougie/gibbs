@@ -220,46 +220,65 @@ def addTrajArrayField(fields):
     conn.close()
 
 
-
 def labelTrajectories():
     cur = conn.cursor()
     table = 'pre.traj_cdl'+pre.res+'_b_'+pre.datarange
-    lookuptable = 'pre.traj_'''+pre.datarange+'_lookup_temp'
+    lookuptable = 'pre.traj_'''+pre.datarange+'_lookup'
+
     for year in pre.conversionyears:
         pre_context = 'cdl'+pre.res+'_b_'+str(year - 2)
         before_year ='cdl'+pre.res+'_b_'+str(year - 1)
         year_cdl = 'cdl'+pre.res+'_b_'+str(year)
         post_context = 'cdl'+pre.res+'_b_'+str(year + 1)
-        query = 'update '+lookuptable+' set ytc = '+str(year)+' where traj_array in (SELECT traj_array FROM '+table+' a INNER JOIN '+lookuptable+' b using(traj_array) Where '+pre_context+' = 0 AND '+before_year+'= 0 AND '+year_cdl+' = 1 AND '+post_context+' = 1 )'
-        print query
-        # cur.execute(query);
+        query_ytc = 'update '+lookuptable+' set mtr = 3, ytc = '+str(year)+' where traj_array in (SELECT traj_array FROM '+table+' a INNER JOIN '+lookuptable+' b using(traj_array) Where '+pre_context+' = 0 AND '+before_year+'= 0 AND '+year_cdl+' = 1 AND '+post_context+' = 1 )'
+        print query_ytc
+        cur.execute(query_ytc)
+        conn.commit()
 
+
+        query_yfc = 'update '+lookuptable+' set mtr = 4, yfc = '+str(year)+' where traj_array in (SELECT traj_array FROM '+table+' a INNER JOIN '+lookuptable+' b using(traj_array) Where '+pre_context+' = 1 AND '+before_year+'= 1 AND '+year_cdl+' = 0 AND '+post_context+' = 0 )'
+        print query_yfc
+        cur.execute(query_yfc)
         conn.commit()
 
 
 
-# update 
-#  pre.traj_2008to2015_lookup_temp set ytc = 2010 where traj_array in
-# (SELECT 
-#   traj_array 
-# FROM 
-#   pre.traj_cdl30_b_2008to2015 a INNER JOIN pre.traj_2008to2015_lookup_temp b using(traj_array)
-# Where cdl30_b_2008 = 0 AND
-#  cdl30_b_2009 = 0 AND
-#  cdl30_b_2010 = 1 AND
-#  cdl30_b_2011 = 1 AND
-#  mtr = 5)
+
+def FindRedundantTrajectories():
+    cur = conn.cursor()
+    table = 'pre.traj_cdl'+pre.res+'_b_'+pre.datarange
+    lookuptable = 'pre.traj_'''+pre.datarange+'_lookup'
+
+    query_list = []
+    for year in pre.conversionyears:
+        pre_context = 'cdl'+pre.res+'_b_'+str(year - 2)
+        before_year ='cdl'+pre.res+'_b_'+str(year - 1)
+        year_cdl = 'cdl'+pre.res+'_b_'+str(year)
+        post_context = 'cdl'+pre.res+'_b_'+str(year + 1)
+        query_ytc = 'SELECT traj_array FROM '+table+' a INNER JOIN '+lookuptable+' b using(traj_array) Where '+pre_context+' = 0 AND '+before_year+'= 0 AND '+year_cdl+' = 1 AND '+post_context+' = 1'
+        print query_ytc
+        query_list.append(query_ytc)
+
+        query_yfc = 'SELECT traj_array FROM '+table+' a INNER JOIN '+lookuptable+' b using(traj_array) Where '+pre_context+' = 1 AND '+before_year+'= 1 AND '+year_cdl+' = 0 AND '+post_context+' = 0'
+        print query_yfc
+        query_list.append(query_yfc)
 
 
 
+    print query_list
+    str1 = ' UNION ALL '.join(query_list)
+    print str1
 
 
-# NOTE---THIS ADDS COUNT FIELD FOR FASTER LOOKUP CREATION
+    query1 = 'update pre.traj_2008to2016_lookup set mtr = 5, ytc = NULL where traj_array in (select * from ('+str1+') ou where (select count(*) from ('+str1+') inr where inr.traj_array = ou.traj_array) > 1)'
+    print query1
+    cur.execute(query1);
+    conn.commit()
 
-# # UPDATE pre.traj_cdl30_b_2008to2015_lookup as t1
-# # SET count = (SELECT (SELECT SUM(s) FROM UNNEST(traj_array) s) FROM pre.traj_cdl30_b_2008to2015_lookup as t2 WHERE t1.index = t2.index)
-
-# UPDATE pre.traj_cdl30_b_2008to2015_lookup SET mtr = 5 where mtr is null
+    query2 = 'update pre.traj_2008to2016_lookup set mtr = 5, yfc = NULL where traj_array in (select * from ('+str1+') ou where (select count(*) from ('+str1+') inr where inr.traj_array = ou.traj_array) > 1)'
+    print query2
+    cur.execute(query2);
+    conn.commit()
 
 
 
@@ -286,9 +305,46 @@ pre = ProcessingObject(
 
 
 labelTrajectories()
+FindRedundantTrajectories()
 
 
 
+
+
+
+
+
+
+
+################  temp  ############################################
+
+
+# update 
+#  pre.traj_2008to2015_lookup_temp set ytc = 2010 where traj_array in
+# (SELECT 
+#   traj_array 
+# FROM 
+#   pre.traj_cdl30_b_2008to2015 a INNER JOIN pre.traj_2008to2015_lookup_temp b using(traj_array)
+# Where cdl30_b_2008 = 0 AND
+#  cdl30_b_2009 = 0 AND
+#  cdl30_b_2010 = 1 AND
+#  cdl30_b_2011 = 1 AND
+#  mtr = 5)
+
+
+########### NEED THIS LATER ON!!!!!!!!!!  ###########################
+# select * from pre.tempyo3 ou
+# where (select count(*) from pre.tempyo3 inr
+# where inr.traj_array = ou.traj_array) > 1
+
+
+
+# NOTE---THIS ADDS COUNT FIELD FOR FASTER LOOKUP CREATION
+
+# # UPDATE pre.traj_cdl30_b_2008to2015_lookup as t1
+# # SET count = (SELECT (SELECT SUM(s) FROM UNNEST(traj_array) s) FROM pre.traj_cdl30_b_2008to2015_lookup as t2 WHERE t1.index = t2.index)
+
+# UPDATE pre.traj_cdl30_b_2008to2015_lookup SET mtr = 5 where mtr is null
 
 
 
