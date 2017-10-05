@@ -41,23 +41,26 @@ class CoreObject:
     def __init__(self, res, years, filter, mmu):
         self.res = res
         self.years = years
+        self.datarange = str(self.years[0])+'to'+str(self.years[1])
+        print self.datarange
 
-        if self.years[1] == 2016:
-            self.datarange = str(self.years[0])+'to'+str(self.years[1]-1)
-            print 'self.datarange:', self.datarange
+        # if self.years[1] == 2016:
+        #     self.datarange = str(self.years[0])+'to'+str(self.years[1]-1)
+        #     print 'self.datarange:', self.datarange
             
-        else:
+        # else:
 
-            self.datarange = str(self.years[0])+'to'+str(self.years[1])
-            print 'self.datarange:', self.datarange
+        #     self.datarange = str(self.years[0])+'to'+str(self.years[1])
+        #     print 'self.datarange:', self.datarange
 
 
         # self.traj_name = "traj_cdl"+self.res+"_b_"+self.datarange+"_rfnd"
-        self.traj_name = "traj_cdl"+self.res+"_b_"+self.datarange
+        self.traj_name = "traj_cdl"+self.res+"_b_"+self.datarange+"_rfnd"
         self.traj_path = defineGDBpath(['pre','trajectories'])+self.traj_name
         self.filter = filter
         # self.wc = "*"+res+"*"+self.datarange+"*"
-        self.wc = "*"+res+"*"+self.datarange+"_nh8"
+        self.wc = "*"+res+"*"+self.datarange+"*_n8h"
+        # print self.wc
         self.mmu = mmu
 
 
@@ -172,7 +175,7 @@ def focalStats(gdb_args_in, dataset, gdb_args_out):
 
 def regionGroup():
     raster_name = core.traj_name + core.filter + '_mtr'
-    raster = defineGDBpath(['core', 'mtr']) + core.traj_name + core.filter + '_mtr'
+    raster = defineGDBpath(['core', 'mtr']) + core.traj_name + '_' + core.filter + '_mtr'
     print 'raster: ', raster
 
     filter_combos = {'8w':["EIGHT", "WITHIN"]}
@@ -298,27 +301,27 @@ def clipByMMUmask():
 ################ Instantiate the class to create core object  ########################
 core = CoreObject(
       #resolution
-      '56',
+      '30',
       #data range---i.e. all the cdl years you are referencing 
       [2008,2016],
       #filter used
       'n8h',
       #mmu
-       15
+       5
       )
 
 
 
 #############################  Call Functions ######################################
 ##------filter gdb--------------
-majorityFilter()
+# majorityFilter()
 
 ##------mtr gdb-----------------
-createMTR()
+# createMTR()
 
 ##------mmu gdb-----------------
 regionGroup()
-clipByMMUmask()
+# clipByMMUmask()
 
 ##find way to call the parrell_nibble function here
 

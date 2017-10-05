@@ -72,7 +72,7 @@ class RefineObject:
             if self.name == 'ytc':
                 self.mtr = '3'
                 # self.subtypelist = ['sc']
-                self.subtypelist = ['bfc','fc','sc']
+                self.subtypelist = ['bfc','fc']
                 print 'yo', self.subtypelist
                 self.traj_change = 1
 
@@ -153,82 +153,6 @@ def createMTR():
 
 
 
-def createYearbinaries():
-    print "-----------------createYearbinaries() function-------------------------------"
-    #DESCRIPTION:subset the trajectoires by year to create binary ytc or ytc raster by year that represent the conversion to/from crop between succesive years
-    arcpy.env.workspace=defineGDBpath(['refine',refine.name])
-    
-    output = refine.name+refine.res+'_'+refine.datarange
-    print 'output: ', output
-
-    ###copy trajectory raster so it can be modified iteritively
-    arcpy.CopyRaster_management(defineGDBpath(['pre', 'trajectories']) + 'traj_cdl'+refine.res+'_b_'+refine.datarange, output)
-    
-    arcpy.CheckOutExtension("Spatial")
-
-    #Connect to postgres database to get values from traj dataset 
-    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
-    query = 'select * from pre.traj_cdl'+refine.res+'_b_'+refine.datarange+' as a JOIN pre.traj_' + refine.datarange + '_lookup as b ON a.traj_array = b.traj_array WHERE b.'+refine.name+' IS NOT NULL'
-    print query
-    df = pd.read_sql_query(query, con=engine)
-    print 'df--',df
-    
-    # loop through rows in the dataframe
-    for index, row in df.iterrows():
-        #get the arbitrary value assigned to the specific trajectory
-        value=str(row['Value'])
-        print 'value: ', value
-
-        #cy is acronym for conversion year
-        cy = str(row[refine.name])
-        print 'cy:', cy
-        
-        # allow raster to be overwritten
-        arcpy.env.overwriteOutput = True
-        print "overwrite on? ", arcpy.env.overwriteOutput
-    
-        #establish the condition
-        cond = "Value = " + value
-        print 'cond: ', cond
-        
-        # set everthing not equal to the unique trajectory value to null label this abitray value equal to conversion year
-        OutRas = Con(output, cy, output, cond)
-   
-        OutRas.save(output)
-
-    #build pyramids t the end
-    gen.buildPyramids(output)
-
-    removeArbitraryValuesFromYearbinaries()
-
-
-
-
-def removeArbitraryValuesFromYearbinaries():
-    print "-----------------removeArbitraryValuesFromYearbinaries() function-------------------------------"
-    #DESCRIPTION: remove the arbitrary values from the 'yfc_years_'+mmu dataset
-
-    #define gdb workspace
-    arcpy.env.workspace=defineGDBpath(['refine',refine.name])
-
-    arcpy.CheckOutExtension("Spatial")
-    
-    #get raster from geodatabse
-    raster_input = refine.name+refine.res+'_'+refine.datarange
-    output = refine.name+refine.res+'_'+refine.datarange+'_clean'
-
-    ##only keep year values in map
-    cond = "Value < 2009" 
-    print 'cond: ', cond
-        
-    # set mmu raster to null where value is less 2013 (i.e. get rid of attribute values)
-    outSetNull = SetNull(raster_input, raster_input,  cond)
-    
-    #Save the output 
-    outSetNull.save(output)
-
-    #build pyramids t the end
-    gen.buildPyramids(output)
 
 
 
@@ -258,7 +182,7 @@ def attachCDL(subtype):
     # NOTE: Need to copy the yxc_clean dataset and rename it with subtype after it
     arcpy.env.workspace=defineGDBpath(['refine',refine.name])
 
-    inputraster = refine.name+refine.res+'_'+refine.datarange+'_clean'
+    inputraster = refine.name+refine.res+'_'+refine.datarange
     print "inputraster: ", inputraster
     
     output = inputraster+'_'+subtype
@@ -308,7 +232,7 @@ def createChangeTrajectories():
     def getRasterList():
         orderedlist = []
         for subtype in refine.subtypelist:
-            orderedlist.append(refine.name+refine.res+'_'+refine.datarange+'_clean_'+subtype)
+            orderedlist.append(refine.name+refine.res+'_'+refine.datarange+'_'+subtype)
         print orderedlist
         return orderedlist
 
@@ -329,7 +253,7 @@ def createChangeTrajectories():
 
 
 
-def createMask_nlcdtraj():
+def createMask_nlcdtraj(join_operator):
 
     nlcd1 = Raster(defineGDBpath(['ancillary','nlcd'])+'nlcd'+refine.res+'_'+refine.nlcd_years[0])
     nlcd2 = Raster(defineGDBpath(['ancillary','nlcd'])+'nlcd'+refine.res+'_'+refine.nlcd_years[1])
@@ -340,11 +264,11 @@ def createMask_nlcdtraj():
 
     # If condition is true set pixel to 23 else set pixel value to NULL
     #NOTE: both of the hardcoded values are ok because uniform accross resolutions and they are constant
-    # outCon = Con((nlcd1 == 82) & (refinement_mtr == 3), getArbitraryCropValue(), Con((nlcd2 == 82) & (refinement_mtr == 3), getArbitraryCropValue()))
+    outCon = Con((nlcd1 == 82) & (refinement_mtr == 3), getArbitraryCropValue(), Con((nlcd2 == 82) & (refinement_mtr == 3), getArbitraryCropValue()))
     if join_operator == 'or':
         output = defineGDBpath(['refine','masks'])+'traj_nlcd'+refine.res+'_b_'+refine.nlcd_years[0]+'or'+refine.nlcd_years[1]+'_'+refine.name+refine.datarange+'_mask'
         print 'output:', output
-        outCon = Con((nlcd1 == 82) & (refinement_mtr == 3) & (ytc_clean < 2012), getArbitraryCropValue(), Con((nlcd2 == 82) & (refinement_mtr == 3), getArbitraryCropValue()) , Con((nlcd2 == 82) & (refinement_mtr == 3) & (ytc_clean > 2011), getArbitraryCropValue()))
+        outCon = Con((nlcd1 == 82) & (refinement_mtr == 3) & (ytc_clean < 2012), getArbitraryCropValue(), Con((nlcd2 == 82) & (refinement_mtr == 3), getArbitraryCropValue() , Con((nlcd2 == 82) & (refinement_mtr == 3) & (ytc_clean > 2011), getArbitraryCropValue())))
     elif join_operator == 'and':
         output = defineGDBpath(['refine','masks'])+'traj_nlcd'+refine.res+'_b_'+refine.nlcd_years[0]+'and'+refine.nlcd_years[1]+'_'+refine.name+refine.datarange+'_mask'
         print 'output:', output
@@ -375,15 +299,12 @@ def getArbitraryCropValue():
 
 
 
-# createMask_trajytc(['refine','trajectories'], 'traj_ytc56_2008to2012', getReclassifyValuesString())
+
 def createMask_trajytc():
-    # traj_yxc = Raster(defineGDBpath(['pre','trajectories'])+'traj_nlcd'+refine.res+'_b_2001and2006')
     traj_ytc = defineGDBpath(['refine','trajectories'])+'traj_'+refine.name+refine.res+'_'+refine.datarange
-    # output = defineGDBpath(['refine','masks'])+'traj_nlcd'+refine.res+'_b_2001and2006_mask'
-    # print 'output:', output
+
 
     output = defineGDBpath(['refine','masks'])+'traj_'+refine.name+refine.res+'_'+refine.datarange+'_mask'
-    # output = defineGDBpath(gdb_args_out)+raster_out
     print 'output:', output
 
     reclassArray = createReclassifyList() 
@@ -400,16 +321,22 @@ def createReclassifyList():
     #Note: this is a aux function that the reclassifyRaster() function references
     cur = conn.cursor()
    
+    # query = (
+    # "SELECT DISTINCT \"Value\" "
+    # "FROM refinement.traj_"+refine.name+refine.res+"_"+refine.datarange+" "
+    # "WHERE 122 = traj_array[1] "
+    # "OR 123 = traj_array[1] "
+    # "OR 124 = traj_array[1] "
+    # "OR 61 = traj_array[2] "
+    # "OR '{37,36,36}' = traj_array "
+    # "OR '{152,36,36}' = traj_array "
+    # "OR '{176,36,36}' = traj_array"
+    # )
+
     query = (
     "SELECT DISTINCT \"Value\" "
     "FROM refinement.traj_"+refine.name+refine.res+"_"+refine.datarange+" "
-    "WHERE 122 = traj_array[1] "
-    "OR 123 = traj_array[1] "
-    "OR 124 = traj_array[1] "
-    "OR 61 = traj_array[2] "
-    "OR '{37,36,36}' = traj_array "
-    "OR '{152,36,36}' = traj_array "
-    "OR '{176,36,36}' = traj_array"
+    "WHERE 61 = traj_array[2] "
     )
 
     print query
@@ -430,6 +357,48 @@ def createReclassifyList():
         fulllist.append(templist)
     print fulllist
     return fulllist
+
+def createReclassifyList_mod():
+    #Note: this is a aux function that the reclassifyRaster() function references
+    cur = conn.cursor()
+   
+    # query = (
+    # "SELECT DISTINCT \"Value\" "
+    # "FROM refinement.traj_"+refine.name+refine.res+"_"+refine.datarange+" "
+    # "WHERE 122 = traj_array[1] "
+    # "OR 123 = traj_array[1] "
+    # "OR 124 = traj_array[1] "
+    # "OR 61 = traj_array[2] "
+    # "OR '{37,36,36}' = traj_array "
+    # "OR '{152,36,36}' = traj_array "
+    # "OR '{176,36,36}' = traj_array"
+    # )
+
+    query = (
+    "SELECT DISTINCT \"Value\" "
+    "FROM refinement.traj_"+refine.name+refine.res+"_"+refine.datarange+" "
+    "WHERE 61 = traj_array[2] "
+    )
+
+    print query
+
+    cur.execute(query)
+    #create empty list
+    fulllist=[[0,0,"NODATA"]]
+
+    # fetch all rows from table
+    rows = cur.fetchall()
+    return rows
+    print 'number of records in lookup table', len(rows)
+    
+    # interate through rows tuple to format the values into an array that is is then appended to the reclassifylist
+    # for row in rows:
+    #     templist=[]
+    #     templist.append(row[0])
+    #     templist.append(refine.traj_change)
+    #     fulllist.append(templist)
+    # print fulllist
+    # return fulllist
 
 
  
@@ -486,7 +455,7 @@ def addGDBTable2postgres():
 def createRefinedTrajectory():
     
     traj = defineGDBpath(['pre','trajectories']) + 'traj_cdl'+refine.res+'_b_'+refine.datarange
-    nlcd_mask = defineGDBpath(['refine','masks']) + 'traj_nlcd'+refine.res+'_b_'+refine.nlcd_years[0]+'or'+refine.nlcd_years[1]+'_'+refine.name+refine.datarange+'_mask'
+    nlcd_mask = defineGDBpath(['refine','masks']) + 'traj_nlcd'+refine.res+'_b_'+refine.nlcd_years[0]+'or'+refine.nlcd_years[1]+'or'+refine.nlcd_years[2]+'_'+refine.name+refine.datarange+'_mask'
     trajYTC_mask = defineGDBpath(['refine','masks']) + 'traj_'+refine.name+refine.res+'_'+refine.datarange+'_mask'
     output = 'traj_cdl'+refine.res+'_b_'+refine.datarange+'_rfnd'
     print 'output:', output
@@ -508,7 +477,7 @@ refine = RefineObject(
       ## cdl data range---i.e. all the cdl years you are referencing 
       [2008,2016],
       ## ncdl datasets
-      ['2001','2006']
+      ['2001','2006','2011']
       )
 
 
@@ -517,12 +486,8 @@ refine = RefineObject(
 
 ##################  call functions  ############################################
    
-###  create the mtr directly from the trajectories without filtering  ###################
-createMTR()
-
-
-### create the year conversions #####################
-# createYearbinaries()
+###  create the mtr directly from the trajectories without filtering  ###################----NOTE NEED TO DO THIS TWICE NOW!!!
+# createMTR()
 
 
 ### attach the cld values to the years binaries  #######################
@@ -543,7 +508,7 @@ for subtype in refine.subtypelist:
 ##NOTE NEED TO GENERALIZE THIS FUNCTION!!!!!!!!!!!!!!!
 
 ###----hard coded still. Also has questionable inner method!
-# createMask_nlcdtraj()
+# createMask_nlcdtraj('or')
 
 ###----?????  ---ok but has questionable inner method!
 # createMask_trajytc()
@@ -552,6 +517,202 @@ for subtype in refine.subtypelist:
 ### create the refined trajectory ########################
 ###----hard coded still
 # createRefinedTrajectory()
+
+
+
+
+# createReclassifyList()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# arcpy.env.workspace = defineGDBpath(['ancillary','temp'])
+
+
+# rasterfile = 'composite_cnty'
+# traj_ytc = 'test_cnty'
+
+
+# result = arcpy.GetCellValue_management(traj_ytc, "0 28")
+# cellSize = result.getOutput(0)
+# print(cellSize)
+
+
+
+# result = arcpy.GetCellValue_management(rasterfile, "11616 14631")
+# cellSize = result.getOutput(0)
+# print(cellSize)
+
+
+# # Get input Raster properties
+# inRas = arcpy.Raster('C:/data/inRaster')
+# lowerLeft = arcpy.Point(inRas.extent.XMin,inRas.extent.YMin)
+# cellSize = ras.meanCellWidth
+
+# # Convert Raster to numpy array
+# arr = arcpy.RasterToNumPyArray(inRas,nodata_to_value=0)
+
+# # Calculate percentage of the row for each cell value
+# arrSum = arr.sum(1)
+# arrSum.shape = (arr.shape[0],1)
+# arrPerc = (arr)/arrSum
+
+# #Convert Array to raster (keep the origin and cellsize the same as the input)
+# newRaster = arcpy.NumPyArrayToRaster(arrPerc,lowerLeft,cellSize,
+#                                      value_to_nodata=0)
+
+# raster = arcpy.Raster(traj_ytc)
+# array = arcpy.RasterToNumPyArray(raster)
+# (height, width)=array.shape
+# for row in range(0,height):
+#     for col in range(0,width):
+#         # print str(row)+","+str(col)+":"+str(array.item(row,col))
+
+#         result = arcpy.GetCellValue_management(raster, str(row)+" "+str(col))
+#         cellValue = result.getOutput(0)
+#         print cellValue
+#         if cellValue == 1229:
+#             print(cellValue)
+
+
+
+
+# raster1 = arcpy.Raster(traj_ytc)
+# ex = arcpy.RasterToNumPyArray(raster1)
+# # ex=np.arange(30)
+# # ex=np.reshape(ex,[3,10])
+# # print ex
+# thelist = (ex == 5392).nonzero()
+# print thelist[0]
+# print thelist[1]
+
+# yo = np.dstack((thelist[0],thelist[1]))
+# print yo
+# tt = yo.flat
+# print tt
+# print ex[11524,14463]
+
+
+
+
+
+
+
+
+
+
+# raster2 = arcpy.Raster(rasterfile)
+# ex2 = arcpy.RasterToNumPyArray(raster2)
+
+# for x in yo:
+#     print x[0][0]
+#     print ex2[1,1]
+    # result = arcpy.GetCellValue_management(raster, "18 14213")
+    # cellSize = result.getOutput(0)
+    # print(cellSize)
+
+
+
+# result = arcpy.GetCellValue_management(rasterfile, "18 14213")
+# cellSize = result.getOutput(0)
+# print(cellSize)
+
+
+
+
+
+
+# lowerLeft = arcpy.Point(inRas.extent.XMin,inRas.extent.YMin)
+# cellSize = inRas.meanCellWidth
+
+# # # Convert Raster to numpy array
+# arr = arcpy.RasterToNumPyArray(inRas,nodata_to_value=0)
+
+
+# import arcgisscripting
+# gp=arcgisscripting.create()
+# gp.multioutputmapalgebra(r'%s=sample(%s)' % ('Desktop/test.csv',traj_ytc))
+
+def getCDLvalueByYear(x):
+    print 'fdf', arr_comp[x[0],x[1]]
+    # print arr_comp[x[0],x[1]]
+    # return arr_comp[x[0],x[1]]
+
+
+
+# import arcpy
+# import numpy
+
+# Get input Raster properties
+# inRas = arcpy.Raster('C:/data/inRaster')
+
+inYTC = Raster(defineGDBpath(['ancillary','temp'])+'ytc_fish')
+arr_ytc = arcpy.RasterToNumPyArray(inYTC)
+inComp = Raster(defineGDBpath(['ancillary','temp'])+'composite_fish')
+arr_comp = arcpy.RasterToNumPyArray(inComp)
+inTraj = Raster(defineGDBpath(['ancillary','temp'])+'traj_fish_t2')
+arr_traj = arcpy.RasterToNumPyArray(inTraj)
+
+
+rows=createReclassifyList_mod()
+print rows
+
+# thelist = (arr_traj == 5392).nonzero()
+for row in rows:
+    print row[0]
+    thelist = (arr_traj == row[0]).nonzero()
+    print thelist
+    ww=np.column_stack((thelist[0],thelist[1]))
+    print ww
+    print len(ww)
+    count = 0
+    for x in ww:
+
+        yearlist=range(arr_ytc[x[0],x[1]], 2017)
+        # print yearlist
+        bandindexstart = 9 - len(yearlist)
+        bandindexlist=range(bandindexstart, 9)
+        # print bandindexlist
+
+        for index, bandindex in enumerate(bandindexlist):
+            currentband = arr_comp[bandindex]
+            # print currentband[x[0],x[1]]
+            bandindexlist[index] = currentband[x[0],x[1]]
+        # print bandindexlist
+
+        if bandindexlist.count(bandindexlist[0]) == len(bandindexlist):
+            print '-----------------same--------------------------------'
+            print bandindexlist
+            print 'x:',x[0]
+            print 'y:',x[1]
+
+
+
+    # count = count + 1
+    # print count
+
 
 
 

@@ -40,13 +40,15 @@ class NibbleObject:
         self.years = years
         self.subtype = subtype
 
-        if self.years[1] == 2016:
-			self.datarange = str(self.years[0])+'to'+str(self.years[1]-1)
-			print 'self.datarange:', self.datarange
+        self.datarange = str(self.years[0])+'to'+str(self.years[1])
 
-        else:
-			self.datarange = str(self.years[0])+'to'+str(self.years[1])
-			print 'self.datarange:', self.datarange
+   #      if self.years[1] == 2016:
+			# self.datarange = str(self.years[0])+'to'+str(self.years[1]-1)
+			# print 'self.datarange:', self.datarange
+
+   #      else:
+			# self.datarange = str(self.years[0])+'to'+str(self.years[1])
+			# print 'self.datarange:', self.datarange
         
         if self.subtype == 'mtr':
         	self.gdb_path = defineGDBpath(['core', 'mmu'])
@@ -153,9 +155,9 @@ def mosiacRasters():
 #### Define conversion object ######
 nibble = NibbleObject(
 	  #mmu
-	  '15',
+	  '5',
 	  #resolution
-	  '56',
+	  '30',
 	  #data-range
 	  [2008,2016],
 	  #subtype
