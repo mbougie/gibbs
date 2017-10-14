@@ -455,33 +455,57 @@ def setValueToNull(gdb_path, wc):
 
 
 
-def reprojectRaster(gdb_path, wc):
+# def reprojectRaster(gdb_path, wc):
+#     #description: tabulate the values of the raster by county 
+
+#     # Set environment settings
+#     arcpy.env.workspace = defineGDBpath(gdb_path)
+    
+#     # Set local variables
+#     for raster in arcpy.ListDatasets(wc, "Raster"): 
+#         print 'raster: ', raster
+
+#         raster_out = raster+'_initial2'
+
+
+#         spatial_ref = arcpy.Describe(defineGDBpath(['ancillary','cdl'])+'cdl_2010').spatialReference
+#         # spatial_ref = arcpy.Describe(raster).spatialReference
+#         sr = arcpy.SpatialReference("Hawaii Albers Equal Area Conic")
+
+#         print spatial_ref.Name
+#         print spatial_ref.PCSCode
+#         print spatial_ref.alias
+
+#         arcpy.ProjectRaster_management(raster, raster_out, sr)
+
+
+
+def reprojectRaster(raster_path, raster_name, raster_extension):
     #description: tabulate the values of the raster by county 
 
     # Set environment settings
-    arcpy.env.workspace = defineGDBpath(gdb_path)
+    # arcpy.env.workspace = defineGDBpath(gdb_path)
     
     # Set local variables
-    for raster in arcpy.ListDatasets(wc, "Raster"): 
-        print 'raster: ', raster
+    # for raster in arcpy.ListDatasets(wc, "Raster"): 
+    print 'raster: ', raster
 
-        raster_out = raster+'_initial2'
-
-
-        spatial_ref = arcpy.Describe(defineGDBpath(['ancillary','cdl'])+'cdl_2010').spatialReference
-        # spatial_ref = arcpy.Describe(raster).spatialReference
-        sr = arcpy.SpatialReference("Hawaii Albers Equal Area Conic")
-
-        print spatial_ref.Name
-        print spatial_ref.PCSCode
-        print spatial_ref.alias
-
-        # arcpy.ProjectRaster_management(raster, raster_out, sr)
+    raster_out = raster_path+'hello'+raster_extension
 
 
+    spatial_ref = arcpy.Describe(defineGDBpath(['ancillary','cdl'])+'cdl_2010').spatialReference
+    # spatial_ref = arcpy.Describe(raster).spatialReference
+    sr = arcpy.SpatialReference("Hawaii Albers Equal Area Conic")
+
+    print spatial_ref.Name
+    print spatial_ref.PCSCode
+    print spatial_ref.alias
+
+    arcpy.ProjectRaster_management(raster, raster_out, sr)
 
 
 
+    
 
 
 # setValueToNull(['ancillary','xp_initial'],'*')

@@ -19,11 +19,11 @@ import general as gen
 case=['Bougie','Gibbs']
 
 
+
 try:
     conn = psycopg2.connect("dbname='usxp' user='mbougie' host='144.92.235.105' password='Mend0ta!'")
 except:
     print "I am unable to connect to the database"
-
 
 
 ###################  Define the environment  #######################################################
@@ -668,30 +668,62 @@ def getCDLvalueByYear(x):
 # Get input Raster properties
 # inRas = arcpy.Raster('C:/data/inRaster')
 
-inYTC = Raster(defineGDBpath(['ancillary','temp'])+'ytc_fish')
-arr_ytc = arcpy.RasterToNumPyArray(inYTC)
-inComp = Raster(defineGDBpath(['ancillary','temp'])+'composite_fish')
-arr_comp = arcpy.RasterToNumPyArray(inComp)
-inTraj = Raster(defineGDBpath(['ancillary','temp'])+'traj_fish_t2')
-arr_traj = arcpy.RasterToNumPyArray(inTraj)
+mask = np.zeros((13789, 21973), dtype=np.int)
+# mask = np.zeros((20, 20))
+print mask
 
 
+# inYTC = Raster(defineGDBpath(['ancillary','temp'])+'ytc_fish')
+# arr_ytc = arcpy.RasterToNumPyArray(inYTC)
+# inComp = Raster(defineGDBpath(['ancillary','temp'])+'composite_fish')
+# arr_comp = arcpy.RasterToNumPyArray(inComp)
+# inTraj = Raster(defineGDBpath(['ancillary','temp'])+'traj_fish_t2')
+# arr_traj = arcpy.RasterToNumPyArray(inTraj)
+
+
+
+#ytc dataset
+# inYTC = Raster(defineGDBpath(['ancillary','temp'])+'ytc_fish')
+inYTC = Raster(defineGDBpath(['refine','ytc'])+'ytc30_2008to2016')
+# arr_ytc = arcpy.RasterToNumPyArray(in_raster=inYTC, lower_left_corner = arcpy.Point(inYTC.extent.XMin,inYTC.extent.YMin), ncols = 13789, nrows = 21973, nodata_to_value = 0)
+arr_ytc = arcpy.RasterToNumPyArray(in_raster=inYTC, lower_left_corner = arcpy.Point(inYTC.extent.XMin,inYTC.extent.YMin), nrows = 13789, ncols = 21973)
+print 'art',arr_ytc
+#composite stack of clds
+
+# self.inComp = defineGDBpath(['ancillary','temp'])+'composite'
+# # self.arr_comp = arcpy.RasterToNumPyArray(Raster(inComp))
+# self.inTraj = defineGDBpath(['refine','trajectories'])+'traj_ytc30_2008to2016'
+# # inComp = Raster(defineGDBpath(['ancillary','temp'])+'composite_fish')
+
+
+inComp = Raster(defineGDBpath(['ancillary','temp'])+'composite')
+arr_comp = arcpy.RasterToNumPyArray(in_raster=inComp, lower_left_corner = arcpy.Point(inYTC.extent.XMin,inYTC.extent.YMin), nrows = 13789, ncols = 21973)
+
+
+inTraj = Raster(defineGDBpath(['refine','trajectories'])+'traj_ytc30_2008to2016')
+arr_traj = arcpy.RasterToNumPyArray(in_raster=inTraj, lower_left_corner = arcpy.Point(inYTC.extent.XMin,inYTC.extent.YMin), nrows = 13789, ncols = 21973)
+
+#get the trajectory values that satify the condtion from postgres
 rows=createReclassifyList_mod()
-print rows
+# print 'rows------', rows
 
 # thelist = (arr_traj == 5392).nonzero()
+
+#find the location of each pixel labeled with specific arbitray value in the rows list  
 for row in rows:
-    print row[0]
+    # print 'arbitrary trajectory label:', row[0]
+
+    #Return the indices of the elements that are non-zero.
     thelist = (arr_traj == row[0]).nonzero()
-    print thelist
+    # print 'thelist----', thelist
+
     ww=np.column_stack((thelist[0],thelist[1]))
-    print ww
-    print len(ww)
+    # print ww
+    # print 'len----', len(ww)
     count = 0
     for x in ww:
-
         yearlist=range(arr_ytc[x[0],x[1]], 2017)
-        # print yearlist
+        # print 'yearlist----', yearlist
         bandindexstart = 9 - len(yearlist)
         bandindexlist=range(bandindexstart, 9)
         # print bandindexlist
@@ -707,13 +739,18 @@ for row in rows:
             print bandindexlist
             print 'x:',x[0]
             print 'y:',x[1]
+            mask[x[0],x[1]] = 1
 
 
+myRaster = arcpy.NumPyArrayToRaster(mask,x_cell_size=30, y_cell_size=30, value_to_nodata=0)
 
-    # count = count + 1
-    # print count
+raster_path = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\temp_rasters\\'
+raster_name = 'mask_t41.tif'
 
+in_dataset = raster_path + raster_name
 
+myRaster.save(in_dataset)
 
-
+#define projerction of the new raster
+# arcpy.DefineProjection_management (in_dataset, arcpy.SpatialReference("NAD 1983 UTM Zone 11N"))
 

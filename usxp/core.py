@@ -43,24 +43,10 @@ class CoreObject:
         self.years = years
         self.datarange = str(self.years[0])+'to'+str(self.years[1])
         print self.datarange
-
-        # if self.years[1] == 2016:
-        #     self.datarange = str(self.years[0])+'to'+str(self.years[1]-1)
-        #     print 'self.datarange:', self.datarange
-            
-        # else:
-
-        #     self.datarange = str(self.years[0])+'to'+str(self.years[1])
-        #     print 'self.datarange:', self.datarange
-
-
-        # self.traj_name = "traj_cdl"+self.res+"_b_"+self.datarange+"_rfnd"
         self.traj_name = "traj_cdl"+self.res+"_b_"+self.datarange+"_rfnd"
         self.traj_path = defineGDBpath(['pre','trajectories'])+self.traj_name
         self.filter = filter
-        # self.wc = "*"+res+"*"+self.datarange+"*"
         self.wc = "*"+res+"*"+self.datarange+"*_n8h"
-        # print self.wc
         self.mmu = mmu
 
 
@@ -203,7 +189,7 @@ def clipByMMUmask():
     #define workspace
     arcpy.env.workspace=defineGDBpath(['core', 'mmu'])
 
-    raster = defineGDBpath(['core', 'mmu']) + core.traj_name + core.filter+'_mtr_8w'
+    raster = defineGDBpath(['core', 'mmu']) + core.traj_name + '_' + core.filter + '_mtr_8w'
     print 'raster: ', raster
 
     # for count in masks_list:
@@ -218,6 +204,8 @@ def clipByMMUmask():
 
     # Save the output 
     outSetNull.save(output)
+
+    gen.buildPyramids(output)
 
 
 
@@ -321,7 +309,7 @@ core = CoreObject(
 
 ##------mmu gdb-----------------
 regionGroup()
-# clipByMMUmask()
+clipByMMUmask()
 
 ##find way to call the parrell_nibble function here
 

@@ -41,24 +41,13 @@ class NibbleObject:
         self.subtype = subtype
 
         self.datarange = str(self.years[0])+'to'+str(self.years[1])
+ 
+    	self.gdb_path = defineGDBpath(['core', 'mmu'])
+        self.raster_name = 'traj_cdl'+self.res+'_b_'+self.datarange+'_rfnd_n8h_mtr'
+        self.in_raster = defineGDBpath(['core', 'mtr']) + self.raster_name
+        self.out_fishnet = defineGDBpath(['ancillary', 'temp']) + 'fishnet_' + self.subtype
+        self.pixel_type = "32_BIT_UNSIGNED"
 
-        
-        if self.subtype == 'mtr':
-        	self.gdb_path = defineGDBpath(['core', 'mmu'])
-	        self.raster_name = 'traj_cdl'+self.res+'_b_'+self.datarange+'_rfnd_n8h_mtr'
-	        self.in_raster = defineGDBpath(['core', 'mtr']) + self.raster_name
-	        self.mask_name = self.raster_name + '_8w_msk' + self.mmu
-	        self.in_mask_raster = self.gdb_path + self.mask_name
-	        self.out_fishnet = defineGDBpath(['ancillary', 'temp']) + 'fishnet_' + self.subtype
-	        self.pixel_type = "8_BIT_UNSIGNED"
-        else:
-			self.gdb_path = defineGDBpath(['post', self.subtype])
-			self.raster_name = self.subtype+self.res+'_'+self.datarange+'_mmu'+self.mmu
-			self.in_raster = self.gdb_path + self.raster_name
-			self.mask_name = self.raster_name + '_clean'
-			self.in_mask_raster = self.gdb_path + self.mask_name
-			self.out_fishnet = defineGDBpath(['ancillary', 'temp']) + 'fishnet_' + self.subtype
-			self.pixel_type = "16_BIT_UNSIGNED"
 
 
 def create_fishnet():
@@ -109,35 +98,64 @@ def execute_task(in_extentDict):
 	arcpy.env.extent = arcpy.Extent(XMin, YMin, XMax, YMax)
 
 	###  Execute Nibble  #####################
-	ras_out = arcpy.sa.Nibble(nibble.in_raster, nibble.in_mask_raster, "DATA_ONLY")
 
-	#clear out the extent for next time
-	arcpy.ClearEnvironment("extent")
-    
-    # print fc_count
-	outname = "tile_" + str(fc_count) +'.tif'
+	filter_combos = {'8w':["EIGHT", "WITHIN"]}
+	for k, v in filter_combos.iteritems():
+	    print k,v
+	    # Execute RegionGroup
+	    ras_out = RegionGroup(Raster(nibble.in_raster), v[0], v[1],"NO_LINK")
 
-	#create Directory
+		#clear out the extent for next time
+        arcpy.ClearEnvironment("extent")
+	    
+	    # print fc_count
+        outname = "tile_" + str(fc_count) +'.tif'
 
-	outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/", r"tiles", outname)
+		#create Directory
 
-	ras_out.save(outpath)
+        outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/", r"tiles", outname)
+
+        ras_out.save(outpath)
+
+
+
+def createMMUmask():
+    root_in = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\tiles\\'
+    rasterlist = glob.glob(root_in+"*.tif")
+    print tilelist 
+
+    for raster in rasterlist:
+        print raster
+
+        output = raster.replace('.', '_mask.')
+        print output
+
+        # for count in masks_list:
+        cond = "Count < " + str(gen.getPixelCount('30', 5))
+        print 'cond: ',cond
+
+        outSetNull = SetNull(raster, 1, cond)
+
+        # Save the output 
+        outSetNull.save(output)
+
 
 
 
 def mosiacRasters():
-	tilelist = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*.tif")
-	print tilelist 
+	root_in = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\tiles\\'
+	tilelist = glob.glob(root_in+"*mask.tif")
+	print tilelist  
 	######mosiac tiles together into a new raster
-	nbl_raster = nibble.mask_name + '_nbl'
+	nbl_raster = nibble.raster_name + '_8w_msk5'
 	print 'nbl_raster: ', nbl_raster
 
 	arcpy.MosaicToNewRaster_management(tilelist, nibble.gdb_path, nbl_raster, Raster(nibble.in_raster).spatialReference, nibble.pixel_type, nibble.res, "1", "LAST","FIRST")
 
-	##Overwrite the existing attribute table file
+	#Overwrite the existing attribute table file
 	arcpy.BuildRasterAttributeTable_management(nibble.gdb_path + nbl_raster, "Overwrite")
 
-	## Overwrite pyramids
+	# Overwrite pyramids
 	gen.buildPyramids(nibble.gdb_path + nbl_raster)
 
 
@@ -185,6 +203,8 @@ if __name__ == '__main__':
 	pool.map(execute_task, extDict.items())
 	pool.close()
 	pool.join
+    
+    createMMUmask()
 
 	mosiacRasters()
     
