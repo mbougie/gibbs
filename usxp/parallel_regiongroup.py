@@ -43,10 +43,12 @@ class NibbleObject:
         self.datarange = str(self.years[0])+'to'+str(self.years[1])
  
     	self.gdb_path = defineGDBpath(['core', 'mmu'])
-        self.raster_name = 'traj_cdl'+self.res+'_b_'+self.datarange+'_rfnd_n8h_mtr'
+        self.raster_name = 'traj_cdl'+self.res+'_b_'+self.datarange+'_n8h_mtr'
         self.in_raster = defineGDBpath(['core', 'mtr']) + self.raster_name
         self.out_fishnet = defineGDBpath(['ancillary', 'temp']) + 'fishnet_' + self.subtype
         self.pixel_type = "32_BIT_UNSIGNED"
+
+        self.dir_tiles = 'C:/Users/Bougie/Desktop/Gibbs/tiles/'
 
 
 
@@ -119,10 +121,10 @@ def execute_task(in_extentDict):
 
 
 
-def createMMUmask():
+def createMMUmaskTiles():
     root_in = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\tiles\\'
     rasterlist = glob.glob(root_in+"*.tif")
-    print tilelist 
+    print rasterlist
 
     for raster in rasterlist:
         print raster
@@ -181,6 +183,11 @@ if __name__ == '__main__':
 	# need to create a unique fishnet for each dataset
 	##create_fishnet()
 
+	#remove a files in tiles directory
+	# tiles = glob.glob(nibble.dir_tiles+"*")
+	# for tile in tiles:
+	# 	os.remove(tile)
+
 	#get extents of individual features and add it to a dictionary
 	extDict = {}
 	count = 1 
@@ -198,13 +205,13 @@ if __name__ == '__main__':
 	# print 'extDict', extDict
 	# print'extDict.items()',  extDict.items()
 
-	#######create a process and pass dictionary of extent to execute task
-	pool = Pool(processes=cpu_count())
-	pool.map(execute_task, extDict.items())
-	pool.close()
-	pool.join
-    
-    createMMUmask()
+	######create a process and pass dictionary of extent to execute task
+	# pool = Pool(processes=cpu_count())
+	# pool.map(execute_task, extDict.items())
+	# pool.close()
+	# pool.join
+
+	# createMMUmaskTiles()
 
 	mosiacRasters()
     

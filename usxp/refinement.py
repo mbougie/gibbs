@@ -47,16 +47,19 @@ class RefineObject:
         self.yearcount=len(range(self.years[0], self.years[1]+1))
         self.datarange = str(self.years[0])+'to'+str(self.years[1])
         print 'self.datarange:', self.datarange
-
-        if self.years[1] == 2016:
-            self.conversionyears = range(self.years[0]+2, self.years[1])
-            print 'self.conversionyears:', self.conversionyears
-        else:
-            self.conversionyears = range(self.years[0]+1, self.years[1] + 1)
-            print 'self.conversionyears:', self.conversionyears
-
+        self.conversionyears = range(self.years[0]+2, self.years[1])
+        print 'self.conversionyears:', self.conversionyears
         self.traj_dataset = "traj_cdl"+self.res+"_b_"+self.datarange
         self.nlcd_years = nlcd_years
+
+        # if self.years[1] == 2016:
+        #     self.conversionyears = range(self.years[0]+2, self.years[1])
+        #     print 'self.conversionyears:', self.conversionyears
+        # else:
+        #     self.conversionyears = range(self.years[0]+1, self.years[1] + 1)
+        #     print 'self.conversionyears:', self.conversionyears
+
+
         
      
         # self.mmu_Raster=Raster(defineGDBpath([gdb,'mtr']) + 'traj_cdl'+res+'_b_8to12_mtr')
@@ -145,11 +148,11 @@ def createMTR():
 
     reclassArray = createReclassifyList() 
 
-    outReclass = Reclassify(raster, "Value", RemapRange(reclassArray), "NODATA")
+    # outReclass = Reclassify(raster, "Value", RemapRange(reclassArray), "NODATA")
     
-    outReclass.save(output)
+    # outReclass.save(output)
 
-    gen.buildPyramids(output)
+    # gen.buildPyramids(output)
 
 
 
@@ -255,24 +258,25 @@ def createChangeTrajectories():
 
 def createMask_nlcdtraj(join_operator):
 
-    nlcd1 = Raster(defineGDBpath(['ancillary','nlcd'])+'nlcd'+refine.res+'_'+refine.nlcd_years[0])
-    nlcd2 = Raster(defineGDBpath(['ancillary','nlcd'])+'nlcd'+refine.res+'_'+refine.nlcd_years[1])
-    nlcd3 = Raster(defineGDBpath(['ancillary','nlcd'])+'nlcd'+refine.res+'_'+refine.nlcd_years[2])
+    nlcd2001 = Raster(defineGDBpath(['ancillary','nlcd'])+'nlcd'+refine.res+'_'+refine.nlcd_years[0])
+    nlcd2006 = Raster(defineGDBpath(['ancillary','nlcd'])+'nlcd'+refine.res+'_'+refine.nlcd_years[1])
+    nlcd2011 = Raster(defineGDBpath(['ancillary','nlcd'])+'nlcd'+refine.res+'_'+refine.nlcd_years[2])
     refinement_mtr = Raster(defineGDBpath(['refine','mtr'])+'traj_cdl'+refine.res+'_b_'+refine.datarange+'_mtr')
     ytc_clean = Raster(defineGDBpath(['refine','ytc'])+'ytc'+refine.res+'_'+refine.datarange)
    
 
     # If condition is true set pixel to 23 else set pixel value to NULL
     #NOTE: both of the hardcoded values are ok because uniform accross resolutions and they are constant
-    outCon = Con((nlcd1 == 82) & (refinement_mtr == 3), getArbitraryCropValue(), Con((nlcd2 == 82) & (refinement_mtr == 3), getArbitraryCropValue()))
+    # outCon = Con((nlcd2001 == 82) & (refinement_mtr == 3), getArbitraryCropValue(), Con((nlcd2 == 82) & (refinement_mtr == 3), getArbitraryCropValue()))
     if join_operator == 'or':
         output = defineGDBpath(['refine','masks'])+'traj_nlcd'+refine.res+'_b_'+refine.nlcd_years[0]+'or'+refine.nlcd_years[1]+'_'+refine.name+refine.datarange+'_mask'
         print 'output:', output
-        outCon = Con((nlcd1 == 82) & (refinement_mtr == 3) & (ytc_clean < 2012), getArbitraryCropValue(), Con((nlcd2 == 82) & (refinement_mtr == 3), getArbitraryCropValue() , Con((nlcd2 == 82) & (refinement_mtr == 3) & (ytc_clean > 2011), getArbitraryCropValue())))
+        outCon = Con((nlcd2001 == 82) & (refinement_mtr == 3) & (ytc_clean < 2012), getArbitraryCropValue(), Con((nlcd2006 == 82) & (refinement_mtr == 3), getArbitraryCropValue() , Con((nlcd2006 == 82) & (refinement_mtr == 3) & (ytc_clean > 2011), getArbitraryCropValue()))) 
+        print outCon
     elif join_operator == 'and':
         output = defineGDBpath(['refine','masks'])+'traj_nlcd'+refine.res+'_b_'+refine.nlcd_years[0]+'and'+refine.nlcd_years[1]+'_'+refine.name+refine.datarange+'_mask'
         print 'output:', output
-        outCon = Con(((nlcd1 == 82) & (nlcd2 == 82) & (refinement_mtr == 3)), getArbitraryCropValue())
+        outCon = Con(((nlcd2001 == 82) & (nlcd2 == 82) & (refinement_mtr == 3)), getArbitraryCropValue())
     
     outCon.save(output)
 
@@ -321,23 +325,23 @@ def createReclassifyList():
     #Note: this is a aux function that the reclassifyRaster() function references
     cur = conn.cursor()
    
-    # query = (
-    # "SELECT DISTINCT \"Value\" "
-    # "FROM refinement.traj_"+refine.name+refine.res+"_"+refine.datarange+" "
-    # "WHERE 122 = traj_array[1] "
-    # "OR 123 = traj_array[1] "
-    # "OR 124 = traj_array[1] "
-    # "OR 61 = traj_array[2] "
-    # "OR '{37,36,36}' = traj_array "
-    # "OR '{152,36,36}' = traj_array "
-    # "OR '{176,36,36}' = traj_array"
-    # )
-
     query = (
     "SELECT DISTINCT \"Value\" "
     "FROM refinement.traj_"+refine.name+refine.res+"_"+refine.datarange+" "
-    "WHERE 61 = traj_array[2] "
+    "WHERE 122 = traj_array[1] "
+    "OR 123 = traj_array[1] "
+    "OR 124 = traj_array[1] "
+    "OR 61 = traj_array[2] "
+    "OR '{37,36,36}' = traj_array "
+    "OR '{152,36,36}' = traj_array "
+    "OR '{176,36,36}' = traj_array"
     )
+
+    # query = (
+    # "SELECT DISTINCT \"Value\" "
+    # "FROM refinement.traj_"+refine.name+refine.res+"_"+refine.datarange+" "
+    # "WHERE 61 = traj_array[2] "
+    # )
 
     print query
 
@@ -508,7 +512,7 @@ for subtype in refine.subtypelist:
 ##NOTE NEED TO GENERALIZE THIS FUNCTION!!!!!!!!!!!!!!!
 
 ###----hard coded still. Also has questionable inner method!
-# createMask_nlcdtraj('or')
+createMask_nlcdtraj('or')
 
 ###----?????  ---ok but has questionable inner method!
 # createMask_trajytc()
@@ -655,8 +659,8 @@ for subtype in refine.subtypelist:
 # gp=arcgisscripting.create()
 # gp.multioutputmapalgebra(r'%s=sample(%s)' % ('Desktop/test.csv',traj_ytc))
 
-def getCDLvalueByYear(x):
-    print 'fdf', arr_comp[x[0],x[1]]
+# def getCDLvalueByYear(x):
+#     print 'fdf', arr_comp[x[0],x[1]]
     # print arr_comp[x[0],x[1]]
     # return arr_comp[x[0],x[1]]
 
@@ -668,9 +672,9 @@ def getCDLvalueByYear(x):
 # Get input Raster properties
 # inRas = arcpy.Raster('C:/data/inRaster')
 
-mask = np.zeros((13789, 21973), dtype=np.int)
-# mask = np.zeros((20, 20))
-print mask
+# mask = np.zeros((13789, 21973), dtype=np.int)
+# # mask = np.zeros((20, 20))
+# print mask
 
 
 # inYTC = Raster(defineGDBpath(['ancillary','temp'])+'ytc_fish')
@@ -684,10 +688,10 @@ print mask
 
 #ytc dataset
 # inYTC = Raster(defineGDBpath(['ancillary','temp'])+'ytc_fish')
-inYTC = Raster(defineGDBpath(['refine','ytc'])+'ytc30_2008to2016')
-# arr_ytc = arcpy.RasterToNumPyArray(in_raster=inYTC, lower_left_corner = arcpy.Point(inYTC.extent.XMin,inYTC.extent.YMin), ncols = 13789, nrows = 21973, nodata_to_value = 0)
-arr_ytc = arcpy.RasterToNumPyArray(in_raster=inYTC, lower_left_corner = arcpy.Point(inYTC.extent.XMin,inYTC.extent.YMin), nrows = 13789, ncols = 21973)
-print 'art',arr_ytc
+# inYTC = Raster(defineGDBpath(['refine','ytc'])+'ytc30_2008to2016')
+# # arr_ytc = arcpy.RasterToNumPyArray(in_raster=inYTC, lower_left_corner = arcpy.Point(inYTC.extent.XMin,inYTC.extent.YMin), ncols = 13789, nrows = 21973, nodata_to_value = 0)
+# arr_ytc = arcpy.RasterToNumPyArray(in_raster=inYTC, lower_left_corner = arcpy.Point(inYTC.extent.XMin,inYTC.extent.YMin), nrows = 13789, ncols = 21973)
+# print 'art',arr_ytc
 #composite stack of clds
 
 # self.inComp = defineGDBpath(['ancillary','temp'])+'composite'
@@ -696,60 +700,60 @@ print 'art',arr_ytc
 # # inComp = Raster(defineGDBpath(['ancillary','temp'])+'composite_fish')
 
 
-inComp = Raster(defineGDBpath(['ancillary','temp'])+'composite')
-arr_comp = arcpy.RasterToNumPyArray(in_raster=inComp, lower_left_corner = arcpy.Point(inYTC.extent.XMin,inYTC.extent.YMin), nrows = 13789, ncols = 21973)
+# inComp = Raster(defineGDBpath(['ancillary','temp'])+'composite')
+# arr_comp = arcpy.RasterToNumPyArray(in_raster=inComp, lower_left_corner = arcpy.Point(inYTC.extent.XMin,inYTC.extent.YMin), nrows = 13789, ncols = 21973)
 
 
-inTraj = Raster(defineGDBpath(['refine','trajectories'])+'traj_ytc30_2008to2016')
-arr_traj = arcpy.RasterToNumPyArray(in_raster=inTraj, lower_left_corner = arcpy.Point(inYTC.extent.XMin,inYTC.extent.YMin), nrows = 13789, ncols = 21973)
+# inTraj = Raster(defineGDBpath(['refine','trajectories'])+'traj_ytc30_2008to2016')
+# arr_traj = arcpy.RasterToNumPyArray(in_raster=inTraj, lower_left_corner = arcpy.Point(inYTC.extent.XMin,inYTC.extent.YMin), nrows = 13789, ncols = 21973)
 
 #get the trajectory values that satify the condtion from postgres
-rows=createReclassifyList_mod()
+# rows=createReclassifyList_mod()
 # print 'rows------', rows
 
 # thelist = (arr_traj == 5392).nonzero()
 
 #find the location of each pixel labeled with specific arbitray value in the rows list  
-for row in rows:
-    # print 'arbitrary trajectory label:', row[0]
+# for row in rows:
+#     # print 'arbitrary trajectory label:', row[0]
 
-    #Return the indices of the elements that are non-zero.
-    thelist = (arr_traj == row[0]).nonzero()
-    # print 'thelist----', thelist
+#     #Return the indices of the elements that are non-zero.
+#     thelist = (arr_traj == row[0]).nonzero()
+#     # print 'thelist----', thelist
 
-    ww=np.column_stack((thelist[0],thelist[1]))
-    # print ww
-    # print 'len----', len(ww)
-    count = 0
-    for x in ww:
-        yearlist=range(arr_ytc[x[0],x[1]], 2017)
-        # print 'yearlist----', yearlist
-        bandindexstart = 9 - len(yearlist)
-        bandindexlist=range(bandindexstart, 9)
-        # print bandindexlist
+#     ww=np.column_stack((thelist[0],thelist[1]))
+#     # print ww
+#     # print 'len----', len(ww)
+#     count = 0
+#     for x in ww:
+#         yearlist=range(arr_ytc[x[0],x[1]], 2017)
+#         # print 'yearlist----', yearlist
+#         bandindexstart = 9 - len(yearlist)
+#         bandindexlist=range(bandindexstart, 9)
+#         # print bandindexlist
 
-        for index, bandindex in enumerate(bandindexlist):
-            currentband = arr_comp[bandindex]
-            # print currentband[x[0],x[1]]
-            bandindexlist[index] = currentband[x[0],x[1]]
-        # print bandindexlist
+#         for index, bandindex in enumerate(bandindexlist):
+#             currentband = arr_comp[bandindex]
+#             # print currentband[x[0],x[1]]
+#             bandindexlist[index] = currentband[x[0],x[1]]
+#         # print bandindexlist
 
-        if bandindexlist.count(bandindexlist[0]) == len(bandindexlist):
-            print '-----------------same--------------------------------'
-            print bandindexlist
-            print 'x:',x[0]
-            print 'y:',x[1]
-            mask[x[0],x[1]] = 1
+#         if bandindexlist.count(bandindexlist[0]) == len(bandindexlist):
+#             print '-----------------same--------------------------------'
+#             print bandindexlist
+#             print 'x:',x[0]
+#             print 'y:',x[1]
+#             mask[x[0],x[1]] = 1
 
 
-myRaster = arcpy.NumPyArrayToRaster(mask,x_cell_size=30, y_cell_size=30, value_to_nodata=0)
+# myRaster = arcpy.NumPyArrayToRaster(mask,x_cell_size=30, y_cell_size=30, value_to_nodata=0)
 
-raster_path = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\temp_rasters\\'
-raster_name = 'mask_t41.tif'
+# raster_path = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\temp_rasters\\'
+# raster_name = 'mask_t41.tif'
 
-in_dataset = raster_path + raster_name
+# in_dataset = raster_path + raster_name
 
-myRaster.save(in_dataset)
+# myRaster.save(in_dataset)
 
 #define projerction of the new raster
 # arcpy.DefineProjection_management (in_dataset, arcpy.SpatialReference("NAD 1983 UTM Zone 11N"))

@@ -47,7 +47,7 @@ class CoreObject:
         self.traj_name = "traj_cdl"+self.res+"_b_"+self.datarange
         self.traj_path = defineGDBpath(['pre','trajectories'])+self.traj_name
         self.filter = filter
-        
+        self.wc = "*"+res+"*"+self.datarange+"*_n8h"
         self.mmu = mmu
 
 
@@ -72,23 +72,23 @@ def addColorMap(inraster,template):
 
 def createMTR():
     ## replace the arbitrary values in the trajectories dataset with the mtr values 1-5.
-    raster = defineGDBpath(['core','filter']) + core.traj_name+"_n8h"
+    arcpy.env.workspace = defineGDBpath(['core','filter'])
 
-# self.wc = self.traj_name+"_n8h"
-#     for raster in arcpy.ListDatasets(core.wc, "Raster"): 
 
-    print 'raster: ', raster
+    for raster in arcpy.ListDatasets(core.wc, "Raster"): 
 
-    output = defineGDBpath(['core','mtr'])+core.traj_name+"_n8h"+'_mtr'
-    print 'output:', output
+        print 'raster: ', raster
 
-    reclassArray = createReclassifyList() 
+        output = defineGDBpath(['core','mtr'])+raster+'_mtr'
+        print 'output:', output
 
-    outReclass = Reclassify(Raster(raster), "Value", RemapRange(reclassArray), "NODATA")
-    
-    outReclass.save(output)
+        reclassArray = createReclassifyList() 
 
-    gen.buildPyramids(output)
+        outReclass = Reclassify(Raster(raster), "Value", RemapRange(reclassArray), "NODATA")
+        
+        outReclass.save(output)
+
+        gen.buildPyramids(output)
 
 
 
@@ -303,7 +303,7 @@ core = CoreObject(
 
 #############################  Call Functions ######################################
 ##------filter gdb--------------
-# majorityFilter()
+majorityFilter()
 
 ##------mtr gdb-----------------
 createMTR()

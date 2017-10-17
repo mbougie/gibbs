@@ -39,18 +39,34 @@ class ConversionObject:
         self.res = res
         self.mmu = mmu
         self.years = years
+        
+        self.datarange = str(self.years[0])+'to'+str(self.years[1])
+        print 'self.datarange:', self.datarange
+        
+        self.conversionyears = range(self.years[0]+2, self.years[1])
+        print 'self.conversionyears:', self.conversionyears
+        
+        self.traj_dataset = "traj_cdl"+self.res+"_b_"+self.datarange
+        
         self.mmu_gdb=defineGDBpath(['core','mmu'])
 
-        if self.years[1] == 2016:
-            self.datarange = str(self.years[0])+'to'+str(self.years[1]-1)
-            print 'self.datarange:', self.datarange
-            self.conversionyears = range(self.years[0]+1, self.years[1])
-            print 'self.conversionyears:', self.conversionyears
-        else:
-            self.datarange = str(self.years[0])+'to'+str(self.years[1])
-            print 'self.datarange:', self.datarange
-            self.conversionyears = range(self.years[0]+1, self.years[1] + 1)
-            print 'self.conversionyears:', self.conversionyears
+
+        mtr = defineGDBpath(['core','mtr'])+'traj_cdl30_b_2008to2016_rfnd_n8h_mtr'
+        ytc = defineGDBpath(['post','ytc'])+'ytc30_2008to2016_mmu5'
+        outCon = Con((mtr == 3) & (ytc >= 2008), ytc, Con((mtr == 3) & (IsNull(ytc)), 3))
+
+        output = defineGDBpath(['post','ytc'])+'ytc30_2008to2016_mmu5_msk'
+
+        # if self.years[1] == 2016:
+        #     self.datarange = str(self.years[0])+'to'+str(self.years[1]-1)
+        #     print 'self.datarange:', self.datarange
+        #     self.conversionyears = range(self.years[0]+1, self.years[1])
+        #     print 'self.conversionyears:', self.conversionyears
+        # else:
+        #     self.datarange = str(self.years[0])+'to'+str(self.years[1])
+        #     print 'self.datarange:', self.datarange
+        #     self.conversionyears = range(self.years[0]+1, self.years[1] + 1)
+        #     print 'self.conversionyears:', self.conversionyears
         
 
         if self.name == 'ytc':
@@ -139,6 +155,46 @@ def createYearbinaries():
 
 
 
+def createYearbinaries_better():
+        # DESCRIPTION:attach the appropriate cdl value to each year binary dataset
+    print "-----------------  createYearbinaries_better()  -------------------------------"
+
+    def createReclassifyList():
+        #this is a sub function for createYearbinaries_better().  references the mtr value in psotgres to create a list containing arbitray trajectory value and associated new mtr value
+
+        engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
+        query = 'SELECT * from pre.' + post.traj_dataset + ' as a JOIN pre.traj_' + post.datarange + '_lookup as b ON a.traj_array = b.traj_array WHERE '+post.name+' IS NOT NULL'
+        print 'query:', query
+        df = pd.read_sql_query(query, con=engine)
+        print df
+        fulllist=[[0,0,"NODATA"]]
+        for index, row in df.iterrows():
+            templist=[]
+            value=row['Value'] 
+            yxc=row[post.name]  
+            templist.append(int(value))
+            templist.append(int(yxc))
+            fulllist.append(templist)
+        print 'fulllist: ', fulllist
+        return fulllist
+
+
+    ## replace the arbitrary values in the trajectories dataset with the yxc values.
+    raster = Raster(defineGDBpath(['pre','trajectories'])+post.traj_dataset)
+    print 'raster:', raster
+
+    output = defineGDBpath(['post',post.name])+post.name+post.res+'_'+post.datarange
+    print 'output: ', output
+
+    reclassArray = createReclassifyList() 
+
+    outReclass = Reclassify(raster, "Value", RemapRange(reclassArray), "NODATA")
+    
+    outReclass.save(output)
+
+    gen.buildPyramids(output)
+
+
 def removeArbitraryValuesFromYearbinaries():
     print "-----------------removeArbitraryValuesFromYearbinaries() function-------------------------------"
     #DESCRIPTION: remove the arbitrary values from the 'yfc_years_'+mmu dataset
@@ -197,6 +253,16 @@ def clipByMMUmask():
     gen.buildPyramids(output)
 
 
+def createMask():
+    mtr = Raster(defineGDBpath(['core','mmu'])+'traj_cdl30_b_2008to2016_rfnd_n8h_mtr_8w_msk5_nbl')
+    ytc = Raster(defineGDBpath(['post','ytc'])+'ytc30_2008to2016_mmu5')
+
+    outCon = Con((mtr == 3) & (IsNull(ytc)), 3, Con((mtr == 3) & (ytc >= 2008), ytc))
+    output = defineGDBpath(['post','ytc'])+'ytc30_2008to2016_mmu5_msk'
+    outCon.save(output)
+    gen.buildPyramids(output)
+
+
 
 
 
@@ -245,16 +311,23 @@ def attachCDL(gdb_args_in):
 post = ConversionObject(
       'ytc',
       'fc',
-      '56',
-      '15',
+      '30',
+      '5',
       ## these are the conversion years 
       [2008,2016]
       )
 
 ################ call functions  #####################################################
-createYearbinaries()
-clipByMMUmask()
-removeArbitraryValuesFromYearbinaries()
+# createYearbinaries_better()
+createMask()
+
+
+
+
+
+######### old #########################
+# createYearbinaries()
+# removeArbitraryValuesFromYearbinaries()
 # attachCDL(['post',post.name])
 
 

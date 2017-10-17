@@ -45,23 +45,28 @@ class ProcessingObject:
     def __init__(self, res, years):
         self.res = res
         self.years = years
+        self.datarange = str(self.years[0])+'to'+str(self.years[1])
+        print self.datarange
+        self.traj_dataset = "traj_cdl"+self.res+"_b_"+self.datarange
+        self.conversionyears = range(self.years[0]+2, self.years[1])
+        print 'self.conversionyears:', self.conversionyears
         # self.data_years = range(self.years[0], self.years[1] + 1)
         
 
         self.yearcount=len(range(self.years[0], self.years[1]+1))
 
-        if self.years[1] == 2016:
-            self.datarange = str(self.years[0])+'to'+str(self.years[1])
-            print 'self.datarange:', self.datarange
-            self.conversionyears = range(self.years[0]+2, self.years[1])
-            print 'self.conversionyears:', self.conversionyears
-        else:
-            self.datarange = str(self.years[0])+'to'+str(self.years[1])
-            print 'self.datarange:', self.datarange
-            self.conversionyears = range(self.years[0]+2, self.years[1] + 1)
-            print 'self.conversionyears:', self.conversionyears
+        # if self.years[1] == 2016:
+        #     self.datarange = str(self.years[0])+'to'+str(self.years[1])
+        #     print 'self.datarange:', self.datarange
+        #     self.conversionyears = range(self.years[0]+2, self.years[1])
+        #     print 'self.conversionyears:', self.conversionyears
+        # else:
+        #     self.datarange = str(self.years[0])+'to'+str(self.years[1])
+        #     print 'self.datarange:', self.datarange
+        #     self.conversionyears = range(self.years[0]+2, self.years[1] + 1)
+        #     print 'self.conversionyears:', self.conversionyears
 
-        self.traj_dataset = "traj_cdl"+self.res+"_b_"+self.datarange
+        # self.traj_dataset = "traj_cdl"+self.res+"_b_"+self.datarange
         # self.nlcd_years = nlcd_years
 
 
@@ -242,9 +247,13 @@ def labelTrajectories():
         conn.commit()
 
 
+def test():
+    print 'this is a TEST'
+
 
 
 def FindRedundantTrajectories():
+    # what is the purpose of this function??
     cur = conn.cursor()
     table = 'pre.traj_cdl'+pre.res+'_b_'+pre.datarange
     lookuptable = 'pre.traj_'''+pre.datarange+'_lookup'
@@ -283,11 +292,10 @@ def FindRedundantTrajectories():
 
 
 pre = ProcessingObject(
-  #resolution
-  '30', 
-  #data-range
-  [2008,2016]
-  )
+    #resolution
+    '30', 
+    #data-range
+    [2008,2016]
 
 
 ######  call functions  #############################
@@ -295,6 +303,8 @@ pre = ProcessingObject(
 # yearlist = ['2014','2015','2016']
 # for year in yearlist:
 #     reclassifyRaster(['ancillary','cdl'], "56", "*"+year+"*", "b", ['pre','binaries'])
+
+
 
 ###-----createTrajectories()-----------------------------------------------
 # createTrajectories()
@@ -304,8 +314,8 @@ pre = ProcessingObject(
 # addGDBTable2postgres()
 
 
-labelTrajectories()
-FindRedundantTrajectories()
+# labelTrajectories()
+# FindRedundantTrajectories()
 
 
 

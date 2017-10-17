@@ -171,17 +171,25 @@ def mosiacRasters():
     arcpy.MosaicToNewRaster_management(tilelist, nibble.gdb_path, nbl_raster, Raster(nibble.in_raster).spatialReference, nibble.pixel_type, nibble.res, "1", "LAST","FIRST")
 
 
+def mask():
+    mtr = Raster(defineGDBpath(['core','mmu'])+'traj_cdl30_b_2008to2016_rfnd_n8h_mtr_8w_msk5_nbl')
+    ytc = Raster(defineGDBpath(['post','ytc'])+'ytc30_2008to2016_mmu5')
+    outCon = Con((mtr == 3) & (IsNull(ytc)), 3, Con((mtr == 3) & (ytc >= 2008), ytc))
+    output = defineGDBpath(['post','ytc'])+'ytc30_2008to2016_mmu5_msk'
 
+    
+    outCon.save(output)
 
+    gen.buildPyramids(output)
 
 
 
 #####call functions
+print (sys.version)
 
-
-
+# mask()
 # transposeTableyo(['ancillary','temp'],'hex_hist')
 
 # getcolumns()
 
-clipByMMUmask()
+# clipByMMUmask()

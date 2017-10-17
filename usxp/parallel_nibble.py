@@ -10,6 +10,7 @@ import logging
 from multiprocessing import Process, Queue, Pool, cpu_count, current_process, Manager
 import general as gen
 
+
 arcpy.env.overwriteOutput = True
 arcpy.env.scratchWorkspace = "in_memory" 
 
@@ -42,6 +43,8 @@ class NibbleObject:
 
         self.datarange = str(self.years[0])+'to'+str(self.years[1])
 
+        self.dir_tiles = 'C:/Users/Bougie/Desktop/Gibbs/tiles/'
+
         
         if self.subtype == 'mtr':
         	self.gdb_path = defineGDBpath(['core', 'mmu'])
@@ -55,7 +58,7 @@ class NibbleObject:
 			self.gdb_path = defineGDBpath(['post', self.subtype])
 			self.raster_name = self.subtype+self.res+'_'+self.datarange+'_mmu'+self.mmu
 			self.in_raster = self.gdb_path + self.raster_name
-			self.mask_name = self.raster_name + '_clean'
+			self.mask_name = self.raster_name + '_msk'
 			self.in_mask_raster = self.gdb_path + self.mask_name
 			self.out_fishnet = defineGDBpath(['ancillary', 'temp']) + 'fishnet_' + self.subtype
 			self.pixel_type = "16_BIT_UNSIGNED"
@@ -109,7 +112,7 @@ def execute_task(in_extentDict):
 	arcpy.env.extent = arcpy.Extent(XMin, YMin, XMax, YMax)
 
 	###  Execute Nibble  #####################
-	ras_out = arcpy.sa.Nibble(nibble.in_raster, nibble.in_mask_raster, "DATA_ONLY")
+	ras_out = arcpy.sa.Nibble(nibble.in_mask_raster, nibble.in_raster, "DATA_ONLY")
 
 	#clear out the extent for next time
 	arcpy.ClearEnvironment("extent")
@@ -126,7 +129,7 @@ def execute_task(in_extentDict):
 
 
 def mosiacRasters():
-	tilelist = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*.tif")
+	tilelist = glob.glob(nibble.dir_tiles+'*.tif')
 	print tilelist 
 	######mosiac tiles together into a new raster
 	nbl_raster = nibble.mask_name + '_nbl'
@@ -154,11 +157,15 @@ nibble = NibbleObject(
 	  #data-range
 	  [2008,2016],
 	  #subtype
-	  'mtr'
+	  'ytc'
       )
 
 
 if __name__ == '__main__':
+    ##remove a files in tiles directory
+	tiles = glob.glob(nibble.dir_tiles+"*")
+	for tile in tiles:
+		os.remove(tile)
 
 	# need to create a unique fishnet for each dataset
 	##create_fishnet()
@@ -180,11 +187,11 @@ if __name__ == '__main__':
 	# print 'extDict', extDict
 	# print'extDict.items()',  extDict.items()
 
-	#######create a process and pass dictionary of extent to execute task
 	pool = Pool(processes=cpu_count())
 	pool.map(execute_task, extDict.items())
 	pool.close()
 	pool.join
 
-	mosiacRasters()
+	mosiacRasters()	#######create a process and pass dictionary of extent to execute task
+
     
