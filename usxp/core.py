@@ -36,14 +36,11 @@ except:
     print "I am unable to connect to the database"
 
 #################### class to create core object  ####################################################
-class CoreObject:
-
-    def __init__(self, res, years, filter, mmu):
+class ProcessingObject(object):
+    def __init__(self, res, mmu, years, filter):
         self.res = res
         self.years = years
         self.datarange = str(self.years[0])+'to'+str(self.years[1])
-        print self.datarange
-        # self.traj_name = "traj_cdl"+self.res+"_b_"+self.datarange+"_rfnd"
         self.traj_name = "traj_cdl"+self.res+"_b_"+self.datarange
         self.traj_path = defineGDBpath(['pre','trajectories'])+self.traj_name
         self.filter = filter
@@ -288,16 +285,16 @@ def addAcresField(tablename, schema):
 
 
 ################ Instantiate the class to create core object  ########################
-core = CoreObject(
-      #resolution
-      '30',
-      #data range---i.e. all the cdl years you are referencing 
-      [2008,2016],
-      #filter used
-      'n8h',
-      #mmu
-       5
-      )
+# core = CoreObject(
+#       #resolution
+#       '30',
+#       #data range---i.e. all the cdl years you are referencing 
+#       [2008,2016],
+#       #filter used
+#       'n8h',
+#       #mmu
+#        5
+#       )
 
 
 
@@ -306,7 +303,7 @@ core = CoreObject(
 # majorityFilter()
 
 ##------mtr gdb-----------------
-createMTR()
+# createMTR()
 
 ##------mmu gdb-----------------
 # regionGroup()

@@ -10,6 +10,7 @@ import numpy as np
 import psycopg2
 from itertools import groupby
 import general as gen
+import multiple_series as ms
 
 
 arcpy.CheckOutExtension("Spatial")
@@ -37,62 +38,42 @@ def defineGDBpath(arg_list):
     return gdb_path
 
 
-#################### class to create pre object  ####################################################
 
 
-class ProcessingObject:
 
-    def __init__(self, res, years):
+class ProcessingObject(object):
+
+    def __init__(self, res, mmu, years):
         self.res = res
+        self.mmu = mmu
         self.years = years
+        self.data_years = range(self.years[0], self.years[1] + 1)
+        print self.data_years
         self.datarange = str(self.years[0])+'to'+str(self.years[1])
         print self.datarange
-        self.traj_dataset = "traj_cdl"+self.res+"_b_"+self.datarange
-        self.conversionyears = range(self.years[0]+2, self.years[1])
-        print 'self.conversionyears:', self.conversionyears
-        # self.data_years = range(self.years[0], self.years[1] + 1)
+        print years[0]
+        self.traj_dataset = "traj_cdl"+str(self.res)+"_b_"+str(self.datarange)
         
 
-        self.yearcount=len(range(self.years[0], self.years[1]+1))
+        # self.yearcount=len(range(self.years[0], self.years[1]+1))
 
-        # if self.years[1] == 2016:
-        #     self.datarange = str(self.years[0])+'to'+str(self.years[1])
-        #     print 'self.datarange:', self.datarange
-        #     self.conversionyears = range(self.years[0]+2, self.years[1])
-        #     print 'self.conversionyears:', self.conversionyears
-        # else:
-        #     self.datarange = str(self.years[0])+'to'+str(self.years[1])
-        #     print 'self.datarange:', self.datarange
-        #     self.conversionyears = range(self.years[0]+2, self.years[1] + 1)
-        #     print 'self.conversionyears:', self.conversionyears
-
-        # self.traj_dataset = "traj_cdl"+self.res+"_b_"+self.datarange
-        # self.nlcd_years = nlcd_years
-
-
-        # self.traj_dataset = "traj_cdl"+self.res+"_b_"+self.datarange
-
-
-
+    def __str__(self):
+        return 'ProcessingObject(res: {}, years: {})'.format(self.res, str(self.years))
+    
 
     def getCDLlist(self):
         cdl_list = []
         for year in self.data_years:
-            cdl_dataset = 'cdl'+self.res+'_b_'+str(year)
+            print 'll', year
+            cdl_dataset = 'cdl'+str(self.res)+'_b_'+str(year)
             cdl_list.append(cdl_dataset)
         print'cdl_list: ', cdl_list
         return cdl_list
 
+
+
+
      
-
-     
-    
-
-
-        
-
-
-
 
 def reclassifyRaster(gdb_args_in, res, wc, reclass_degree, gdb_args_out):
     # Description: reclass cdl rasters based on the specific arc_reclassify_table 
@@ -247,10 +228,6 @@ def labelTrajectories():
         conn.commit()
 
 
-def test():
-    print 'this is a TEST'
-
-
 
 def FindRedundantTrajectories():
     # what is the purpose of this function??
@@ -289,75 +266,26 @@ def FindRedundantTrajectories():
     cur.execute(query2);
     conn.commit()
 
+# pre = None
+
+# pre = ProcessingObject(
+#     #resolution
+#     res,
+#     mmu,
+#     #data-range
+#     years
+# )
+
+def run():
+    # print "pre is: {}".format(str(pre))
+    print pre.traj_dataset
+    ###-----createTrajectories()-----------------------------------------------
+    createTrajectories()
 
 
-pre = ProcessingObject(
-    #resolution
-    '30', 
-    #data-range
-    [2008,2016]
+    ###-----addGDBTable2postgres()
+    # addGDBTable2postgres()
 
 
-######  call functions  #############################
-###-----reclassifyRaster()------------------
-# yearlist = ['2014','2015','2016']
-# for year in yearlist:
-#     reclassifyRaster(['ancillary','cdl'], "56", "*"+year+"*", "b", ['pre','binaries'])
-
-
-
-###-----createTrajectories()-----------------------------------------------
-# createTrajectories()
-
-
-###-----addGDBTable2postgres()
-# addGDBTable2postgres()
-
-
-# labelTrajectories()
-# FindRedundantTrajectories()
-
-
-
-
-
-
-
-
-
-
-################  temp  ############################################
-
-
-# update 
-#  pre.traj_2008to2015_lookup_temp set ytc = 2010 where traj_array in
-# (SELECT 
-#   traj_array 
-# FROM 
-#   pre.traj_cdl30_b_2008to2015 a INNER JOIN pre.traj_2008to2015_lookup_temp b using(traj_array)
-# Where cdl30_b_2008 = 0 AND
-#  cdl30_b_2009 = 0 AND
-#  cdl30_b_2010 = 1 AND
-#  cdl30_b_2011 = 1 AND
-#  mtr = 5)
-
-
-########### NEED THIS LATER ON!!!!!!!!!!  ###########################
-# select * from pre.tempyo3 ou
-# where (select count(*) from pre.tempyo3 inr
-# where inr.traj_array = ou.traj_array) > 1
-
-
-
-# NOTE---THIS ADDS COUNT FIELD FOR FASTER LOOKUP CREATION
-
-# # UPDATE pre.traj_cdl30_b_2008to2015_lookup as t1
-# # SET count = (SELECT (SELECT SUM(s) FROM UNNEST(traj_array) s) FROM pre.traj_cdl30_b_2008to2015_lookup as t2 WHERE t1.index = t2.index)
-
-# UPDATE pre.traj_cdl30_b_2008to2015_lookup SET mtr = 5 where mtr is null
-
-
-
-
-
-
+    # labelTrajectories()
+    # FindRedundantTrajectories()

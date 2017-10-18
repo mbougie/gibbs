@@ -512,7 +512,7 @@ for subtype in refine.subtypelist:
 ##NOTE NEED TO GENERALIZE THIS FUNCTION!!!!!!!!!!!!!!!
 
 ###----hard coded still. Also has questionable inner method!
-createMask_nlcdtraj('or')
+# createMask_nlcdtraj('or')
 
 ###----?????  ---ok but has questionable inner method!
 # createMask_trajytc()

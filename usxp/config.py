@@ -13,7 +13,7 @@ def from_config(func):
 			config = json.load(file_in)
 
 		#'**' takes a dict and extracts its contents and passes them as parameters to a function.
-		# Question: what is the func() syntax?
+		#returns the intial function with new arguments????
 		return func(**config)
 	
 	## return the decorated input function

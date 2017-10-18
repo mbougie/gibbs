@@ -5,27 +5,26 @@ Run multiple series.
 import sys
 from config import from_config
 
-# import pre
-# import core
+import pre
+import core
 # import refinement
-from pre_temp import ProcessingObject
-import pre_temp
 
 
-def run_series(pre, core):
-    # Run a series from a personal ConfigObject
+def run_series(res,mmu,years,pre_arg, core, hi):
+	# Run a series from a personal ConfigObject
 
-    # config = ConfigObject(a, b, c, d, e)
+	# config = ConfigObject(a, b, c, d, e)
 
-    # Rest of series code using config object
- 
-    # print("Contents of this config file: {} {}".format(pre, core))
-    # print "ProcessingObject params: {}".format(str(pre_params))
-    # print "core: {}".format(str(core))
+	# Rest of series code using config object
 
-    pre_temp.pre = ProcessingObject(pre['res'], pre['years'])
-    pre_temp.run()
-    # print "ProcessingObject created was: {}".format(str(obj))
+	# print("Contents of this config file: {} {}".format(pre, core))
+	print "pre: {}".format(str(pre_arg))
+	print "core: {}".format(str(core))
+	
+	create an instance that the pre.py script can reference
+	pre.pre = pre.ProcessingObject(res,mmu,years)
+	
+	pre.run()
 
 # Question: @from_config?
 @from_config

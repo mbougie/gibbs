@@ -31,9 +31,9 @@ def defineGDBpath(arg_list):
 
 #######  define raster and mask  ####################
 
-class NibbleObject:
+class ProcessingObject(object):
 
-    def __init__(self, mmu, res, years, subtype):
+    def __init__(self, res, mmu, years, subtype):
         self.res = res
         self.mmu = mmu
         
@@ -54,13 +54,13 @@ class NibbleObject:
 
 def create_fishnet():
 	#delete previous fishnet feature class
-	arcpy.Delete_management(nibble.out_fishnet)
+	arcpy.Delete_management(prg.out_fishnet)
 
     #acquire parameters for creatfisnet function
-	XMin = nibble.in_raster.extent.XMin
-	YMin = nibble.in_raster.extent.YMin
-	XMax = nibble.in_raster.extent.XMax
-	YMax = nibble.in_raster.extent.YMax
+	XMin = prg.in_raster.extent.XMin
+	YMin = prg.in_raster.extent.YMin
+	XMax = prg.in_raster.extent.XMax
+	YMax = prg.in_raster.extent.YMax
 
 	origCord = "{} {}".format(XMin, YMin)
 	YAxisCord = "{} {}".format(XMin, YMax)
@@ -74,11 +74,11 @@ def create_fishnet():
 
 	geotype = "POLYGON"
 
-	arcpy.env.outputCoordinateSystem = nibble.in_raster.spatialReference
-	print nibble.in_raster.spatialReference.name
+	arcpy.env.outputCoordinateSystem = prg.in_raster.spatialReference
+	print prg.in_raster.spatialReference.name
 
     #call CreateFishnet_management function
-	arcpy.CreateFishnet_management(nibble.out_fishnet, origCord, YAxisCord, cellSizeW, cellSizeH, numRows, numCols, cornerCord, "NO_LABELS", "", geotype)
+	arcpy.CreateFishnet_management(prg.out_fishnet, origCord, YAxisCord, cellSizeW, cellSizeH, numRows, numCols, cornerCord, "NO_LABELS", "", geotype)
 
     
   
@@ -95,8 +95,8 @@ def execute_task(in_extentDict):
 
 	#set environments
 	 #The brilliant thing here is that using the extents with the full dataset!!!!!!   DONT EVEN NEED TO CLIP THE FULL RASTER TO THE FISHNET BECASUE 
-	arcpy.env.snapRaster = nibble.in_raster
-	arcpy.env.cellsize = nibble.in_raster
+	arcpy.env.snapRaster = prg.in_raster
+	arcpy.env.cellsize = prg.in_raster
 	arcpy.env.extent = arcpy.Extent(XMin, YMin, XMax, YMax)
 
 	###  Execute Nibble  #####################
@@ -105,7 +105,7 @@ def execute_task(in_extentDict):
 	for k, v in filter_combos.iteritems():
 	    print k,v
 	    # Execute RegionGroup
-	    ras_out = RegionGroup(Raster(nibble.in_raster), v[0], v[1],"NO_LINK")
+	    ras_out = RegionGroup(Raster(prg.in_raster), v[0], v[1],"NO_LINK")
 
 		#clear out the extent for next time
         arcpy.ClearEnvironment("extent")
@@ -149,33 +149,33 @@ def mosiacRasters():
 	tilelist = glob.glob(root_in+"*mask.tif")
 	print tilelist  
 	######mosiac tiles together into a new raster
-	nbl_raster = nibble.raster_name + '_8w_msk5'
+	nbl_raster = prg.raster_name + '_8w_msk5'
 	print 'nbl_raster: ', nbl_raster
 
-	arcpy.MosaicToNewRaster_management(tilelist, nibble.gdb_path, nbl_raster, Raster(nibble.in_raster).spatialReference, nibble.pixel_type, nibble.res, "1", "LAST","FIRST")
+	arcpy.MosaicToNewRaster_management(tilelist, prg.gdb_path, nbl_raster, Raster(prg.in_raster).spatialReference, prg.pixel_type, prg.res, "1", "LAST","FIRST")
 
 	#Overwrite the existing attribute table file
-	arcpy.BuildRasterAttributeTable_management(nibble.gdb_path + nbl_raster, "Overwrite")
+	arcpy.BuildRasterAttributeTable_management(prg.gdb_path + nbl_raster, "Overwrite")
 
 	# Overwrite pyramids
-	gen.buildPyramids(nibble.gdb_path + nbl_raster)
+	gen.buildPyramids(prg.gdb_path + nbl_raster)
 
 
 
 
 
 
-#### Define conversion object ######
-nibble = NibbleObject(
-	  #mmu
-	  '5',
-	  #resolution
-	  '30',
-	  #data-range
-	  [2008,2016],
-	  #subtype
-	  'mtr'
-      )
+# #### Define conversion object ######
+# nibble = NibbleObject(
+# 	  #mmu
+# 	  '5',
+# 	  #resolution
+# 	  '30',
+# 	  #data-range
+# 	  [2008,2016],
+# 	  #subtype
+# 	  'mtr'
+#       )
 
 
 if __name__ == '__main__':
@@ -184,15 +184,15 @@ if __name__ == '__main__':
 	##create_fishnet()
 
 	#remove a files in tiles directory
-	# tiles = glob.glob(nibble.dir_tiles+"*")
-	# for tile in tiles:
-	# 	os.remove(tile)
+	tiles = glob.glob(prg.dir_tiles+"*")
+	for tile in tiles:
+		os.remove(tile)
 
 	#get extents of individual features and add it to a dictionary
 	extDict = {}
 	count = 1 
 
-	for row in arcpy.da.SearchCursor(nibble.out_fishnet, ["SHAPE@"]):
+	for row in arcpy.da.SearchCursor(prg.out_fishnet, ["SHAPE@"]):
 		extent_curr = row[0].extent
 		ls = []
 		ls.append(extent_curr.XMin)
@@ -206,12 +206,12 @@ if __name__ == '__main__':
 	# print'extDict.items()',  extDict.items()
 
 	######create a process and pass dictionary of extent to execute task
-	# pool = Pool(processes=cpu_count())
-	# pool.map(execute_task, extDict.items())
-	# pool.close()
-	# pool.join
+	pool = Pool(processes=cpu_count())
+	pool.map(execute_task, extDict.items())
+	pool.close()
+	pool.join
 
-	# createMMUmaskTiles()
+	createMMUmaskTiles()
 
 	mosiacRasters()
     
