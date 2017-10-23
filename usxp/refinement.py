@@ -38,19 +38,21 @@ def defineGDBpath(arg_list):
 
 
 #################### class to create yxc object  ####################################################
-class RefineObject:
+class ProcessingObject(object):
 
-    def __init__(self, name, res, years, nlcd_years):
+    def __init__(self, res, years, name, join_operator):
+
+
         self.name = name
-        self.res = res
+        self.res = str(res)
         self.years = years
         self.yearcount=len(range(self.years[0], self.years[1]+1))
         self.datarange = str(self.years[0])+'to'+str(self.years[1])
         print 'self.datarange:', self.datarange
         self.conversionyears = range(self.years[0]+2, self.years[1])
-        print 'self.conversionyears:', self.conversionyears
+        print 'self.conversionyears:', str(self.conversionyears)
         self.traj_dataset = "traj_cdl"+self.res+"_b_"+self.datarange
-        self.nlcd_years = nlcd_years
+        self.join_operator = join_operator
 
         # if self.years[1] == 2016:
         #     self.conversionyears = range(self.years[0]+2, self.years[1])
@@ -256,11 +258,11 @@ def createChangeTrajectories():
 
 
 
-def createMask_nlcdtraj(join_operator):
+def createMask_nlcdtraj():
 
-    nlcd2001 = Raster(defineGDBpath(['ancillary','nlcd'])+'nlcd'+refine.res+'_'+refine.nlcd_years[0])
-    nlcd2006 = Raster(defineGDBpath(['ancillary','nlcd'])+'nlcd'+refine.res+'_'+refine.nlcd_years[1])
-    nlcd2011 = Raster(defineGDBpath(['ancillary','nlcd'])+'nlcd'+refine.res+'_'+refine.nlcd_years[2])
+    nlcd2001 = Raster(defineGDBpath(['ancillary','nlcd'])+'nlcd'+refine.res+'_2001')
+    nlcd2006 = Raster(defineGDBpath(['ancillary','nlcd'])+'nlcd'+refine.res+'_2006')
+    nlcd2011 = Raster(defineGDBpath(['ancillary','nlcd'])+'nlcd'+refine.res+'_2011')
     refinement_mtr = Raster(defineGDBpath(['refine','mtr'])+'traj_cdl'+refine.res+'_b_'+refine.datarange+'_mtr')
     ytc_clean = Raster(defineGDBpath(['refine','ytc'])+'ytc'+refine.res+'_'+refine.datarange)
    
@@ -268,12 +270,13 @@ def createMask_nlcdtraj(join_operator):
     # If condition is true set pixel to 23 else set pixel value to NULL
     #NOTE: both of the hardcoded values are ok because uniform accross resolutions and they are constant
     # outCon = Con((nlcd2001 == 82) & (refinement_mtr == 3), getArbitraryCropValue(), Con((nlcd2 == 82) & (refinement_mtr == 3), getArbitraryCropValue()))
-    if join_operator == 'or':
-        output = defineGDBpath(['refine','masks'])+'traj_nlcd'+refine.res+'_b_'+refine.nlcd_years[0]+'or'+refine.nlcd_years[1]+'_'+refine.name+refine.datarange+'_mask'
+    if refine.join_operator == 'or':
+        output = defineGDBpath(['refine','masks'])+'traj_nlcd'+refine.res+'_b_2006or2011_'+refine.name+refine.datarange+'_mask'
         print 'output:', output
-        outCon = Con((nlcd2001 == 82) & (refinement_mtr == 3) & (ytc_clean < 2012), getArbitraryCropValue(), Con((nlcd2006 == 82) & (refinement_mtr == 3), getArbitraryCropValue() , Con((nlcd2006 == 82) & (refinement_mtr == 3) & (ytc_clean > 2011), getArbitraryCropValue()))) 
+        outCon = Con((nlcd2006 == 82) & (refinement_mtr == 3) & (ytc_clean < 2012), Con((nlcd2006 == 82) & (refinement_mtr == 3) & (ytc_clean > 2011), getArbitraryCropValue())) 
+        # outCon = Con((nlcd2001 == 82) & (refinement_mtr == 3) & (ytc_clean < 2012), getArbitraryCropValue(), Con((nlcd2006 == 82) & (refinement_mtr == 3), getArbitraryCropValue() , Con((nlcd2006 == 82) & (refinement_mtr == 3) & (ytc_clean > 2011), getArbitraryCropValue()))) 
         print outCon
-    elif join_operator == 'and':
+    elif refine.join_operator == 'and':
         output = defineGDBpath(['refine','masks'])+'traj_nlcd'+refine.res+'_b_'+refine.nlcd_years[0]+'and'+refine.nlcd_years[1]+'_'+refine.name+refine.datarange+'_mask'
         print 'output:', output
         outCon = Con(((nlcd2001 == 82) & (nlcd2 == 82) & (refinement_mtr == 3)), getArbitraryCropValue())
@@ -475,16 +478,16 @@ def createRefinedTrajectory():
 
 
 ################ Instantiate the class to create yxc object  ########################
-refine = RefineObject(
-      'ytc',
-      '30',
-      ## cdl data range---i.e. all the cdl years you are referencing 
+refine = ProcessingObject(
+      #resolution
+      30,
+      #data range---i.e. all the cdl years you are referencing 
       [2008,2016],
-      ## ncdl datasets
-      ['2001','2006','2011']
+      #name
+      'ytc',
+      #join_operator
+      'or'
       )
-
-
 
 
 
@@ -512,7 +515,7 @@ for subtype in refine.subtypelist:
 ##NOTE NEED TO GENERALIZE THIS FUNCTION!!!!!!!!!!!!!!!
 
 ###----hard coded still. Also has questionable inner method!
-# createMask_nlcdtraj('or')
+createMask_nlcdtraj()
 
 ###----?????  ---ok but has questionable inner method!
 # createMask_trajytc()

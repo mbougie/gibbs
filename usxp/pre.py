@@ -10,7 +10,7 @@ import numpy as np
 import psycopg2
 from itertools import groupby
 import general as gen
-import multiple_series as ms
+
 
 
 arcpy.CheckOutExtension("Spatial")
@@ -64,7 +64,7 @@ class ProcessingObject(object):
     def getCDLlist(self):
         cdl_list = []
         for year in self.data_years:
-            print 'll', year
+            print 'year:', year
             cdl_dataset = 'cdl'+str(self.res)+'_b_'+str(year)
             cdl_list.append(cdl_dataset)
         print'cdl_list: ', cdl_list
@@ -266,21 +266,31 @@ def FindRedundantTrajectories():
     cur.execute(query2);
     conn.commit()
 
-# pre = None
+
+
+
 
 # pre = ProcessingObject(
 #     #resolution
-#     res,
-#     mmu,
+#     30,
+#     #mmu
+#     5,
 #     #data-range
-#     years
+#     [2008,2016]
 # )
 
-def run():
-    # print "pre is: {}".format(str(pre))
-    print pre.traj_dataset
-    ###-----createTrajectories()-----------------------------------------------
-    createTrajectories()
+
+
+# createTrajectories()
+# addGDBTable2postgres()
+# FindRedundantTrajectories()
+
+
+# def run():
+#     # print "pre is: {}".format(str(pre))
+#     # print pre.traj_dataset
+#     ###-----createTrajectories()-----------------------------------------------
+#     createTrajectories()
 
 
     ###-----addGDBTable2postgres()

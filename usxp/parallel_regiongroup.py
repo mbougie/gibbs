@@ -37,13 +37,13 @@ class ProcessingObject(object):
         self.res = res
         self.mmu = mmu
         
-        self.years = years
+        self.years =years 
         self.subtype = subtype
 
         self.datarange = str(self.years[0])+'to'+str(self.years[1])
  
     	self.gdb_path = defineGDBpath(['core', 'mmu'])
-        self.raster_name = 'traj_cdl'+self.res+'_b_'+self.datarange+'_n8h_mtr'
+        self.raster_name = 'traj_cdl'+str(self.res)+'_b_'+self.datarange+'_rfnd_n8h_mtr'
         self.in_raster = defineGDBpath(['core', 'mtr']) + self.raster_name
         self.out_fishnet = defineGDBpath(['ancillary', 'temp']) + 'fishnet_' + self.subtype
         self.pixel_type = "32_BIT_UNSIGNED"
@@ -162,26 +162,31 @@ def mosiacRasters():
 
 
 
-
+def run():
+	print 'ffffff',  prg.raster_name
 
 
 # #### Define conversion object ######
-# nibble = NibbleObject(
-# 	  #mmu
-# 	  '5',
-# 	  #resolution
-# 	  '30',
-# 	  #data-range
-# 	  [2008,2016],
-# 	  #subtype
-# 	  'mtr'
-#       )
+prg = ProcessingObject(
+
+	  #resolution
+	  '30',
+	  #mmu
+	  '5',
+	  #data-range
+	  [2008,2016],
+	  #subtype
+	  'mtr'
+      )
 
 
-if __name__ == '__main__':
+# if __name__ == '__main__':
+def run():  
+# 	print 'hello'
 
+	print 'years', prg.years
 	# need to create a unique fishnet for each dataset
-	##create_fishnet()
+	#create_fishnet()
 
 	#remove a files in tiles directory
 	tiles = glob.glob(prg.dir_tiles+"*")

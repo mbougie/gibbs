@@ -39,17 +39,17 @@ class ProcessingObject(object):
         
         self.years = years
         self.subname = subname
-        print self.subname
+        print 'self.subname:', self.subname
 
         self.datarange = str(self.years[0])+'to'+str(self.years[1])
-        print self.datarange
+        print 'self.datarange:', self.datarange
 
         self.dir_tiles = 'C:/Users/Bougie/Desktop/Gibbs/tiles/'
 
         
         if self.subname == 'mtr':
         	self.gdb_path = defineGDBpath(['core', 'mmu'])
-	        self.raster_name = 'traj_cdl'+self.res+'_b_'+self.datarange+'_n8h_mtr'
+	        self.raster_name = 'traj_cdl'+self.res+'_b_'+self.datarange+'_rfnd_n8h_mtr'
 	        self.in_raster = defineGDBpath(['core', 'mtr']) + self.raster_name
 	        print self.in_raster
 	        self.mask_name = self.raster_name + '_8w_msk' + self.mmu
@@ -114,7 +114,7 @@ def execute_task(in_extentDict):
 	arcpy.env.extent = arcpy.Extent(XMin, YMin, XMax, YMax)
 
 	###  Execute Nibble  #####################
-	ras_out = arcpy.sa.Nibble(nibble.in_mask_raster, nibble.in_raster, "DATA_ONLY")
+	ras_out = arcpy.sa.Nibble(nibble.in_raster, nibble.in_mask_raster, "DATA_ONLY")
 
 	#clear out the extent for next time
 	arcpy.ClearEnvironment("extent")

@@ -31,13 +31,14 @@ def defineGDBpath(arg_list):
 
 
 #################### class to create yxc object  ####################################################
-class ConversionObject:
 
-    def __init__(self, name, subtype, res, mmu, years):
+class ProcessingObject(object):
+
+    def __init__(self, res, mmu, years, name, subname):
         self.name = name
-        self.subtype = subtype
-        self.res = res
-        self.mmu = mmu
+        self.subname = subname
+        self.res = str(res)
+        self.mmu = str(mmu)
         self.years = years
         
         self.datarange = str(self.years[0])+'to'+str(self.years[1])
@@ -76,12 +77,12 @@ class ConversionObject:
     
     #function for to get correct cdl for the attachCDL() function
     def getAssociatedCDL(self, year):
-        if self.subtype == 'bfc' or  self.subtype == 'bfnc':
+        if self.subname == 'bfc' or  self.subname == 'bfnc':
             # subtract 1 from every year in list
             cdl_file = defineGDBpath(['ancillary','cdl'])+'cdl_'+ str(year - 1)
             return cdl_file
 
-        elif self.subtype == 'fc' or  self.subtype == 'fnc':
+        elif self.subname == 'fc' or  self.subname == 'fnc':
             # subtract 1 from every year in list
             cdl_file = defineGDBpath(['ancillary','cdl'])+'cdl_'+ str(year)
             return cdl_file
@@ -278,9 +279,9 @@ def attachCDL(gdb_args_in):
     # arcpy.env.snapRaster = "ytc_years_traj_cdl_b_n8h_mtr_8w_msk23_nbl"
 
     # # #copy raster
-    # arcpy.CopyRaster_management("ytc_years_traj_cdl_b_n8h_mtr_8w_msk23_nbl", "ytc_years_traj_cdl_b_n8h_mtr_8w_msk23_nbl_"+post.subtype)
+    # arcpy.CopyRaster_management("ytc_years_traj_cdl_b_n8h_mtr_8w_msk23_nbl", "ytc_years_traj_cdl_b_n8h_mtr_8w_msk23_nbl_"+post.subname)
     
-    wc = '*'+post.subtype
+    wc = '*'+post.subname
     print wc
 
     for raster in arcpy.ListDatasets(wc, "Raster"): 
@@ -308,18 +309,31 @@ def attachCDL(gdb_args_in):
 
 
 ################ Instantiate the class to create yxc object  ########################
-post = ConversionObject(
+# post = ConversionObject(
+#       'ytc',
+#       'fc',
+#       '30',
+#       '5',
+#       ## these are the conversion years 
+#       [2008,2016]
+#       )
+
+post = ProcessingObject(
+      #resolution
+      30,
+      #mmu
+      5,
+      #data range---i.e. all the cdl years you are referencing 
+      [2008,2016],
+      #name
       'ytc',
-      'fc',
-      '30',
-      '5',
-      ## these are the conversion years 
-      [2008,2016]
+      #subname
+      'fc'
       )
 
 ################ call functions  #####################################################
-# createYearbinaries_better()
-createMask()
+createYearbinaries_better()
+# createMask()
 
 
 

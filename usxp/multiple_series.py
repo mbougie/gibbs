@@ -3,14 +3,22 @@ Run multiple series.
 """
 
 import sys
+import os
 from config import from_config
 
 import pre
+import parallel_false as pf
 import core
+import parallel_regiongroup as prg
+import parallel_nibble_mtr as pn_mtr
+import post
+# import parallel_nibble_ytc as pn_ytc
+
 # import refinement
 
 
-def run_series(res,mmu,years,pre_arg, core, hi):
+
+def run_series(res,mmu,years,pre_arg, core_arg, prg_arg, post_arg):
 	# Run a series from a personal ConfigObject
 
 	# config = ConfigObject(a, b, c, d, e)
@@ -18,13 +26,58 @@ def run_series(res,mmu,years,pre_arg, core, hi):
 	# Rest of series code using config object
 
 	# print("Contents of this config file: {} {}".format(pre, core))
-	print "pre: {}".format(str(pre_arg))
-	print "core: {}".format(str(core))
-	
-	create an instance that the pre.py script can reference
+	# print "pre: {}".format(str(pre_arg))
+	# print "core: {}".format(str(core))
+
+	#### create an instance that the pre.py script can reference
 	pre.pre = pre.ProcessingObject(res,mmu,years)
-	
-	pre.run()
+	core.core = core.ProcessingObject(res,mmu,years,core_arg['filter'])
+	# post.post = post.ProcessingObject(res,mmu,years,post_arg['name'],post_arg['subname'])
+	# prg.prg = prg.ProcessingObject(res,mmu,years,prg_arg['subtype'])
+
+
+	# prg.poolit()
+	####  call functions in pre.py
+	# pre.createTrajectories()
+	# pre.addGDBTable2postgres()
+	# pre.FindRedundantTrajectories()
+
+    
+	####  preform refinement processing
+    
+
+
+
+
+	####  preform core processing
+	# core.majorityFilter()
+	# core.createMTR() 
+	# prg.run()
+	# pn_mtr.run()
+	# core.addGDBTable2postgres()
+
+
+	### preform post processing
+	# post.createYearbinaries_better()
+	# post.createMask()
+	# pn.run()
+
+
+
+	# os.system('parallel_regiongroup.py')
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # Question: @from_config?
 @from_config

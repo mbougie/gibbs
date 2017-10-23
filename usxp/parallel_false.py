@@ -15,7 +15,7 @@ import collections
 from collections import namedtuple
 import psycopg2
 from sqlalchemy import create_engine
-
+import gdal
 
 
 
@@ -44,64 +44,41 @@ def defineGDBpath(arg_list):
 
 
 
+
+
+gdal.AllRegister()
+
+# open the image
+inDs = gdal.Open("C:/Users/Bougie/Desktop/Gibbs/temp/test_temp.tif")
+
+
+# create the output image
+driver = inDs.GetDriver()
+
+
+
+
+
+
+
+
 #######  define raster and mask  ####################
-
-inYTC = Raster(defineGDBpath(['refine','ytc'])+'ytc30_2008to2016')
-# self.arr_ytc = arcpy.RasterToNumPyArray(Raster(inYTC))
-
-
-# print arr_ytc
-inComp = Raster(defineGDBpath(['ancillary','temp'])+'composite')
-# self.arr_comp = arcpy.RasterToNumPyArray(Raster(inComp))
-inTraj = Raster(defineGDBpath(['refine','trajectories'])+'traj_ytc30_2008to2016')
-
-
 class NibbleObject:
 
     def __init__(self, mmu, res, years, subtype):
-        self.res = res
-        self.mmu = mmu
-        
-        self.years = years
-        self.subtype = subtype
-
-        self.datarange = str(self.years[0])+'to'+str(self.years[1])
-
-   #      if self.years[1] == 2016:
-			# self.datarange = str(self.years[0])+'to'+str(self.years[1]-1)
-			# print 'self.datarange:', self.datarange
-
-   #      else:
-			# self.datarange = str(self.years[0])+'to'+str(self.years[1])
-			# print 'self.datarange:', self.datarange
-        
-   #      if self.subtype == 'mtr':
-   #      	self.gdb_path = defineGDBpath(['core', 'mmu'])
-	  #       self.raster_name = 'traj_cdl'+self.res+'_b_'+self.datarange+'_rfnd_n8h_mtr'
-	  #       self.in_raster = defineGDBpath(['core', 'mtr']) + self.raster_name
-	  #       self.mask_name = self.raster_name + '_8w_msk' + self.mmu
-	  #       self.in_mask_raster = self.gdb_path + self.mask_name
-	  #       self.out_fishnet = defineGDBpath(['ancillary', 'temp']) + 'fishnet_' + self.subtype
-	  #       self.pixel_type = "8_BIT_UNSIGNED"
-   #      else:
-			# self.gdb_path = defineGDBpath(['post', self.subtype])
-			# self.raster_name = self.subtype+self.res+'_'+self.datarange+'_mmu'+self.mmu
-			# self.in_raster = self.gdb_path + self.raster_name
-			# print 'yo', self.in_raster
-			# self.mask_name = self.raster_name + '_clean'
-			# self.in_mask_raster = self.gdb_path + self.mask_name
-        self.out_fishnet = defineGDBpath(['ancillary', 'temp']) + 'fishnet_' + self.subtype
-			# self.pixel_type = "16_BIT_UNSIGNED"
-        
-  #       self.inYTC = Raster(defineGDBpath(['refine','ytc'])+'ytc30_2008to2016')
-		# # self.arr_ytc = arcpy.RasterToNumPyArray(Raster(inYTC))
-
-
-		# # print arr_ytc
-  #       self.inComp = defineGDBpath(['ancillary','temp'])+'composite'
-		# # self.arr_comp = arcpy.RasterToNumPyArray(Raster(inComp))
-  #       self.inTraj = defineGDBpath(['refine','trajectories'])+'traj_ytc30_2008to2016'
-		# self.arr_traj = arcpy.RasterToNumPyArray(Raster(inTraj))
+		self.res = res
+		self.mmu = mmu
+		self.years = years
+		self.subtype = subtype
+		self.datarange = str(self.years[0])+'to'+str(self.years[1])
+		self.gdb_path = defineGDBpath(['refine','ytc'])
+		self.inYTC = Raster(defineGDBpath(['refine','ytc'])+'ytc30_2008to2016')
+		self.inComp = Raster(defineGDBpath(['ancillary','temp'])+'composite')
+		self.inTraj = Raster(defineGDBpath(['refine','trajectories'])+'traj_ytc30_2008to2016')
+		self.inTraj_name = 'traj_ytc30_2008to2016'
+		self.out_fishnet = defineGDBpath(['ancillary', 'temp']) + 'fishnet_' + self.subtype
+		self.pixel_type = "8_BIT_UNSIGNED"
+		self.dir_tiles = 'C:/Users/Bougie/Desktop/Gibbs/tiles/'
 
 
 def create_fishnet():
@@ -132,8 +109,138 @@ def create_fishnet():
     #call CreateFishnet_management function
 	arcpy.CreateFishnet_management(nibble.out_fishnet, origCord, YAxisCord, cellSizeW, cellSizeH, numRows, numCols, cornerCord, "NO_LABELS", "", geotype)
 
+
+
+
+def execute_task_new(in_extentDict):
+	fc_count = in_extentDict[0]
+	print fc_count
+	
+	procExt = in_extentDict[1]
+	# print procExt
+	XMin = procExt[0]
+	YMin = procExt[1]
+	XMax = procExt[2]
+	YMax = procExt[3]
+
+	#set environments
+	#The brilliant thing here is that using the extents with the full dataset!!!!!!   DONT EVEN NEED TO CLIP THE FULL RASTER TO THE FISHNET BECASUE 
+	arcpy.env.snapRaster = nibble.inYTC
+	arcpy.env.cellsize = nibble.inYTC
+	arcpy.env.extent = arcpy.Extent(XMin, YMin, XMax, YMax)
+
+	cls = 21973
+	rws = 13789
+
+
+
+
+
     
-  
+	# gdal.AllRegister()
+
+	# # open the image
+	# inDs = gdal.Open("C:/Users/Bougie/Desktop/Gibbs/temp/test_temp.tif")
+	
+	
+	# # create the output image
+	# driver = inDs.GetDriver()
+
+
+
+	# outData = numpy.zeros((rows,cols), numpy.int16)
+	outData = np.zeros((13789, 21973), dtype=np.int)
+	print 'outData: ', outData
+
+	
+
+
+
+	# ras_out.save(outpath)
+
+
+
+
+
+
+
+	arr_ytc = arcpy.RasterToNumPyArray(in_raster=nibble.inYTC, lower_left_corner = arcpy.Point(XMin,YMin), nrows = 13789, ncols = 21973)
+	arr_comp = arcpy.RasterToNumPyArray(in_raster=nibble.inComp, lower_left_corner = arcpy.Point(XMin,YMin), nrows = 13789, ncols = 21973)
+	arr_traj = arcpy.RasterToNumPyArray(in_raster=nibble.inTraj, lower_left_corner = arcpy.Point(XMin,YMin), nrows = 13789, ncols = 21973)
+
+	#find the location of each pixel labeled with specific arbitray value in the rows list  
+	for row in rows:
+	    # print 'arbitrary trajectory label:', row[0]
+
+	    #Return the indices of the elements that are non-zero.
+	    thelist = (arr_traj == row[0]).nonzero()
+	    # print 'thelist----', thelist
+
+	    ww=np.column_stack((thelist[0],thelist[1]))
+	    # print ww
+	    # print 'len----', len(ww)
+	    count = 0
+	    for x in ww:
+	        yearlist=range(arr_ytc[x[0],x[1]], 2017)
+	        # print 'yearlist----', yearlist
+	        bandindexstart = 9 - len(yearlist)
+	        bandindexlist=range(bandindexstart, 9)
+	        # print bandindexlist
+
+	        for index, bandindex in enumerate(bandindexlist):
+	            currentband = arr_comp[bandindex]
+	            # print currentband[x[0],x[1]]
+	            bandindexlist[index] = currentband[x[0],x[1]]
+	        # print bandindexlist
+
+	        if bandindexlist.count(bandindexlist[0]) == len(bandindexlist):
+	            print '-----------------same--------------------------------'
+	            print bandindexlist
+	            print 'x:',x[0]
+	            print 'y:',x[1]
+	            outData[x[0],x[1]] = 1
+
+	# outData = outData[np.isnan(outData)] = 0
+	#clear out the extent for next time
+	arcpy.ClearEnvironment("extent")
+
+	# print fc_count
+	outname = "tile_" + str(fc_count) +'.tif'
+
+	#create
+	outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/", r"tiles", outname)
+
+	outDs = driver.Create(outpath, cls, rws, 1, gdal.GDT_Int32)
+
+	outBand = outDs.GetRasterBand(1)
+
+	# outData = arcpy.NumPyArrayToRaster(outData,x_cell_size=30, y_cell_size=30, value_to_nodata=0)
+ 	
+	# # write the data
+	outBand.WriteArray(outData)
+
+	# flush data to disk, set the NoData value and calculate stats
+	outBand.FlushCache()
+	# outBand.SetNoDataValue(-99)
+
+	# # georeference the image and set the projection
+	# You need to get those values like you did.
+	# x_pixels = 16  # number of pixels in x
+	# y_pixels = 16  # number of pixels in y
+	PIXEL_SIZE = 30  # size of the pixel...        
+	# x_min = 553648  
+	# y_max = 7784555  # x_min & y_max are like the "top left" corner.
+	# XMin = procExt[0]
+	# YMin = procExt[1]
+	# XMax = procExt[2]
+	# YMax = procExt[3]
+
+	outDs.SetGeoTransform((XMin,PIXEL_SIZE,0,YMax,0,-PIXEL_SIZE))  
+	# outDs.SetGeoTransform(inDs.GetGeoTransform())
+	outDs.SetProjection(inDs.GetProjection())
+
+	# del outData    
+
 
 def execute_task(in_extentDict):
 	fc_count = in_extentDict[0]
@@ -146,41 +253,24 @@ def execute_task(in_extentDict):
 	YMax = procExt[3]
 
 	#set environments
-	 #The brilliant thing here is that using the extents with the full dataset!!!!!!   DONT EVEN NEED TO CLIP THE FULL RASTER TO THE FISHNET BECASUE 
-	arcpy.env.snapRaster = inYTC
-	arcpy.env.cellsize = inYTC
+	#The brilliant thing here is that using the extents with the full dataset!!!!!!   DONT EVEN NEED TO CLIP THE FULL RASTER TO THE FISHNET BECASUE 
+	arcpy.env.snapRaster = nibble.inYTC
+	arcpy.env.cellsize = nibble.inYTC
 	arcpy.env.extent = arcpy.Extent(XMin, YMin, XMax, YMax)
 
 
 	mask = np.zeros((13789, 21973), dtype=np.int)
 
 
+	# arcpy.CreateRasterDataset_management("c:/data", "EmptyTIFF.tif", "2",
+ #                                     "8_BIT_UNSIGNED", "World_Mercator.prj",
+ #                                     "3", "", "PYRAMIDS -1 NEAREST JPEG",
+ #                                     "128 128", "NONE", "")
 
-	# inYTC = Raster(defineGDBpath(['refine','ytc'])+'ytc30_2008to2016')
-	# arr_ytc = arcpy.RasterToNumPyArray(in_raster=inYTC, lower_left_corner = arcpy.Point(inYTC.extent.XMin,inYTC.extent.YMin), ncols = 13789, nrows = 21973, nodata_to_value = 0)
-	arr_ytc = arcpy.RasterToNumPyArray(in_raster=inYTC, lower_left_corner = arcpy.Point(XMin,YMin), nrows = 13789, ncols = 21973)
-	print 'art',arr_ytc
-	#composite stack of clds
+	arr_ytc = arcpy.RasterToNumPyArray(in_raster=nibble.inYTC, lower_left_corner = arcpy.Point(XMin,YMin), nrows = 13789, ncols = 21973)
+	arr_comp = arcpy.RasterToNumPyArray(in_raster=nibble.inComp, lower_left_corner = arcpy.Point(XMin,YMin), nrows = 13789, ncols = 21973)
+	arr_traj = arcpy.RasterToNumPyArray(in_raster=nibble.inTraj, lower_left_corner = arcpy.Point(XMin,YMin), nrows = 13789, ncols = 21973)
 
-	# self.inComp = defineGDBpath(['ancillary','temp'])+'composite'
-	# # self.arr_comp = arcpy.RasterToNumPyArray(Raster(inComp))
-	# self.inTraj = defineGDBpath(['refine','trajectories'])+'traj_ytc30_2008to2016'
-	# # inComp = Raster(defineGDBpath(['ancillary','temp'])+'composite_fish')
-
-
-	# inComp = Raster(defineGDBpath(['ancillary','temp'])+'composite')
-	arr_comp = arcpy.RasterToNumPyArray(in_raster=inComp, lower_left_corner = arcpy.Point(XMin,YMin), nrows = 13789, ncols = 21973)
-
-
-	# inTraj = Raster(defineGDBpath(['refine','trajectories'])+'traj_ytc30_2008to2016')
-	arr_traj = arcpy.RasterToNumPyArray(in_raster=inTraj, lower_left_corner = arcpy.Point(XMin,YMin), nrows = 13789, ncols = 21973)
-
-	#get the trajectory values that satify the condtion from postgres
-	# rows=createReclassifyList_mod()
-	# print 'rows------', rows
-
-	# thelist = (arr_traj == 5392).nonzero()
-    
 	#find the location of each pixel labeled with specific arbitray value in the rows list  
 	for row in rows:
 	    # print 'arbitrary trajectory label:', row[0]
@@ -214,23 +304,15 @@ def execute_task(in_extentDict):
 	            mask[x[0],x[1]] = 1
 
 
-
-
-
 	#clear out the extent for next time
 	arcpy.ClearEnvironment("extent")
  	
- 	
-
-
 	ras_out = arcpy.NumPyArrayToRaster(mask,x_cell_size=30, y_cell_size=30, value_to_nodata=0)
 	
-
 	# print fc_count
 	outname = "tile_" + str(fc_count) +'.tif'
 
 	#create Directory
-
 	outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/", r"tiles", outname)
 
 	ras_out.save(outpath)
@@ -241,39 +323,72 @@ def mosiacRasters():
 	tilelist = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*.tif")
 	print tilelist 
 	######mosiac tiles together into a new raster
-	nbl_raster = nibble.mask_name + '_nbl'
-	print 'nbl_raster: ', nbl_raster
 
-	arcpy.MosaicToNewRaster_management(tilelist, nibble.gdb_path, nbl_raster, Raster(nibble.in_raster).spatialReference, nibble.pixel_type, nibble.res, "1", "LAST","FIRST")
+	# arcpy.env.overwriteOutput = True
+
+	
+
+	arcpy.env.workspace =  defineGDBpath(['refine','masks'])
+
+	mosaic = 'traj_ytc30_2008to2015_mask'
+
+	masks_gdb = defineGDBpath(['refine','masks'])
+
+	snapit =  "C:/Users/Bougie/Desktop/Gibbs/temp/test_temp.tif"
+	out_name = 'test_33'
+
+	testit = masks_gdb+out_name
+
+	# arcpy.env.cellSize = wc
+
+	# Set Snap Raster environment
+	arcpy.env.snapRaster = snapit
+	# CreateRasterDataset_management (out_path, out_name, {cellsize}, pixel_type, {raster_spatial_reference}, number_of_bands, {config_keyword}, {pyramids}, {tile_size}, {compression}, {compression}, {pyramid_origin})
+
+	# arcpy.CreateRasterDataset_management(masks_gdb, out_name, 30, "8_BIT_UNSIGNED", Raster(mosaic).spatialReference, 1, "", "", "", "", "")
+	# CreateRasterDataset_management (out_path, out_name, cellsize=30, pixel_type, raster_spatial_reference, number_of_bands)
+
+	# arcpy.Mosaic_management(inputs=tilelist, target=masks_gdb+'new2', nodata_value=0)
+
+	# Mosaic_management (inputs, target, {mosaic_type}, {colormap}, {background_value}, {nodata_value}, {onebit_to_eightbit}, {mosaicking_tolerance}, {MatchingMethod})
+
+	# arcpy.Mosaic_management(tilelist, testit, "", "", "", 0, "", "", "")
+
+	arcpy.MosaicToNewRaster_management(tilelist, defineGDBpath(['refine','masks']), out_name, "", nibble.pixel_type, "", "1", "LAST","FIRST")
+	# arcpy.MosaicToNewRaster_management(tilelist, masks_gdb, mosaic, "", "8_BIT_UNSIGNED", "", "1", "LAST", "FIRST")
+
+
+	# cond = "Value = 0"
+	# print 'cond: ', cond
+
+	# # set mmu raster to null where value is less 2013 (i.e. get rid of attribute values)
+	# outSetNull = SetNull(masks_gdb + mosaic, masks_gdb + mosaic,  cond)
+
+	# #Save the output 
+	# outSetNull.save(masks_gdb + mosaic)
+
+
 
 	##Overwrite the existing attribute table file
-	arcpy.BuildRasterAttributeTable_management(nibble.gdb_path + nbl_raster, "Overwrite")
+	# arcpy.BuildRasterAttributeTable_management(masks_gdb + output, "Overwrite")
 
-	## Overwrite pyramids
-	gen.buildPyramids(nibble.gdb_path + nbl_raster)
+	# ## Overwrite pyramids
+	# gen.buildPyramids(masks_gdb + output)
 
 
 
 def createReclassifyList_mod():
     #Note: this is a aux function that the reclassifyRaster() function references
     cur = conn.cursor()
-   
-    # query = (
-    # "SELECT DISTINCT \"Value\" "
-    # "FROM refinement.traj_"+refine.name+refine.res+"_"+refine.datarange+" "
-    # "WHERE 122 = traj_array[1] "
-    # "OR 123 = traj_array[1] "
-    # "OR 124 = traj_array[1] "
-    # "OR 61 = traj_array[2] "
-    # "OR '{37,36,36}' = traj_array "
-    # "OR '{152,36,36}' = traj_array "
-    # "OR '{176,36,36}' = traj_array"
-    # )
+
 
     query = (
     "SELECT DISTINCT \"Value\" "
     "FROM refinement.traj_"+nibble.subtype+nibble.res+"_"+nibble.datarange+" "
     "WHERE 61 = traj_array[2] "
+    "OR '{37,36}' = traj_array "
+    "OR '{152,36}' = traj_array "
+    "OR '{176,36}' = traj_array"
     )
 
     print query
@@ -287,16 +402,6 @@ def createReclassifyList_mod():
     return rows
     print 'number of records in lookup table', len(rows)
     
-    # interate through rows tuple to format the values into an array that is is then appended to the reclassifylist
-    # for row in rows:
-    #     templist=[]
-    #     templist.append(row[0])
-    #     templist.append(refine.traj_change)
-    #     fulllist.append(templist)
-    # print fulllist
-    # return fulllist
-
-
 
 
 ### Define conversion object ######
@@ -319,6 +424,9 @@ if __name__ == '__main__':
 
 	# need to create a unique fishnet for each dataset
 	##create_fishnet()
+	# tiles = glob.glob(nibble.dir_tiles+"*")
+	# for tile in tiles:
+	# 	os.remove(tile)
 
 	#get extents of individual features and add it to a dictionary
 	extDict = {}
@@ -338,10 +446,14 @@ if __name__ == '__main__':
 	print'extDict.items',  extDict.items()
 
 	#######create a process and pass dictionary of extent to execute task
-	pool = Pool(processes=5)
-	pool.map(execute_task, extDict.items())
-	pool.close()
-	pool.join
+	# pool = Pool(processes=5)
+	# pool.map(execute_task_new, extDict.items())
+	# pool.close()
+	# pool.join
 
 	mosiacRasters()
+
+
+
     
+   

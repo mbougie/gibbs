@@ -38,10 +38,12 @@ except:
 #################### class to create core object  ####################################################
 class ProcessingObject(object):
     def __init__(self, res, mmu, years, filter):
-        self.res = res
+        self.res = str(res)
         self.years = years
         self.datarange = str(self.years[0])+'to'+str(self.years[1])
-        self.traj_name = "traj_cdl"+self.res+"_b_"+self.datarange
+        print 'self.datarange', self.datarange
+        # self.traj_name = "traj_cdl"+self.res+"_b_"+self.datarange+"_rfnd"
+        self.traj_name = "traj_cdl"+str(self.res)+"_b_"+self.datarange
         self.traj_path = defineGDBpath(['pre','trajectories'])+self.traj_name
         self.filter = filter
         
@@ -70,13 +72,12 @@ def addColorMap(inraster,template):
 def createMTR():
     ## replace the arbitrary values in the trajectories dataset with the mtr values 1-5.
     raster = defineGDBpath(['core','filter']) + core.traj_name+"_n8h"
-
-# self.wc = self.traj_name+"_n8h"
-#     for raster in arcpy.ListDatasets(core.wc, "Raster"): 
+    # raster = defineGDBpath(['pre','trajectories']) + core.traj_name
 
     print 'raster: ', raster
 
     output = defineGDBpath(['core','mtr'])+core.traj_name+"_n8h"+'_mtr'
+    # output = defineGDBpath(['core','mtr'])+core.traj_name+'_mtr'
     print 'output:', output
 
     reclassArray = createReclassifyList() 
@@ -218,7 +219,7 @@ def addGDBTable2postgres():
     arcpy.env.workspace = defineGDBpath(['post','ytc'])
     
     # wc = '*'+core.res+'*'+core.datarange+'*'+core.filter+'*_msk5_nbl'
-    wc = 'ytc30_2008to2016_mmu5_nbl'
+    wc = 'ytc30_2008to2016_initial'
     print wc
 
 
@@ -285,16 +286,16 @@ def addAcresField(tablename, schema):
 
 
 ################ Instantiate the class to create core object  ########################
-# core = CoreObject(
-#       #resolution
-#       '30',
-#       #data range---i.e. all the cdl years you are referencing 
-#       [2008,2016],
-#       #filter used
-#       'n8h',
-#       #mmu
-#        5
-#       )
+core = ProcessingObject(
+      #resolution
+      30,
+      #mmu
+      5,
+      #data range---i.e. all the cdl years you are referencing 
+      [2008,2016],
+      #filter
+      'n8h'
+      )
 
 
 
@@ -306,13 +307,12 @@ def addAcresField(tablename, schema):
 # createMTR()
 
 ##------mmu gdb-----------------
-# regionGroup()
-# clipByMMUmask()
+
 
 ##find way to call the parrell_nibble function here
 
 ##########  NEW     ###################################
-# addGDBTable2postgres()
+addGDBTable2postgres()
 
 
 
