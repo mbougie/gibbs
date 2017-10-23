@@ -53,6 +53,7 @@ class ProcessingObject(object):
         print 'self.conversionyears:', str(self.conversionyears)
         self.traj_dataset = "traj_cdl"+self.res+"_b_"+self.datarange
         self.join_operator = join_operator
+        self.traj_dataset_path = defineGDBpath(['pre','trajectories']) + self.traj_dataset
 
         # if self.years[1] == 2016:
         #     self.conversionyears = range(self.years[0]+2, self.years[1])
@@ -273,7 +274,7 @@ def createMask_nlcdtraj():
     if refine.join_operator == 'or':
         output = defineGDBpath(['refine','masks'])+'traj_nlcd'+refine.res+'_b_2006or2011_'+refine.name+refine.datarange+'_mask'
         print 'output:', output
-        outCon = Con((nlcd2006 == 82) & (refinement_mtr == 3) & (ytc_clean < 2012), Con((nlcd2006 == 82) & (refinement_mtr == 3) & (ytc_clean > 2011), getArbitraryCropValue())) 
+        outCon = Con((nlcd2006 == 82) & (refinement_mtr == 3) & (ytc_clean < 2012), getArbitraryCropValue(), Con((nlcd2006 == 82) & (refinement_mtr == 3) & (ytc_clean > 2011), getArbitraryCropValue())) 
         # outCon = Con((nlcd2001 == 82) & (refinement_mtr == 3) & (ytc_clean < 2012), getArbitraryCropValue(), Con((nlcd2006 == 82) & (refinement_mtr == 3), getArbitraryCropValue() , Con((nlcd2006 == 82) & (refinement_mtr == 3) & (ytc_clean > 2011), getArbitraryCropValue()))) 
         print outCon
     elif refine.join_operator == 'and':
@@ -307,11 +308,11 @@ def getArbitraryCropValue():
 
 
 
-def createMask_trajytc():
+def createMask_trajytc_dev():
     traj_ytc = defineGDBpath(['refine','trajectories'])+'traj_'+refine.name+refine.res+'_'+refine.datarange
 
 
-    output = defineGDBpath(['refine','masks'])+'traj_'+refine.name+refine.res+'_'+refine.datarange+'_mask'
+    output = defineGDBpath(['refine','masks'])+'traj_'+refine.name+refine.res+'_'+refine.datarange+'_mskdev'
     print 'output:', output
 
     reclassArray = createReclassifyList() 
@@ -324,7 +325,7 @@ def createMask_trajytc():
 
 
 
-def createReclassifyList():
+def createReclassifyList_initial():
     #Note: this is a aux function that the reclassifyRaster() function references
     cur = conn.cursor()
    
@@ -408,6 +409,43 @@ def createReclassifyList_mod():
     # return fulllist
 
 
+def createReclassifyList():
+    #Note: this is a aux function that the reclassifyRaster() function references
+    cur = conn.cursor()
+   
+    query = (
+    "SELECT DISTINCT \"Value\" "
+    "FROM refinement.traj_"+refine.name+refine.res+"_"+refine.datarange+" "
+    "WHERE 122 = traj_array[1] "
+    "OR 123 = traj_array[1] "
+    "OR 124 = traj_array[1] "
+    )
+
+    # query = (
+    # "SELECT DISTINCT \"Value\" "
+    # "FROM refinement.traj_"+refine.name+refine.res+"_"+refine.datarange+" "
+    # "WHERE 61 = traj_array[2] "
+    # )
+
+    print query
+
+    cur.execute(query)
+    #create empty list
+    fulllist=[[0,0,"NODATA"]]
+
+    # fetch all rows from table
+    rows = cur.fetchall()
+    print 'number of records in lookup table', len(rows)
+    
+    # interate through rows tuple to format the values into an array that is is then appended to the reclassifylist
+    for row in rows:
+        templist=[]
+        templist.append(row[0])
+        templist.append(refine.traj_change)
+        fulllist.append(templist)
+    print fulllist
+    return fulllist
+
  
 
 def addGDBTable2postgres():
@@ -460,20 +498,30 @@ def addGDBTable2postgres():
 
 
 def createRefinedTrajectory():
-    
-    traj = defineGDBpath(['pre','trajectories']) + 'traj_cdl'+refine.res+'_b_'+refine.datarange
-    nlcd_mask = defineGDBpath(['refine','masks']) + 'traj_nlcd'+refine.res+'_b_'+refine.nlcd_years[0]+'or'+refine.nlcd_years[1]+'or'+refine.nlcd_years[2]+'_'+refine.name+refine.datarange+'_mask'
-    trajYTC_mask = defineGDBpath(['refine','masks']) + 'traj_'+refine.name+refine.res+'_'+refine.datarange+'_mask'
-    output = 'traj_cdl'+refine.res+'_b_'+refine.datarange+'_rfnd'
-    print 'output:', output
-    
-    # create a filelist to format the argument for MosaicToNewRaster_management() function
-    filelist = [traj, nlcd_mask, trajYTC_mask]
-    print '-----[traj, nlcd_mask, trajYTC_mask]-----'
+
+    ##### Set environment settings
+    arcpy.env.workspace = defineGDBpath(['refine','masks'])
+
+    ##### loop through each of the cdl rasters besure nlcd is last 
+    condlist = ['36and61', 'dev', 'nlcd2006or2011']
+
+    ##### create a raster list to mosiac together make sure that the intial traj is first in list and nlcd mask is last in the list.
+    filelist = [refine.traj_dataset_path]
+
+    for cond in condlist:
+
+        for raster in arcpy.ListDatasets(refine.traj_dataset+'_'+cond, "Raster"): 
+
+            print 'raster: ',raster
+
+            filelist.append(raster)
+
     print filelist
 
-    #mosaicRasters():
-    arcpy.MosaicToNewRaster_management(filelist, defineGDBpath(['pre','trajectories']), output, Raster(traj).spatialReference, '16_BIT_UNSIGNED', refine.res, "1", "LAST","FIRST")
+    output = 'traj_cdl'+refine.res+'_b_'+refine.datarange+'_rfnd_t2'
+
+    ##### mosaicRasters():
+    arcpy.MosaicToNewRaster_management(filelist, defineGDBpath(['pre','trajectories']), output, Raster(refine.traj_dataset_path).spatialReference, '16_BIT_UNSIGNED', refine.res, "1", "LAST","FIRST")
 
 
 
@@ -511,19 +559,21 @@ for subtype in refine.subtypelist:
 # addGDBTable2postgres() 
 
 
-### create mask  #####################
+### create the masks  #####################
 ##NOTE NEED TO GENERALIZE THIS FUNCTION!!!!!!!!!!!!!!!
 
 ###----hard coded still. Also has questionable inner method!
-createMask_nlcdtraj()
+# createMask_nlcdtraj()
 
 ###----?????  ---ok but has questionable inner method!
-# createMask_trajytc()
+# createMask_trajytc_dev()
+
+####call parallel_false script
 
 
 ### create the refined trajectory ########################
 ###----hard coded still
-# createRefinedTrajectory()
+createRefinedTrajectory()
 
 
 

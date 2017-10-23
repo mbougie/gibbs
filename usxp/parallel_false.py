@@ -242,6 +242,17 @@ def execute_task_new(in_extentDict):
 	# del outData    
 
 
+
+
+
+
+
+
+
+
+
+
+
 def execute_task(in_extentDict):
 	fc_count = in_extentDict[0]
 	# print fc_count
@@ -257,6 +268,7 @@ def execute_task(in_extentDict):
 	arcpy.env.snapRaster = nibble.inYTC
 	arcpy.env.cellsize = nibble.inYTC
 	arcpy.env.extent = arcpy.Extent(XMin, YMin, XMax, YMax)
+	arcpy.env.outputCoordinateSystem = nibble.inYTC
 
 
 	mask = np.zeros((13789, 21973), dtype=np.int)
@@ -304,10 +316,12 @@ def execute_task(in_extentDict):
 	            mask[x[0],x[1]] = 1
 
 
-	#clear out the extent for next time
-	arcpy.ClearEnvironment("extent")
+
  	
 	ras_out = arcpy.NumPyArrayToRaster(mask,x_cell_size=30, y_cell_size=30, value_to_nodata=0)
+
+	#clear out the extent for next time
+	arcpy.ClearEnvironment("extent")
 	
 	# print fc_count
 	outname = "tile_" + str(fc_count) +'.tif'
@@ -319,42 +333,49 @@ def execute_task(in_extentDict):
 
 
 
+
+
 def mosiacRasters():
+	######Description: mosiac tiles together into a new raster
+
+
 	tilelist = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*.tif")
 	print tilelist 
-	######mosiac tiles together into a new raster
-
-	# arcpy.env.overwriteOutput = True
-
 	
-
 	arcpy.env.workspace =  defineGDBpath(['refine','masks'])
+	arcpy.env.extent = nibble.inYTC.extent
+	arcpy.env.snapRaster = nibble.inYTC
+	arcpy.env.cellsize = nibble.inYTC
+	arcpy.env.outputCoordinateSystem = nibble.inYTC
 
 	mosaic = 'traj_ytc30_2008to2015_mask'
 
 	masks_gdb = defineGDBpath(['refine','masks'])
 
-	snapit =  "C:/Users/Bougie/Desktop/Gibbs/temp/test_temp.tif"
-	out_name = 'test_33'
+	out_name = nibble.inTraj_name+'_msk36and61_initial'
 
-	testit = masks_gdb+out_name
+	outpath = masks_gdb+out_name
 
-	# arcpy.env.cellSize = wc
 
-	# Set Snap Raster environment
-	arcpy.env.snapRaster = snapit
-	# CreateRasterDataset_management (out_path, out_name, {cellsize}, pixel_type, {raster_spatial_reference}, number_of_bands, {config_keyword}, {pyramids}, {tile_size}, {compression}, {compression}, {pyramid_origin})
+    ##### CreateRasterDataset_management (out_path, out_name, cellsize=30, pixel_type, raster_spatial_reference, number_of_bands)
+	arcpy.CreateRasterDataset_management(masks_gdb, out_name, 30, "8_BIT_UNSIGNED", nibble.inTraj.spatialReference, 1, "", "", "", "", "")
 
-	# arcpy.CreateRasterDataset_management(masks_gdb, out_name, 30, "8_BIT_UNSIGNED", Raster(mosaic).spatialReference, 1, "", "", "", "", "")
-	# CreateRasterDataset_management (out_path, out_name, cellsize=30, pixel_type, raster_spatial_reference, number_of_bands)
+	##### Mosaic_management (inputs, target, {mosaic_type}, {colormap}, {background_value}, {nodata_value}, {onebit_to_eightbit}, {mosaicking_tolerance}, {MatchingMethod})
+	arcpy.Mosaic_management(tilelist, outpath, "", "", "", 0, "", "", "")
 
-	# arcpy.Mosaic_management(inputs=tilelist, target=masks_gdb+'new2', nodata_value=0)
+    ##### copy raster so it "snaps" to the other datasets -------suboptimal
+    ##### CopyRaster_management (in_raster, out_rasterdataset, {config_keyword}, {background_value}, {nodata_value}, {onebit_to_eightbit}, {colormap_to_RGB}, {pixel_type}, {scale_pixel_value}, {RGB_to_Colormap}, {format}, {transform})
+	arcpy.CopyRaster_management(outpath, nibble.inTraj_name+'_msk36and61')
 
-	# Mosaic_management (inputs, target, {mosaic_type}, {colormap}, {background_value}, {nodata_value}, {onebit_to_eightbit}, {mosaicking_tolerance}, {MatchingMethod})
+    ##### delete the initial raster
+	arcpy.Delete_management(outpath)
 
-	# arcpy.Mosaic_management(tilelist, testit, "", "", "", 0, "", "", "")
 
-	arcpy.MosaicToNewRaster_management(tilelist, defineGDBpath(['refine','masks']), out_name, "", nibble.pixel_type, "", "1", "LAST","FIRST")
+
+
+
+
+	# arcpy.MosaicToNewRaster_management(tilelist, defineGDBpath(['refine','masks']), out_name, "", nibble.pixel_type, "", "1", "LAST","FIRST")
 	# arcpy.MosaicToNewRaster_management(tilelist, masks_gdb, mosaic, "", "8_BIT_UNSIGNED", "", "1", "LAST", "FIRST")
 
 

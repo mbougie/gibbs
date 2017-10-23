@@ -42,8 +42,7 @@ class ProcessingObject(object):
         self.years = years
         self.datarange = str(self.years[0])+'to'+str(self.years[1])
         print 'self.datarange', self.datarange
-        # self.traj_name = "traj_cdl"+self.res+"_b_"+self.datarange+"_rfnd"
-        self.traj_name = "traj_cdl"+str(self.res)+"_b_"+self.datarange
+        self.traj_name = "traj_cdl"+self.res+"_b_"+self.datarange+"_rfnd"
         self.traj_path = defineGDBpath(['pre','trajectories'])+self.traj_name
         self.filter = filter
         
@@ -307,9 +306,8 @@ core = ProcessingObject(
 # createMTR()
 
 ##------mmu gdb-----------------
-
-
 ##find way to call the parrell_nibble function here
+
 
 ##########  NEW     ###################################
 addGDBTable2postgres()
