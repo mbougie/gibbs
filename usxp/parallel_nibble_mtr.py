@@ -164,8 +164,8 @@ nibble = ProcessingObject(
       )
 
 
-# if __name__ == '__main__':
-def run():
+if __name__ == '__main__':
+# def run():
     ##remove a files in tiles directory
 	tiles = glob.glob(nibble.dir_tiles+"*")
 	for tile in tiles:

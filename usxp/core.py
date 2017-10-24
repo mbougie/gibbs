@@ -45,7 +45,6 @@ class ProcessingObject(object):
         self.traj_name = "traj_cdl"+self.res+"_b_"+self.datarange+"_rfnd"
         self.traj_path = defineGDBpath(['pre','trajectories'])+self.traj_name
         self.filter = filter
-        
         self.mmu = mmu
 
 
@@ -71,12 +70,9 @@ def addColorMap(inraster,template):
 def createMTR():
     ## replace the arbitrary values in the trajectories dataset with the mtr values 1-5.
     raster = defineGDBpath(['core','filter']) + core.traj_name+"_n8h"
-    # raster = defineGDBpath(['pre','trajectories']) + core.traj_name
-
     print 'raster: ', raster
 
     output = defineGDBpath(['core','mtr'])+core.traj_name+"_n8h"+'_mtr'
-    # output = defineGDBpath(['core','mtr'])+core.traj_name+'_mtr'
     print 'output:', output
 
     reclassArray = createReclassifyList() 
@@ -151,59 +147,6 @@ def focalStats(gdb_args_in, dataset, gdb_args_out):
         outFocalStatistics.save(output)
         
         gen.buildPyramids(output)
-
-
-# "traj_cdl"+self.res+"_b_"+self.datarange+"_rfnd"
-# self.traj_name
-####################  mmu functions  ##########################################
-
-def regionGroup():
-    raster_name = core.traj_name + core.filter + '_mtr'
-    raster = defineGDBpath(['core', 'mtr']) + core.traj_name + '_' + core.filter + '_mtr'
-    print 'raster: ', raster
-
-    filter_combos = {'8w':["EIGHT", "WITHIN"]}
-    for k, v in filter_combos.iteritems():
-        print k,v
-
-        output=defineGDBpath(['core','mmu'])+raster_name+'_'+k
-        print 'output: ',output
-
-        # Execute RegionGroup
-        outRegionGrp = RegionGroup(Raster(raster), v[0], v[1],"NO_LINK")
-
-        # Save the output 
-        print 'save the output'
-        outRegionGrp.save(output)
-
-        gen.buildPyramids(output)
-
-
-
-
-
-
-def clipByMMUmask():
-    #define workspace
-    arcpy.env.workspace=defineGDBpath(['core', 'mmu'])
-
-    raster = defineGDBpath(['core', 'mmu']) + core.traj_name + '_' + core.filter + '_mtr_8w'
-    print 'raster: ', raster
-
-    # for count in masks_list:
-    cond = "Count < " + str(gen.getPixelCount(core.res, core.mmu))
-    print 'cond: ',cond
-
-    output = raster+'_msk'+ str(core.mmu)
-
-    print output
-
-    outSetNull = SetNull(raster, 1, cond)
-
-    # Save the output 
-    outSetNull.save(output)
-
-    gen.buildPyramids(output)
 
 
 
@@ -285,32 +228,32 @@ def addAcresField(tablename, schema):
 
 
 ################ Instantiate the class to create core object  ########################
-core = ProcessingObject(
-      #resolution
-      30,
-      #mmu
-      5,
-      #data range---i.e. all the cdl years you are referencing 
-      [2008,2016],
-      #filter
-      'n8h'
-      )
+# core = ProcessingObject(
+#       #resolution
+#       30,
+#       #mmu
+#       5,
+#       #data range---i.e. all the cdl years you are referencing 
+#       [2008,2016],
+#       #filter
+#       'n8h'
+#       )
 
 
 
 #############################  Call Functions ######################################
-##------filter gdb--------------
+#------filter gdb--------------
 # majorityFilter()
 
 ##------mtr gdb-----------------
 # createMTR()
 
 ##------mmu gdb-----------------
-##find way to call the parrell_nibble function here
+##find way to run parallel_regiongroup here!!!!
 
 
 ##########  NEW     ###################################
-addGDBTable2postgres()
+# addGDBTable2postgres()
 
 
 

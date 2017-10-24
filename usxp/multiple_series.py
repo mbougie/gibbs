@@ -6,12 +6,12 @@ import sys
 import os
 from config import from_config
 
-import pre
-import parallel_false as pf
-import core
+# import pre
+# import parallel_false as pf
+# import core
 import parallel_regiongroup as prg
-import parallel_nibble_mtr as pn_mtr
-import post
+# import parallel_nibble_mtr as pn_mtr
+# import post
 # import parallel_nibble_ytc as pn_ytc
 
 # import refinement
@@ -29,14 +29,15 @@ def run_series(res,mmu,years,pre_arg, core_arg, prg_arg, post_arg):
 	# print "pre: {}".format(str(pre_arg))
 	# print "core: {}".format(str(core))
 
-	#### create an instance that the pre.py script can reference
-	pre.pre = pre.ProcessingObject(res,mmu,years)
-	core.core = core.ProcessingObject(res,mmu,years,core_arg['filter'])
+	####!!!!!! create an instance that the pre.py script can reference
+	# pre.pre = pre.ProcessingObject(res,mmu,years)
+	# core.core = core.ProcessingObject(res,mmu,years,core_arg['filter'])
 	# post.post = post.ProcessingObject(res,mmu,years,post_arg['name'],post_arg['subname'])
 	# prg.prg = prg.ProcessingObject(res,mmu,years,prg_arg['subtype'])
+	# prg_config = prg.ProcessingObject(...)
+  
 
-
-	# prg.poolit()
+    ####!!!!!! call functions of each script using the specific instance created above
 	####  call functions in pre.py
 	# pre.createTrajectories()
 	# pre.addGDBTable2postgres()
@@ -52,7 +53,9 @@ def run_series(res,mmu,years,pre_arg, core_arg, prg_arg, post_arg):
 	####  preform core processing
 	# core.majorityFilter()
 	# core.createMTR() 
-	# prg.run()
+	# prg.run(prg_config)
+	# prg_config = {'res': res, 'mmu': mmu, ...}
+	prg.run(res, mmu, years, prg_arg['subname'])
 	# pn_mtr.run()
 	# core.addGDBTable2postgres()
 
@@ -65,14 +68,6 @@ def run_series(res,mmu,years,pre_arg, core_arg, prg_arg, post_arg):
 
 
 	# os.system('parallel_regiongroup.py')
-
-
-
-
-
-
-
-
 
 
 
