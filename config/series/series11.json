@@ -1,0 +1,21 @@
+{    
+	"series":"s11",
+	"res":30,
+	"mmu":5,
+	"years":[2008,2016],
+	"pre_arg": {},
+	"core_arg": {"filter":"n8h"},
+	"pp_rg_arg": {"name":"mtr"},
+	"pp_nbl_mtr_arg": {
+		"subname":"mtr",
+		"pixel_type":"8_BIT_UNSIGNED"
+	},
+	"post_arg": {
+        "name":"ytc",
+        "subname":"fc"
+	},
+	"pp_nbl_ytc_arg": {
+		"subname":"ytc",
+		"pixel_type":"16_BIT_UNSIGNED"
+	}
+}

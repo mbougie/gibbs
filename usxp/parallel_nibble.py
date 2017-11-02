@@ -21,6 +21,7 @@ arcpy.CheckOutExtension("Spatial")
 
 #establish root path for this the main project (i.e. usxp)
 rootpath = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/data/usxp/'
+# rootpath = 'D:/projects/ksu/v2/'
 
 ### establish gdb path  ####
 def defineGDBpath(arg_list):
@@ -33,37 +34,40 @@ def defineGDBpath(arg_list):
 #######  define raster and mask  ####################
 class ProcessingObject(object):
 
-    def __init__(self, res, mmu, years, subname):
-        self.res = res
-        self.mmu = mmu
-        
-        self.years = years
-        self.subname = subname
-        print self.subname
+    def __init__(self, series, res, mmu, years, name, pixel_type):
+		self.series = series
+		self.res = str(res)
+		self.mmu =str(mmu)
 
-        self.datarange = str(self.years[0])+'to'+str(self.years[1])
-        print self.datarange
+		self.years = years
+		self.name = name
+		print 'self.name:', self.name
 
-        self.dir_tiles = 'C:/Users/Bougie/Desktop/Gibbs/tiles/'
+		self.datarange = str(self.years[0])+'to'+str(self.years[1])
+		print 'self.datarange:', self.datarange
 
-        
-        if self.subname == 'mtr':
-        	self.gdb_path = defineGDBpath(['core', 'mmu'])
-	        self.raster_name = 'traj_cdl'+self.res+'_b_'+self.datarange+'_n8h_mtr'
-	        self.in_raster = defineGDBpath(['core', 'mtr']) + self.raster_name
-	        print self.in_raster
-	        self.mask_name = self.raster_name + '_8w_msk' + self.mmu
-	        self.in_mask_raster = self.gdb_path + self.mask_name
-	        self.out_fishnet = defineGDBpath(['ancillary', 'temp']) + 'fishnet_' + self.subname
-	        self.pixel_type = "8_BIT_UNSIGNED"
-        else:
-			self.gdb_path = defineGDBpath(['post', self.subname])
-			self.raster_name = self.subname+self.res+'_'+self.datarange+'_mmu'+self.mmu
+		self.dir_tiles = 'C:/Users/Bougie/Desktop/Gibbs/tiles/'
+
+
+		if self.name == 'mtr':
+			self.gdb_path = defineGDBpath(['core', 'mmu'])
+			self.raster_name = self.series+'_traj_cdl'+self.res+'_b_'+self.datarange+'_rfnd_n8h_mtr'
+			self.in_raster = defineGDBpath(['core', 'mtr']) + self.raster_name
+			print 'self.in_raster', self.in_raster
+			self.mask_name = self.raster_name + '_8w_msk' + self.mmu
+			self.in_mask_raster = self.gdb_path + self.mask_name
+			self.out_fishnet = defineGDBpath(['ancillary', 'shapefiles']) + 'fishnet_' + self.name
+			self.pixel_type = "8_BIT_UNSIGNED"
+		else:
+			self.gdb_path = defineGDBpath(['post', self.name])
+			self.raster_name = self.series+'_'+self.name+self.res+'_'+self.datarange+'_mmu'+self.mmu
 			self.in_raster = self.gdb_path + self.raster_name
+			print 'self.in_raster', self.in_raster
 			self.mask_name = self.raster_name + '_msk'
 			self.in_mask_raster = self.gdb_path + self.mask_name
-			self.out_fishnet = defineGDBpath(['ancillary', 'temp']) + 'fishnet_' + self.subname
+			self.out_fishnet = defineGDBpath(['ancillary', 'shapefiles']) + 'fishnet_yxc'
 			self.pixel_type = "16_BIT_UNSIGNED"
+
 
 
 def create_fishnet():
@@ -97,7 +101,10 @@ def create_fishnet():
     
   
 
-def execute_task(in_extentDict):
+def execute_task(args):
+	in_extentDict, nibble = args
+
+
 	fc_count = in_extentDict[0]
 	# print fc_count
 	procExt = in_extentDict[1]
@@ -114,7 +121,7 @@ def execute_task(in_extentDict):
 	arcpy.env.extent = arcpy.Extent(XMin, YMin, XMax, YMax)
 
 	###  Execute Nibble  #####################
-	ras_out = arcpy.sa.Nibble(nibble.in_mask_raster, nibble.in_raster, "DATA_ONLY")
+	ras_out = arcpy.sa.Nibble(nibble.in_raster, nibble.in_mask_raster, "DATA_ONLY")
 
 	#clear out the extent for next time
 	arcpy.ClearEnvironment("extent")
@@ -130,7 +137,7 @@ def execute_task(in_extentDict):
 
 
 
-def mosiacRasters():
+def mosiacRasters(nibble):
 	tilelist = glob.glob(nibble.dir_tiles+'*.tif')
 	print tilelist 
 	######mosiac tiles together into a new raster
@@ -147,32 +154,19 @@ def mosiacRasters():
 
 
 
+  
+def run(series, res, mmu, years, subtype, pixel_type):  
+	#instantiate the class inside run() function
+	nibble = ProcessingObject(series, res, mmu, years, subtype, pixel_type)
+	print nibble.res
 
+	# need to create a unique fishnet for each dataset
+	#create_fishnet()
 
-
-#### Define conversion object ######
-nibble = ProcessingObject(
-
-	  #resolution
-	  '30',
-	  #mmu
-	  '5',
-	  #data-range
-	  [2008,2016],
-	  #subname
-	  'mtr'
-      )
-
-
-# if __name__ == '__main__':
-def run():
-    ##remove a files in tiles directory
+	#remove a files in tiles directory
 	tiles = glob.glob(nibble.dir_tiles+"*")
 	for tile in tiles:
 		os.remove(tile)
-
-	# need to create a unique fishnet for each dataset
-	##create_fishnet()
 
 	#get extents of individual features and add it to a dictionary
 	extDict = {}
@@ -191,11 +185,10 @@ def run():
 	# print 'extDict', extDict
 	# print'extDict.items()',  extDict.items()
 
+	######create a process and pass dictionary of extent to execute task
 	pool = Pool(processes=cpu_count())
-	pool.map(execute_task, extDict.items())
+	pool.map(execute_task, [(ed, nibble) for ed in extDict.items()])
 	pool.close()
 	pool.join
 
-	mosiacRasters()	#######create a process and pass dictionary of extent to execute task
-
-    
+	mosiacRasters(nibble)

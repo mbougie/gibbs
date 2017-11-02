@@ -65,18 +65,19 @@ driver = inDs.GetDriver()
 #######  define raster and mask  ####################
 class NibbleObject:
 
-    def __init__(self, mmu, res, years, subtype):
+    def __init__(self, series, mmu, res, years, subtype):
+		self.series = series
 		self.res = res
 		self.mmu = mmu
 		self.years = years
 		self.subtype = subtype
 		self.datarange = str(self.years[0])+'to'+str(self.years[1])
 		self.gdb_path = defineGDBpath(['refine','ytc'])
-		self.inYTC = Raster(defineGDBpath(['refine','ytc'])+'ytc30_2008to2016')
+		self.inYTC = Raster(defineGDBpath(['refine','ytc'])+self.series+'_ytc30_'+self.datarange)
 		self.inComp = Raster(defineGDBpath(['ancillary','temp'])+'composite')
-		self.inTraj = Raster(defineGDBpath(['refine','trajectories'])+'traj_ytc30_2008to2016')
-		self.inTraj_name = 'traj_ytc30_2008to2016'
-		self.out_fishnet = defineGDBpath(['ancillary', 'temp']) + 'fishnet_' + self.subtype
+		self.inTraj = Raster(defineGDBpath(['refine','trajectories'])+self.series+'_traj_ytc30_'+self.datarange)
+		self.inTraj_name = self.series+'_traj_ytc30_'+self.datarange
+		self.out_fishnet = defineGDBpath(['ancillary', 'shapefiles']) + 'fishnet_' + self.subtype
 		self.pixel_type = "8_BIT_UNSIGNED"
 		self.dir_tiles = 'C:/Users/Bougie/Desktop/Gibbs/tiles/'
 
@@ -348,11 +349,11 @@ def mosiacRasters():
 	arcpy.env.cellsize = nibble.inYTC
 	arcpy.env.outputCoordinateSystem = nibble.inYTC
 
-	mosaic = 'traj_ytc30_2008to2015_mask'
+	# mosaic = 'traj_ytc30_2008to2015_mask'
 
 	masks_gdb = defineGDBpath(['refine','masks'])
 
-	out_name = nibble.inTraj_name+'_msk36and61_initial'
+	out_name = nibble.inTraj_name+'_msk36and61_temp'
 
 	outpath = masks_gdb+out_name
 
@@ -405,7 +406,7 @@ def createReclassifyList_mod():
 
     query = (
     "SELECT DISTINCT \"Value\" "
-    "FROM refinement.traj_"+nibble.subtype+nibble.res+"_"+nibble.datarange+" "
+    "FROM refinement."+nibble.series+"_traj_"+nibble.subtype+nibble.res+"_"+nibble.datarange+" "
     "WHERE 61 = traj_array[2] "
     "OR '{37,36}' = traj_array "
     "OR '{152,36}' = traj_array "
@@ -427,12 +428,13 @@ def createReclassifyList_mod():
 
 ### Define conversion object ######
 nibble = NibbleObject(
+	  's10',
 	  #mmu
 	  '5',
 	  #resolution
 	  '30',
 	  #data-range
-	  [2008,2016],
+	  [2010,2016],
 	  #subtype
 	  'ytc'
       )

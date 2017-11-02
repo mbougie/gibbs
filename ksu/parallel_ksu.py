@@ -8,7 +8,7 @@ import time
 import logging
 import multiprocessing
 from multiprocessing import Process, Queue, Pool, cpu_count, current_process, Manager
-import general as gen
+# import general as gen
 
 arcpy.env.overwriteOutput = True
 arcpy.env.scratchWorkspace = "in_memory" 
@@ -19,7 +19,7 @@ case=['Bougie','Gibbs']
 arcpy.CheckOutExtension("Spatial")
 
 #establish root path for this the main project (i.e. usxp)
-rootpath = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/data/usxp/'
+rootpath = 'D:/projects/ksu/v2/'
 
 ### establish gdb path  ####
 def defineGDBpath(arg_list):
@@ -28,26 +28,18 @@ def defineGDBpath(arg_list):
     return gdb_path
 
 
-
 #######  define raster and mask  ####################
 
 class ProcessingObject(object):
 
-    def __init__(self, series, res, mmu, years, subtype):
-    	self.series = series
+    def __init__(self, res, mmu, years):
         self.res = str(res)
-        self.mmu = mmu
-        self.years =years 
-        self.subtype = subtype
+        self.mmu = str(mmu)
+        # self.years =years
+        self.out_fishnet = defineGDBpath(['ancillary', 'shapefiles']) + 'fishnet_subset'
+        self.clu = defineGDBpath(['main', 'merged_clu']) + 'clu2008county_1cm_buffer'
+        self.yans = defineGDBpath(['main', 'yan_roy']) + 'yan_roy_aeac'
 
-
-        self.datarange = str(self.years[0])+'to'+str(self.years[1])
-    	self.gdb_path = defineGDBpath(['core', 'mmu'])
-        self.raster = self.series+'_traj_cdl'+self.res+'_b_'+self.datarange+'_rfnd_n8h_mtr'
-        self.raster_path = defineGDBpath(['core', 'mtr']) + self.raster
-        self.out_fishnet = defineGDBpath(['ancillary', 'temp']) + 'fishnet_' + self.subtype
-        self.pixel_type = "32_BIT_UNSIGNED"
-        self.dir_tiles = 'C:/Users/Bougie/Desktop/Gibbs/tiles/'
 
 
 
@@ -81,13 +73,11 @@ def create_fishnet():
 
   
 	  
-def execute_task(args):
-	in_extentDict, prg = args
-
+def execute_task(in_extentDict):
 	fc_count = in_extentDict[0]
-	# print fc_count
+	print fc_count
 	procExt = in_extentDict[1]
-	# print procExt
+	print procExt
 	XMin = procExt[0]
 	YMin = procExt[1]
 	XMax = procExt[2]
@@ -95,29 +85,81 @@ def execute_task(args):
 
 	#set environments
 	 #The brilliant thing here is that using the extents with the full dataset!!!!!!   DONT EVEN NEED TO CLIP THE FULL RASTER TO THE FISHNET BECASUE 
-	arcpy.env.snapRaster = prg.raster_path
-	arcpy.env.cellsize = prg.raster_path
-	arcpy.env.extent = arcpy.Extent(XMin, YMin, XMax, YMax)
+	# arcpy.env.snapRaster = prg.clu
+	# arcpy.env.cellsize = prg.clu
+	# arcpy.env.extent = arcpy.Extent(XMin, YMin, XMax, YMax)
 
 	###  Execute Nibble  #####################
 
-	filter_combos = {'8w':["EIGHT", "WITHIN"]}
-	for k, v in filter_combos.iteritems():
-	    print k,v
-	    # Execute RegionGroup
-	    ras_out = RegionGroup(Raster(prg.raster_path), v[0], v[1],"NO_LINK")
 
-		#clear out the extent for next time
-        arcpy.ClearEnvironment("extent")
+	# import arcpy
+	# from arcpy import env
+
+	print 'hi'
+
+	# env.workspace = "C:/data"
+	outname = "tile_" + str(fc_count) + ".shp"
+
+	outpath = os.path.join("D:/projects/ksu/v2/", r"tiles", outname)
+
+	arcpy.Clip_analysis(prg.clu, prg.out_fishnet, outpath)
+
+	arcpy.ClearEnvironment("extent")
+
+
+def clipFCtoFishnet(el):
+	# self.out_fishnet = defineGDBpath(['ancillary', 'shapefiles']) + 'fishnet_subset'
+	arcpy.env.workspace = defineGDBpath(['ancillary', 'shapefiles'])
+	# Use the ListFeatureClasses function to return a list of shapefiles.
+	fc = 'fishnet_subset'
+
+	# cursor = arcpy.da.SearchCursor(fc, ['OBJECTID'])
+	# for row in cursor:
+	#     print(row[0])
 	    
-	    # print fc_count
-        outname = "tile_" + str(fc_count) +'.tif'
+	layer = "layer_" + str(el)
+	where_clause = "OBJECTID = " + str(el)
 
-		#create Directory
 
-        outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/", r"tiles", outname)
 
-        ras_out.save(outpath)
+
+	# Set local variables
+	in_features = defineGDBpath(['main', 'merged_clu']) + 'clu2008county_1cm_buffer'
+	clip_features = arcpy.MakeFeatureLayer_management(fc,layer, where_clause)
+	# out_feature_class = defineGDBpath(['main', 'yo']) + "stco_"+str(extlist[0])
+	xy_tolerance = ""
+
+	outname = "tile_" + str(el) + ".shp"
+
+	outpath = os.path.join("D:/projects/ksu/v2/", r"tiles", outname)
+
+	# arcpy.Clip_analysis(prg.clu, prg.out_fishnet, outpath)
+
+	# Execute Clip
+	arcpy.Clip_analysis(in_features, clip_features, outpath, xy_tolerance)
+
+
+
+
+
+
+	# filter_combos = {'8w':["EIGHT", "WITHIN"]}
+	# for k, v in filter_combos.iteritems():
+	#     print k,v
+	#     # Execute RegionGroup
+	#     ras_out = RegionGroup(Raster(prg.raster_path), v[0], v[1],"NO_LINK")
+
+	# 	#clear out the extent for next time
+ #        arcpy.ClearEnvironment("extent")
+	    
+	#     # print fc_count
+ #        outname = "tile_" + str(fc_count) +'.tif'
+
+	# 	#create Directory
+
+ #        outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/", r"tiles", outname)
+
+ #        ras_out.save(outpath)
 
 
 
@@ -183,43 +225,55 @@ def mosiacRasters(prg):
 	gen.buildPyramids(prg.gdb_path + nbl_raster)
 
 
+prg = ProcessingObject(
+    #resolution
+    30,
+    #mmu
+    5,
+    #data-range
+    [2008,2016]
+)
 
-def run(series, res, mmu, years, subtype):  
-	#instantiate the class inside run() function
-	prg = ProcessingObject(series, res, mmu, years, subtype)
+
+
+
+
+if __name__ == '__main__':
 
 	# need to create a unique fishnet for each dataset
 	#create_fishnet()
 
-	#####  remove a files in tiles directory
-	tiles = glob.glob(prg.dir_tiles+"*")
-	for tile in tiles:
-		os.remove(tile)
+	#remove a files in tiles directory
+	# tiles = glob.glob(prg.dir_tiles+"*")
+	# for tile in tiles:
+	# 	os.remove(tile)
 
 	#get extents of individual features and add it to a dictionary
-	extDict = {}
-	count = 1 
+	# extDict = {}
+	# count = 1 
 
-	for row in arcpy.da.SearchCursor(prg.out_fishnet, ["SHAPE@"]):
-		extent_curr = row[0].extent
-		ls = []
-		ls.append(extent_curr.XMin)
-		ls.append(extent_curr.YMin)
-		ls.append(extent_curr.XMax)
-		ls.append(extent_curr.YMax)
-		extDict[count] = ls
-		count+=1
-    
+	# for row in arcpy.da.SearchCursor(prg.out_fishnet, ["SHAPE@"]):
+	# 	extent_curr = row[0].extent
+	# 	ls = []
+	# 	ls.append(extent_curr.XMin)
+	# 	ls.append(extent_curr.YMin)
+	# 	ls.append(extent_curr.XMax)
+	# 	ls.append(extent_curr.YMax)
+	# 	extDict[count] = ls
+	# 	count+=1
+
 	# print 'extDict', extDict
 	# print'extDict.items()',  extDict.items()
 
-	######create a process and pass dictionary of extent to execute task
-	pool = Pool(processes=cpu_count())
-	pool.map(execute_task, [(ed, prg) for ed in extDict.items()])
+	extlist = [1,2,3,4]
+
+	#######create a process and pass dictionary of extent to execute task
+	pool = Pool(processes=5)
+	pool.map(clipFCtoFishnet, extlist)
 	pool.close()
 	pool.join
 
-	createMMUmaskTiles()
+	# createMMUmaskTiles()
 
-	mosiacRasters(prg)
+	# mosiacRasters(prg)
     

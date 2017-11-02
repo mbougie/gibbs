@@ -37,12 +37,13 @@ except:
 
 #################### class to create core object  ####################################################
 class ProcessingObject(object):
-    def __init__(self, res, mmu, years, filter):
+    def __init__(self, series, res, mmu, years, filter):
+        self.series = series
         self.res = str(res)
         self.years = years
         self.datarange = str(self.years[0])+'to'+str(self.years[1])
         print 'self.datarange', self.datarange
-        self.traj_name = "traj_cdl"+self.res+"_b_"+self.datarange+"_rfnd"
+        self.traj_name = self.series+"_traj_cdl"+self.res+"_b_"+self.datarange+"_rfnd"
         self.traj_path = defineGDBpath(['pre','trajectories'])+self.traj_name
         self.filter = filter
         self.mmu = mmu
@@ -212,52 +213,28 @@ def addAcresField(tablename, schema):
 
 
 
+def AddNullValuesToRaster():
+    in_conditional_raster = defineGDBpath(['core','mmu'])+'traj_cdl30_b_2008to2016_rfnd_s9_n8h_mtr_8w_msk5'
+    in_true_raster_or_constant = defineGDBpath(['core','mtr'])+'traj_cdl30_b_2008to2016_rfnd_s9_n8h_mtr'
+    
+
+
+    outraster = defineGDBpath(['core','mmu'])+'traj_cdl30_b_2008to2016_rfnd_s9_n8h_mtr_8w_msk5_hybrid'
+
+    cond = "Value = 1"
+
+    OutRas = Con(in_conditional_raster, in_true_raster_or_constant, in_conditional_raster, cond)
+
+    OutRas.save(outraster)
 
 
 
 
 
 
+#### COMMENTS ##########################################
+
+#could the addGDBTable2postgres() function be added to a qaqc script or should it stay in this script??
 
 
-
-
-
-
-
-
-
-################ Instantiate the class to create core object  ########################
-# core = ProcessingObject(
-#       #resolution
-#       30,
-#       #mmu
-#       5,
-#       #data range---i.e. all the cdl years you are referencing 
-#       [2008,2016],
-#       #filter
-#       'n8h'
-#       )
-
-
-
-#############################  Call Functions ######################################
-#------filter gdb--------------
-# majorityFilter()
-
-##------mtr gdb-----------------
-# createMTR()
-
-##------mmu gdb-----------------
-##find way to run parallel_regiongroup here!!!!
-
-
-##########  NEW     ###################################
-# addGDBTable2postgres()
-
-
-
-
-
-
-
+# AddNullValuesToRaster()

@@ -40,9 +40,10 @@ def defineGDBpath(arg_list):
 #################### class to create yxc object  ####################################################
 class ProcessingObject(object):
 
-    def __init__(self, res, years, name, join_operator):
+    def __init__(self, series, version, res, years, name, join_operator, nlcd_years):
 
-
+        self.series = series
+        self.version = version
         self.name = name
         self.res = str(res)
         self.years = years
@@ -52,8 +53,15 @@ class ProcessingObject(object):
         self.conversionyears = range(self.years[0]+2, self.years[1])
         print 'self.conversionyears:', str(self.conversionyears)
         self.traj_dataset = "traj_cdl"+self.res+"_b_"+self.datarange
+        self.traj_rfnd_dataset = self.series+"_traj_cdl"+self.res+"_b_"+self.datarange+'_rfnd'
         self.join_operator = join_operator
         self.traj_dataset_path = defineGDBpath(['pre','trajectories']) + self.traj_dataset
+        self.yxc_dataset = self.series+"_"+self.name+self.res+'_'+self.datarange
+        self.nlcd_years = nlcd_years
+        self.nlcd_ven = 'or'.join(self.nlcd_years)
+        print 'self.nlcd_ven:', self.nlcd_ven
+        self.nlcd_count = len(self.nlcd_years)
+        print 'self.nlcd_count:', self.nlcd_count
 
         # if self.years[1] == 2016:
         #     self.conversionyears = range(self.years[0]+2, self.years[1])
@@ -121,7 +129,47 @@ def createMTR():
         #this is a sub function for createMTR().  references the mtr value in psotgres to create a list containing arbitray trajectory value and associated new mtr value
 
         engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
-        query = 'SELECT * from pre.' + refine.traj_dataset + ' as a JOIN pre.traj_' + refine.datarange + '_lookup as b ON a.traj_array = b.traj_array WHERE '+refine.name+' IS NOT NULL'
+        query = 'SELECT * from pre.' + refine.traj_dataset + ' as a JOIN pre.traj_' + refine.datarange + '_lookup as b ON a.traj_array = b.traj_array'
+        print 'query:', query
+        df = pd.read_sql_query(query, con=engine)
+        print df
+        fulllist=[[0,0,"NODATA"]]
+        for index, row in df.iterrows():
+            templist=[]
+            templist.append(int(row['Value']))
+            templist.append(int(row['mtr']))
+            fulllist.append(templist)
+        print 'fulllist: ', fulllist
+        return fulllist
+
+
+    ## replace the arbitrary values in the trajectories dataset with the mtr values 1-5.
+    reclassArray = createReclassifyList() 
+
+    raster = Raster(defineGDBpath(['pre','trajectories'])+refine.traj_dataset)
+    print 'raster:', raster
+
+    output = defineGDBpath(['refine','mtr'])+refine.series+'_'+refine.traj_dataset+'_mtr'
+    print 'output:', output
+
+    outReclass = Reclassify(raster, "Value", RemapRange(reclassArray), "NODATA")
+    
+    outReclass.save(output)
+
+    gen.buildPyramids(output)
+
+
+
+
+def createYearbinaries():
+        # DESCRIPTION:attach the appropriate cdl value to each year binary dataset
+    print "-----------------  createYearbinaries()  -------------------------------"
+
+    def createReclassifyList():
+        #this is a sub function for createYearbinaries_better().  references the mtr value in psotgres to create a list containing arbitray trajectory value and associated new mtr value
+
+        engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
+        query = 'SELECT * from pre.traj_cdl'+refine.res+"_b_"+refine.datarange + ' as a JOIN pre.traj_' + refine.datarange + '_lookup as b ON a.traj_array = b.traj_array WHERE '+refine.name+' IS NOT NULL'
         print 'query:', query
         df = pd.read_sql_query(query, con=engine)
         print df
@@ -129,36 +177,28 @@ def createMTR():
         for index, row in df.iterrows():
             templist=[]
             value=row['Value'] 
-            mtr=row[refine.name]  
+            yxc=row[refine.name]  
             templist.append(int(value))
-            templist.append(int(mtr))
+            templist.append(int(yxc))
             fulllist.append(templist)
         print 'fulllist: ', fulllist
         return fulllist
 
 
-    ## replace the arbitrary values in the trajectories dataset with the mtr values 1-5.
-    # defineGDBpath(['pre','trajectories'])
+    ## replace the arbitrary values in the trajectories dataset with the yxc values.
+    reclassArray = createReclassifyList()
 
     raster = Raster(defineGDBpath(['pre','trajectories'])+refine.traj_dataset)
     print 'raster:', raster
 
-    # output = defineGDBpath(['refine','mtr'])+refine.traj_dataset+'_mtr'
-    # print 'output:', output
-
-    output = defineGDBpath(['refine','ytc'])+refine.name+refine.res+'_'+refine.datarange
+    output = defineGDBpath(['refine',refine.name])+refine.yxc_dataset
     print 'output: ', output
 
-    reclassArray = createReclassifyList() 
-
-    # outReclass = Reclassify(raster, "Value", RemapRange(reclassArray), "NODATA")
+    outReclass = Reclassify(raster, "Value", RemapRange(reclassArray), "NODATA")
     
-    # outReclass.save(output)
+    outReclass.save(output)
 
-    # gen.buildPyramids(output)
-
-
-
+    gen.buildPyramids(output)
 
 
 
@@ -179,16 +219,15 @@ def attachCDL(subtype):
             cdl_file = defineGDBpath(['ancillary','cdl'])+'cdl'+ refine.res + '_' + str(year)
             return cdl_file
 
-        elif subtype == 'sc':
-            cdl_file = defineGDBpath(['ancillary','cdl'])+'cdl'+ refine.res + '_' + str(year + 1)
-            return cdl_file
+
 
 
 
     # NOTE: Need to copy the yxc_clean dataset and rename it with subtype after it
     arcpy.env.workspace=defineGDBpath(['refine',refine.name])
 
-    inputraster = refine.name+refine.res+'_'+refine.datarange
+    inputraster = defineGDBpath(['refine',refine.name])+refine.yxc_dataset
+
     print "inputraster: ", inputraster
     
     output = inputraster+'_'+subtype
@@ -238,14 +277,14 @@ def createChangeTrajectories():
     def getRasterList():
         orderedlist = []
         for subtype in refine.subtypelist:
-            orderedlist.append(refine.name+refine.res+'_'+refine.datarange+'_'+subtype)
+            orderedlist.append(refine.series+'_'+refine.name+refine.res+'_'+refine.datarange+'_'+subtype)
         print orderedlist
         return orderedlist
 
 
 
     
-    output = defineGDBpath(['refine','trajectories'])+'traj_'+refine.name+refine.res+'_'+refine.datarange
+    output = defineGDBpath(['refine','trajectories'])+refine.series+'_'+'traj_'+refine.name+refine.res+'_'+refine.datarange
     print 'output', output
 
     # ##Execute Combine
@@ -264,23 +303,34 @@ def createMask_nlcdtraj():
     nlcd2001 = Raster(defineGDBpath(['ancillary','nlcd'])+'nlcd'+refine.res+'_2001')
     nlcd2006 = Raster(defineGDBpath(['ancillary','nlcd'])+'nlcd'+refine.res+'_2006')
     nlcd2011 = Raster(defineGDBpath(['ancillary','nlcd'])+'nlcd'+refine.res+'_2011')
-    refinement_mtr = Raster(defineGDBpath(['refine','mtr'])+'traj_cdl'+refine.res+'_b_'+refine.datarange+'_mtr')
-    ytc_clean = Raster(defineGDBpath(['refine','ytc'])+'ytc'+refine.res+'_'+refine.datarange)
+    refinement_mtr = Raster(defineGDBpath(['refine','mtr'])+refine.series+'_traj_cdl'+refine.res+'_b_'+refine.datarange+'_mtr')
+    # ytc_clean = Raster(defineGDBpath(['refine','ytc'])+'ytc'+refine.res+'_'+refine.datarange)
    
 
     # If condition is true set pixel to 23 else set pixel value to NULL
     #NOTE: both of the hardcoded values are ok because uniform accross resolutions and they are constant
     # outCon = Con((nlcd2001 == 82) & (refinement_mtr == 3), getArbitraryCropValue(), Con((nlcd2 == 82) & (refinement_mtr == 3), getArbitraryCropValue()))
     if refine.join_operator == 'or':
-        output = defineGDBpath(['refine','masks'])+'traj_nlcd'+refine.res+'_b_2006or2011_'+refine.name+refine.datarange+'_mask'
-        print 'output:', output
-        outCon = Con((nlcd2006 == 82) & (refinement_mtr == 3) & (ytc_clean < 2012), getArbitraryCropValue(), Con((nlcd2006 == 82) & (refinement_mtr == 3) & (ytc_clean > 2011), getArbitraryCropValue())) 
-        # outCon = Con((nlcd2001 == 82) & (refinement_mtr == 3) & (ytc_clean < 2012), getArbitraryCropValue(), Con((nlcd2006 == 82) & (refinement_mtr == 3), getArbitraryCropValue() , Con((nlcd2006 == 82) & (refinement_mtr == 3) & (ytc_clean > 2011), getArbitraryCropValue()))) 
-        print outCon
+        if refine.nlcd_count == 2:
+            output = defineGDBpath(['refine','masks'])+refine.traj_dataset+'_nlcd'+refine.nlcd_ven
+            print 'output:', output
+            outCon = Con((nlcd2006 == 82) & (refinement_mtr == 3) & (ytc_clean <= 2011), getArbitraryCropValue(), Con((nlcd2006 == 82) & (refinement_mtr == 3) & (ytc_clean > 2011), getArbitraryCropValue())) 
+            print outCon
+        if refine.nlcd_count == 3:
+            output = defineGDBpath(['refine','masks'])+refine.traj_dataset+'_nlcd'+refine.nlcd_ven
+            print output
+            outCon = Con((nlcd2001 == 82) & (refinement_mtr == 3) & (ytc_clean < 2012), getArbitraryCropValue(), Con((nlcd2006 == 82) & (refinement_mtr == 3), getArbitraryCropValue() , Con((nlcd2006 == 82) & (refinement_mtr == 3) & (ytc_clean > 2011), getArbitraryCropValue()))) 
+            print outCon
+    
     elif refine.join_operator == 'and':
         output = defineGDBpath(['refine','masks'])+'traj_nlcd'+refine.res+'_b_'+refine.nlcd_years[0]+'and'+refine.nlcd_years[1]+'_'+refine.name+refine.datarange+'_mask'
         print 'output:', output
         outCon = Con(((nlcd2001 == 82) & (nlcd2 == 82) & (refinement_mtr == 3)), getArbitraryCropValue())
+    
+    elif refine.join_operator == 'none':
+        output = defineGDBpath(['refine','masks'])+refine.traj_dataset+'_nlcd2011'
+        print 'output:', output
+        outCon = Con(((nlcd2011 == 82) & (refinement_mtr == 3)), getArbitraryCropValue())
     
     outCon.save(output)
 
@@ -309,10 +359,10 @@ def getArbitraryCropValue():
 
 
 def createMask_trajytc_dev():
-    traj_ytc = defineGDBpath(['refine','trajectories'])+'traj_'+refine.name+refine.res+'_'+refine.datarange
+    traj_ytc = defineGDBpath(['refine','trajectories'])+refine.version+'_traj_'+refine.name+refine.res+'_'+refine.datarange
 
 
-    output = defineGDBpath(['refine','masks'])+'traj_'+refine.name+refine.res+'_'+refine.datarange+'_mskdev'
+    output = defineGDBpath(['refine','masks'])+refine.series+'_traj_'+refine.name+refine.res+'_'+refine.datarange+'_mskdev'
     print 'output:', output
 
     reclassArray = createReclassifyList() 
@@ -325,89 +375,6 @@ def createMask_trajytc_dev():
 
 
 
-def createReclassifyList_initial():
-    #Note: this is a aux function that the reclassifyRaster() function references
-    cur = conn.cursor()
-   
-    query = (
-    "SELECT DISTINCT \"Value\" "
-    "FROM refinement.traj_"+refine.name+refine.res+"_"+refine.datarange+" "
-    "WHERE 122 = traj_array[1] "
-    "OR 123 = traj_array[1] "
-    "OR 124 = traj_array[1] "
-    "OR 61 = traj_array[2] "
-    "OR '{37,36,36}' = traj_array "
-    "OR '{152,36,36}' = traj_array "
-    "OR '{176,36,36}' = traj_array"
-    )
-
-    # query = (
-    # "SELECT DISTINCT \"Value\" "
-    # "FROM refinement.traj_"+refine.name+refine.res+"_"+refine.datarange+" "
-    # "WHERE 61 = traj_array[2] "
-    # )
-
-    print query
-
-    cur.execute(query)
-    #create empty list
-    fulllist=[[0,0,"NODATA"]]
-
-    # fetch all rows from table
-    rows = cur.fetchall()
-    print 'number of records in lookup table', len(rows)
-    
-    # interate through rows tuple to format the values into an array that is is then appended to the reclassifylist
-    for row in rows:
-        templist=[]
-        templist.append(row[0])
-        templist.append(refine.traj_change)
-        fulllist.append(templist)
-    print fulllist
-    return fulllist
-
-def createReclassifyList_mod():
-    #Note: this is a aux function that the reclassifyRaster() function references
-    cur = conn.cursor()
-   
-    # query = (
-    # "SELECT DISTINCT \"Value\" "
-    # "FROM refinement.traj_"+refine.name+refine.res+"_"+refine.datarange+" "
-    # "WHERE 122 = traj_array[1] "
-    # "OR 123 = traj_array[1] "
-    # "OR 124 = traj_array[1] "
-    # "OR 61 = traj_array[2] "
-    # "OR '{37,36,36}' = traj_array "
-    # "OR '{152,36,36}' = traj_array "
-    # "OR '{176,36,36}' = traj_array"
-    # )
-
-    query = (
-    "SELECT DISTINCT \"Value\" "
-    "FROM refinement.traj_"+refine.name+refine.res+"_"+refine.datarange+" "
-    "WHERE 61 = traj_array[2] "
-    )
-
-    print query
-
-    cur.execute(query)
-    #create empty list
-    fulllist=[[0,0,"NODATA"]]
-
-    # fetch all rows from table
-    rows = cur.fetchall()
-    return rows
-    print 'number of records in lookup table', len(rows)
-    
-    # interate through rows tuple to format the values into an array that is is then appended to the reclassifylist
-    # for row in rows:
-    #     templist=[]
-    #     templist.append(row[0])
-    #     templist.append(refine.traj_change)
-    #     fulllist.append(templist)
-    # print fulllist
-    # return fulllist
-
 
 def createReclassifyList():
     #Note: this is a aux function that the reclassifyRaster() function references
@@ -415,17 +382,13 @@ def createReclassifyList():
    
     query = (
     "SELECT DISTINCT \"Value\" "
-    "FROM refinement.traj_"+refine.name+refine.res+"_"+refine.datarange+" "
-    "WHERE 122 = traj_array[1] "
+    "FROM refinement."+refine.version+"_traj_"+refine.name+refine.res+"_"+refine.datarange+" "
+    "WHERE 121 = traj_array[1] "
+    "OR 122 = traj_array[1] "
     "OR 123 = traj_array[1] "
     "OR 124 = traj_array[1] "
     )
 
-    # query = (
-    # "SELECT DISTINCT \"Value\" "
-    # "FROM refinement.traj_"+refine.name+refine.res+"_"+refine.datarange+" "
-    # "WHERE 61 = traj_array[2] "
-    # )
 
     print query
 
@@ -445,6 +408,91 @@ def createReclassifyList():
         fulllist.append(templist)
     print fulllist
     return fulllist
+
+# def createReclassifyList_initial():
+#     #Note: this is a aux function that the reclassifyRaster() function references
+#     cur = conn.cursor()
+   
+#     query = (
+#     "SELECT DISTINCT \"Value\" "
+#     "FROM refinement.traj_"+refine.name+refine.res+"_"+refine.datarange+" "
+#     "WHERE 122 = traj_array[1] "
+#     "OR 123 = traj_array[1] "
+#     "OR 124 = traj_array[1] "
+#     "OR 61 = traj_array[2] "
+#     "OR '{37,36,36}' = traj_array "
+#     "OR '{152,36,36}' = traj_array "
+#     "OR '{176,36,36}' = traj_array"
+#     )
+
+#     # query = (
+#     # "SELECT DISTINCT \"Value\" "
+#     # "FROM refinement.traj_"+refine.name+refine.res+"_"+refine.datarange+" "
+#     # "WHERE 61 = traj_array[2] "
+#     # )
+
+#     print query
+
+#     cur.execute(query)
+#     #create empty list
+#     fulllist=[[0,0,"NODATA"]]
+
+#     # fetch all rows from table
+#     rows = cur.fetchall()
+#     print 'number of records in lookup table', len(rows)
+    
+#     # interate through rows tuple to format the values into an array that is is then appended to the reclassifylist
+#     for row in rows:
+#         templist=[]
+#         templist.append(row[0])
+#         templist.append(refine.traj_change)
+#         fulllist.append(templist)
+#     print fulllist
+#     return fulllist
+
+# def createReclassifyList_mod():
+#     #Note: this is a aux function that the reclassifyRaster() function references
+#     cur = conn.cursor()
+   
+#     # query = (
+#     # "SELECT DISTINCT \"Value\" "
+#     # "FROM refinement.traj_"+refine.name+refine.res+"_"+refine.datarange+" "
+#     # "WHERE 122 = traj_array[1] "
+#     # "OR 123 = traj_array[1] "
+#     # "OR 124 = traj_array[1] "
+#     # "OR 61 = traj_array[2] "
+#     # "OR '{37,36,36}' = traj_array "
+#     # "OR '{152,36,36}' = traj_array "
+#     # "OR '{176,36,36}' = traj_array"
+#     # )
+
+#     query = (
+#     "SELECT DISTINCT \"Value\" "
+#     "FROM refinement.traj_"+refine.name+refine.res+"_"+refine.datarange+" "
+#     "WHERE 61 = traj_array[2] "
+#     )
+
+#     print query
+
+#     cur.execute(query)
+#     #create empty list
+#     fulllist=[[0,0,"NODATA"]]
+
+#     # fetch all rows from table
+#     rows = cur.fetchall()
+#     return rows
+#     print 'number of records in lookup table', len(rows)
+    
+#     # interate through rows tuple to format the values into an array that is is then appended to the reclassifylist
+#     # for row in rows:
+#     #     templist=[]
+#     #     templist.append(row[0])
+#     #     templist.append(refine.traj_change)
+#     #     fulllist.append(templist)
+#     # print fulllist
+#     # return fulllist
+
+
 
  
 
@@ -471,8 +519,8 @@ def addGDBTable2postgres():
 
     # set the engine.....
     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
-    
-    tablename = "traj_"+refine.name+refine.res+"_"+refine.datarange
+
+    tablename = refine.series+"_traj_"+refine.name+refine.res+"_"+refine.datarange
     # path to the table you want to import into postgres
     input = defineGDBpath(['refine', 'trajectories'])+tablename
 
@@ -502,23 +550,25 @@ def createRefinedTrajectory():
     ##### Set environment settings
     arcpy.env.workspace = defineGDBpath(['refine','masks'])
 
-    ##### loop through each of the cdl rasters besure nlcd is last 
-    condlist = ['36and61', 'dev', 'nlcd2006or2011']
+    ##### loop through each of the cdl rasters and make sure nlcd is last 
+    condlist = ['36and61', 'dev', 'nlcd'+refine.nlcd_ven]
 
     ##### create a raster list to mosiac together make sure that the intial traj is first in list and nlcd mask is last in the list.
     filelist = [refine.traj_dataset_path]
 
     for cond in condlist:
 
-        for raster in arcpy.ListDatasets(refine.traj_dataset+'_'+cond, "Raster"): 
+        for raster in arcpy.ListDatasets('*'+refine.datarange+'*_'+cond, "Raster"): 
 
             print 'raster: ',raster
 
             filelist.append(raster)
 
     print filelist
+    print 'lenght of list:', len(filelist)
 
-    output = 'traj_cdl'+refine.res+'_b_'+refine.datarange+'_rfnd_t2'
+    output = refine.traj_rfnd_dataset
+    print output
 
     ##### mosaicRasters():
     arcpy.MosaicToNewRaster_management(filelist, defineGDBpath(['pre','trajectories']), output, Raster(refine.traj_dataset_path).spatialReference, '16_BIT_UNSIGNED', refine.res, "1", "LAST","FIRST")
@@ -527,6 +577,10 @@ def createRefinedTrajectory():
 
 ################ Instantiate the class to create yxc object  ########################
 refine = ProcessingObject(
+      #series
+      's11',
+      #moving Window version
+      'v2',
       #resolution
       30,
       #data range---i.e. all the cdl years you are referencing 
@@ -534,7 +588,9 @@ refine = ProcessingObject(
       #name
       'ytc',
       #join_operator
-      'or'
+      'or',
+      #nlcd datasets to use in mask
+      ['2001','2006','2011']
       )
 
 
@@ -543,7 +599,7 @@ refine = ProcessingObject(
    
 ###  create the mtr directly from the trajectories without filtering  ###################----NOTE NEED TO DO THIS TWICE NOW!!!
 # createMTR()
-
+# createYearbinaries()
 
 ### attach the cld values to the years binaries  #######################
 for subtype in refine.subtypelist:
@@ -565,9 +621,9 @@ for subtype in refine.subtypelist:
 ###----hard coded still. Also has questionable inner method!
 # createMask_nlcdtraj()
 
-###----?????  ---ok but has questionable inner method!
 # createMask_trajytc_dev()
 
+###----?????  ---ok but has questionable inner method!
 ####call parallel_false script
 
 
@@ -582,7 +638,16 @@ createRefinedTrajectory()
 
 
 
-
+# SELECT 
+#   s9_ytc30_2008to2016_mmu5_msk_nbl.index, 
+#   s9_ytc30_2008to2016_mmu5_msk_nbl.objectid, 
+#   count,
+#   '"' || cast(s9_ytc30_2008to2016_mmu5_msk_nbl.value as text) || '"' as years, 
+#   round((cast(s9_ytc30_2008to2016_mmu5_msk_nbl.acres as numeric)/1000000),3) as acres_mil,
+#   round(cast(count/(select sum(count) from counts.s9_ytc30_2008to2016_mmu5_msk_nbl as sub where value > 2012)   as numeric),3) as percent
+# FROM 
+#   counts.s9_ytc30_2008to2016_mmu5_msk_nbl
+# where value > 2012
 
 
 
