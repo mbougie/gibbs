@@ -44,7 +44,7 @@ class ProcessingObject(object):
         self.datarange = str(self.years[0])+'to'+str(self.years[1])
         print 'self.datarange', self.datarange
         self.traj_name = self.series+"_traj_cdl"+self.res+"_b_"+self.datarange+"_rfnd"
-        self.traj_path = defineGDBpath(['pre','trajectories'])+self.traj_name
+        self.traj_path = defineGDBpath(['pre','traj_refined'])+self.traj_name
         self.filter = filter
         self.mmu = mmu
 

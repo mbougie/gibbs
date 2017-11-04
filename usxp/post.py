@@ -142,7 +142,7 @@ def createYearbinaries():
 
 
     ## replace the arbitrary values in the trajectories dataset with the yxc values.
-    raster = Raster(defineGDBpath(['pre','trajectories'])+post.traj_dataset)
+    raster = Raster(defineGDBpath(['pre','traj_refined'])+post.traj_dataset)
     print 'raster:', raster
 
     output = defineGDBpath(['post',post.name])+post.yxc_dataset

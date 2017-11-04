@@ -4,6 +4,7 @@
 	"mmu":5,
 	"years":[2008,2016],
 	"pre_arg": {},
+	"pp_36and61mask_arg": {"name":"ytc"},
 	"core_arg": {"filter":"n8h"},
 	"pp_rg_arg": {"name":"mtr"},
 	"pp_nbl_mtr_arg": {

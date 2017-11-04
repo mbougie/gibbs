@@ -1,0 +1,10 @@
+SELECT 
+  s9_ytc30_2008to2016_mmu5_msk_nbl.index, 
+  s9_ytc30_2008to2016_mmu5_msk_nbl.objectid, 
+  count,
+  '"' || cast(s9_ytc30_2008to2016_mmu5_msk_nbl.value as text) || '"' as years, 
+  acres,
+  round(cast(acres/(select sum(acres) from counts.s9_ytc30_2008to2016_mmu5_msk_nbl as sub where value > 2012)	as numeric),3) as percent
+FROM 
+  counts.s9_ytc30_2008to2016_mmu5_msk_nbl
+where value > 2012

@@ -183,9 +183,51 @@ def mask():
     gen.buildPyramids(output)
 
 
+def tryit():
+    mxd = arcpy.mapping.MapDocument("C:\\Users\\Bougie\\Desktop\\Gibbs\\documents\\temp\\try2.mxd")
+    # lyr_ref = arcpy.mapping.ListLayers(mxd, "cdl30_2012")[0]
+    lyr = arcpy.mapping.ListLayers(mxd, "tile_mtr")[0]
+
+    # arcpy.SelectLayerByAttribute_management(lyr_ref, "NEW_SELECTION")
+    classList = [22,12,23,61,87]
+    # rows = arcpy.da.SearchCursor(lyr_ref, ["Class_Names"])
+    # for row in rows:
+    #     classList.append(row[0])
+    # print lyr.symbologyType == "UNIQUE_VALUES"
+    # if lyr.symbologyType == "UNIQUE_VALUES":
+    #     print 'hi'
+    lyr.symbology.classLabels = classList
+        # lyr.symbology.showOtherValues = False
+        # lyr.symbology.addAllValues()
+    
+    arcpy.RefreshActiveView()
+    arcpy.RefreshTOC()
+    del mxd
+
+
+
+
+
+# import arcpy
+# mxd = arcpy.mapping.MapDocument("current")
+# lyr = arcpy.mapping.ListLayers(mxd, "Population")[0]
+# arcpy.SelectLayerByAttribute_management(lyr, "NEW_SELECTION", "\"POP2000\" > 20000000")
+# stateList = []
+# rows = arcpy.da.SearchCursor(lyr, ["STATE_NAME"])
+# for row in rows:
+#   stateList.append(row[0])
+
+# if lyr.symbologyType == "UNIQUE_VALUES":
+#   lyr.symbology.classValues = stateList
+#   lyr.symbology.showOtherValues = False
+
+# arcpy.RefreshActiveView()
+# arcpy.RefreshTOC()
+# del mxd
+
 
 #####call functions
-print (sys.version)
+# print (sys.version)
 
 # mask()
 # transposeTableyo(['ancillary','temp'],'hex_hist')
@@ -193,3 +235,10 @@ print (sys.version)
 # getcolumns()
 
 # clipByMMUmask()
+
+tryit()
+
+
+
+
+

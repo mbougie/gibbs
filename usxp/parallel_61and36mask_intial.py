@@ -65,19 +65,24 @@ driver = inDs.GetDriver()
 #######  define raster and mask  ####################
 class NibbleObject:
 
-    def __init__(self, series, mmu, res, years, subtype):
+    def __init__(self, series, res, mmu, years, name):
 		self.series = series
-		self.res = res
+		self.res = str(res)
 		self.mmu = mmu
 		self.years = years
-		self.subtype = subtype
+		self.name = name
 		self.datarange = str(self.years[0])+'to'+str(self.years[1])
-		self.gdb_path = defineGDBpath(['refine','ytc'])
-		self.inYTC = Raster(defineGDBpath(['refine','ytc'])+self.series+'_ytc30_'+self.datarange)
+		# self.gdb_path = defineGDBpath(['refine','ytc'])
+		
+		self.inYTC_name = 'ytc'+self.res+'_'+self.datarange
+		self.inYTC = Raster(defineGDBpath(['refine','ytc'])+self.inYTC_name)
+
+		self.inTraj_name = 'traj_'+ self.inYTC_name
+		self.inTraj = Raster(defineGDBpath(['refine','trajectories'])+self.inTraj_name)
+
 		self.inComp = Raster(defineGDBpath(['ancillary','temp'])+'composite')
-		self.inTraj = Raster(defineGDBpath(['refine','trajectories'])+self.series+'_traj_ytc30_'+self.datarange)
-		self.inTraj_name = self.series+'_traj_ytc30_'+self.datarange
-		self.out_fishnet = defineGDBpath(['ancillary', 'shapefiles']) + 'fishnet_' + self.subtype
+	
+		self.out_fishnet = defineGDBpath(['ancillary', 'shapefiles']) + 'fishnet_' + self.name
 		self.pixel_type = "8_BIT_UNSIGNED"
 		self.dir_tiles = 'C:/Users/Bougie/Desktop/Gibbs/tiles/'
 
@@ -400,13 +405,14 @@ def mosiacRasters():
 
 
 def createReclassifyList_mod():
+
     #Note: this is a aux function that the reclassifyRaster() function references
     cur = conn.cursor()
 
 
     query = (
     "SELECT DISTINCT \"Value\" "
-    "FROM refinement."+nibble.series+"_traj_"+nibble.subtype+nibble.res+"_"+nibble.datarange+" "
+    "FROM refinement."+nibble.inTraj_name+" "
     "WHERE 61 = traj_array[2] "
     "OR '{37,36}' = traj_array "
     "OR '{152,36}' = traj_array "
@@ -429,12 +435,12 @@ def createReclassifyList_mod():
 ### Define conversion object ######
 nibble = NibbleObject(
 	  's10',
+	   #resolution
+	  '30',
 	  #mmu
 	  '5',
-	  #resolution
-	  '30',
 	  #data-range
-	  [2010,2016],
+	  [2008,2016],
 	  #subtype
 	  'ytc'
       )
@@ -447,9 +453,9 @@ if __name__ == '__main__':
 
 	# need to create a unique fishnet for each dataset
 	##create_fishnet()
-	# tiles = glob.glob(nibble.dir_tiles+"*")
-	# for tile in tiles:
-	# 	os.remove(tile)
+	tiles = glob.glob(nibble.dir_tiles+"*")
+	for tile in tiles:
+		os.remove(tile)
 
 	#get extents of individual features and add it to a dictionary
 	extDict = {}
@@ -469,14 +475,9 @@ if __name__ == '__main__':
 	print'extDict.items',  extDict.items()
 
 	#######create a process and pass dictionary of extent to execute task
-	# pool = Pool(processes=5)
-	# pool.map(execute_task_new, extDict.items())
-	# pool.close()
-	# pool.join
+	pool = Pool(processes=5)
+	pool.map(execute_task_new, extDict.items())
+	pool.close()
+	pool.join
 
-	mosiacRasters()
-
-
-
-    
-   
+	# mosiacRasters()

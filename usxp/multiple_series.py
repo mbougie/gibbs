@@ -7,8 +7,7 @@ import os
 from config import from_config
 
 import pre
-# import refinement
-# import parallel_false as pf
+import parallel_61and36mask as pp_36and61mask
 import core
 import parallel_regiongroup as prg
 import parallel_nibble as nibble
@@ -19,7 +18,7 @@ import post
 
 
 
-def run_series(series,res,mmu,years,pre_arg, core_arg, pp_rg_arg, pp_nbl_mtr_arg, post_arg, pp_nbl_ytc_arg):
+def run_series(series,res,mmu,years,pre_arg, pp_36and61mask_arg, core_arg, pp_rg_arg, pp_nbl_mtr_arg, post_arg, pp_nbl_ytc_arg):
 	
 
 	####  CREATE INSTANCES  ##################################################################
@@ -27,32 +26,30 @@ def run_series(series,res,mmu,years,pre_arg, core_arg, pp_rg_arg, pp_nbl_mtr_arg
 	core.core = core.ProcessingObject(series,res,mmu,years,core_arg['filter'])
 	post.post = post.ProcessingObject(series,res,mmu,years,post_arg['name'],post_arg['subname'])
 
-  
 
 
 
 
 
-    ###  CALL METHODS FOR EACH PROCESSING STAGE #############################################
 
-    #----------  perform pre processing  -------------------------------------------------
+	###  CALL METHODS FOR EACH PROCESSING STAGE #############################################
+
+	#----------  perform pre processing  -------------------------------------------------
 	# pre.createTrajectories()
 	# pre.addGDBTable2postgres()
 	# pre.FindRedundantTrajectories()
 
-    
-
-    #----------  perform refinement processing  ------------------------------------------
 
 
-
+	#----------  perform refinement processing  ------------------------------------------
+	# pp_36and61mask.run(series, res, mmu, years, 'ytc')
 
 	#----------  perform core processing  ------------------------------------------------
-	core.majorityFilter()
-	core.createMTR() 
-	prg.run(series, res, mmu, years, pp_rg_arg['name'])
-	nibble.run(series, res, mmu, years, pp_nbl_mtr_arg['subname'], pp_nbl_mtr_arg['pixel_type'])
-	
+	# core.majorityFilter()
+	# core.createMTR() 
+	# prg.run(series, res, mmu, years, pp_rg_arg['name'])
+	# nibble.run(series, res, mmu, years, pp_nbl_mtr_arg['subname'], pp_nbl_mtr_arg['pixel_type'])
+
 
 
 	#---------- perform post processing  -------------------------------------------------
