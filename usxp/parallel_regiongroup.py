@@ -145,7 +145,7 @@ def createMMUmaskTiles_test(prg):
 
 
 
-def createMMUmaskTiles():
+def createMMUmaskTiles(prg):
     root_in = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\tiles\\'
     rasterlist = glob.glob(root_in+"*.tif")
     print rasterlist
@@ -157,7 +157,7 @@ def createMMUmaskTiles():
         print output
 
         # for count in masks_list:
-        cond = "Count < " + str(gen.getPixelCount('30', 5))
+        cond = "Count < " + str(gen.getPixelCount(prg.res, prg.mmu))
         print 'cond: ',cond
 
         outSetNull = SetNull(raster, 1, cond)
@@ -171,7 +171,7 @@ def mosiacRasters(prg):
 	tilelist = glob.glob(root_in+"*mask.tif")
 	print tilelist  
 	######mosiac tiles together into a new raster
-	nbl_raster = prg.raster + '_8w_msk5'
+	nbl_raster = prg.raster + '_8w_msk'+str(prg.mmu)
 	print 'nbl_raster: ', nbl_raster
 
 	arcpy.MosaicToNewRaster_management(tilelist, prg.gdb_path, nbl_raster, Raster(prg.raster_path).spatialReference, prg.pixel_type, prg.res, "1", "LAST","FIRST")
@@ -192,9 +192,9 @@ def run(series, res, mmu, years, subtype):
 	#create_fishnet()
 
 	#####  remove a files in tiles directory
-	tiles = glob.glob(prg.dir_tiles+"*")
-	for tile in tiles:
-		os.remove(tile)
+	# tiles = glob.glob(prg.dir_tiles+"*")
+	# for tile in tiles:
+	# 	os.remove(tile)
 
 	#get extents of individual features and add it to a dictionary
 	extDict = {}
@@ -214,12 +214,12 @@ def run(series, res, mmu, years, subtype):
 	# print'extDict.items()',  extDict.items()
 
 	######create a process and pass dictionary of extent to execute task
-	pool = Pool(processes=cpu_count())
-	pool.map(execute_task, [(ed, prg) for ed in extDict.items()])
-	pool.close()
-	pool.join
+	# pool = Pool(processes=cpu_count())
+	# pool.map(execute_task, [(ed, prg) for ed in extDict.items()])
+	# pool.close()
+	# pool.join
 
-	createMMUmaskTiles()
+	createMMUmaskTiles(prg)
 
 	mosiacRasters(prg)
     

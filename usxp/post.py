@@ -233,10 +233,10 @@ def addGDBTable2postgres():
     # set the engine.....
     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
 
-    arcpy.env.workspace = defineGDBpath(['post','yfc'])
+    arcpy.env.workspace = defineGDBpath(['post','ytc'])
     
     # wc = '*'+core.res+'*'+core.datarange+'*'+core.filter+'*_msk5_nbl'
-    wc = 's9_yfc30_2008to2016_mmu5_msk_nbl'
+    wc = 's9_ytc30_2008to2016_mmu5_nbl_fc_nbl'
     print wc
 
 
@@ -287,29 +287,89 @@ def addAcresField(tablename, schema):
 
 
 
+def createSpecificLUCMask():
+    # Description: reclass cdl rasters based on the specific arc_reclassify_table 
+
+        #     self.series = series
+        # self.name = name
+        # self.subname = subname
+        # self.res = str(res)
+        # self.mmu = str(mmu)
+        # self.years = years
+
+    # Set environment settings
+    arcpy.env.workspace = defineGDBpath(['post', post.name])
+    
+    cond =  post.series+'_'+post.name+post.res+'_'+post.datarange+'_mmu'+post.mmu+'_nbl_'+post.subname
+    print 'cond:', cond
+    # print cond
+    # #loop through each of the cdl rasters
+    for raster in arcpy.ListDatasets(cond, "Raster"): 
+        
+        print 'raster: ',raster
+
+        outraster = raster+'_msk'
+        print 'outraster: ', outraster
+       
+        myRemapVal = RemapValue(getReclassifyValuesString())
+
+        outReclassRV = Reclassify(raster, "VALUE", myRemapVal, "")
+
+        # Save the output 
+        outReclassRV.save(outraster)
+
+        #create pyraminds
+        gen.buildPyramids(outraster)
+
+
+
+def getReclassifyValuesString():
+    #Note: this is a aux function that the reclassifyRaster() function references
+     
+    cur = conn.cursor() 
+    
+    # NOTE BFC AND FNC ARE GETTING RID OF 1's!!!!
+    def getbValue():
+        if post.subname == 'bfc' or post.subname == 'fnc':
+            return "'1'"
+        else:
+            return "'0'"
+
+    query = "SELECT value::text,b FROM misc.lookup_cdl WHERE b = "+getbValue()+" ORDER BY value"
+    print 'query----', query
+    #DDL: add column to hold arrays
+    cur.execute(query);
+    
+    #create empty list
+    reclassifylist=[]
+
+    # fetch all rows from table
+    rows = cur.fetchall()
+    
+    # interate through rows tuple to format the values into an array that is is then appended to the reclassifylist
+    for row in rows:
+        ww = [int(row[0]),'NODATA']
+        reclassifylist.append(ww)
+    
+    print reclassifylist
+    return reclassifylist
+
+
 
 ################ Instantiate the class to create yxc object  ########################
-# post = ConversionObject(
-#       'ytc',
-#       'fc',
-#       '30',
-#       '5',
-#       ## these are the conversion years 
-#       [2008,2016]
-#       )
-
-# post = ProcessingObject(
-#       #resolution
-#       30,
-#       #mmu
-#       5,
-#       #data range---i.e. all the cdl years you are referencing 
-#       [2008,2016],
-#       #name
-#       'ytc',
-#       #subname
-#       'fc'
-#       )
+post = ProcessingObject(
+      "s9",
+      #resolution
+      30,
+      #mmu
+      5,
+      #data range---i.e. all the cdl years you are referencing 
+      [2008,2016],
+      #name
+      'yfc',
+      #subname
+      'fnc'
+      )
 
 ################ call functions  #####################################################
 # createYearbinaries_better()
@@ -324,6 +384,10 @@ def addAcresField(tablename, schema):
 # createYearbinaries()
 # removeArbitraryValuesFromYearbinaries()
 # attachCDL(['post',post.name])
+
+
+# addGDBTable2postgres()
+# createSpecificLUCMask()
 
 
 

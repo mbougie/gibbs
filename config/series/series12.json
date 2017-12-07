@@ -1,7 +1,7 @@
 {    
-	"series":"s9",
+	"series":"s12",
 	"res":30,
-	"mmu":5,
+	"mmu":15,
 	"years":[2008,2016],
 
 
@@ -30,8 +30,7 @@
         "subname":"fc"
 	},
 	"pp_nbl_ytc_arg": {
-		"name":"yfc",
-		"subname":"fnc",
+		"subname":"ytc",
 		"pixel_type":"16_BIT_UNSIGNED"
 	},
 	"pp_cdl_arg": {"name":"ytc"}

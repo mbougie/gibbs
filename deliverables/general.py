@@ -732,28 +732,3 @@ def deleteFiles():
     filelist = glob.glob("*")
     for f in filelist:
         os.remove(f)
-
-
-
-
-def getStatesField(field):
-    fc = defineGDBpath(['ancillary','shapefiles'])+'states'
-    
-    cursor = arcpy.SearchCursor(fc)
-    states = []
-    for row in cursor:
-        state = row.getValue(field)
-        states.append(state)
-    return states
-
-
-
-def getWorkSpaces(rootdir):
-    # arcpy.env.workspace = defineGDBpath(gdb_path)
-    arcpy.env.workspace = rootpath+rootdir
-
-    # List all file geodatabases in the current workspace
-    workspaces = arcpy.ListWorkspaces("*", "FileGDB")
-     
-    return workspaces
-

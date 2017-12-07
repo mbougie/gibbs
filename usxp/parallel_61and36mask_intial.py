@@ -434,11 +434,11 @@ def createReclassifyList_mod():
 
 ### Define conversion object ######
 nibble = NibbleObject(
-	  's10',
+	  's12',
 	   #resolution
 	  '30',
 	  #mmu
-	  '5',
+	  '15',
 	  #data-range
 	  [2008,2016],
 	  #subtype
@@ -480,4 +480,4 @@ if __name__ == '__main__':
 	pool.close()
 	pool.join
 
-	# mosiacRasters()
+	mosiacRasters()

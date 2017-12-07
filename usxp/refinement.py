@@ -42,13 +42,14 @@ def defineGDBpath(arg_list):
  
 class ProcessingObject(object):
 
-    def __init__(self, series, res, years, name, join_operator, nlcd_years):
+    def __init__(self, series, res, years, name, join_operator, mask_dev, nlcd_years):
 
         self.series = series
         self.res = str(res)
         self.years = years
         self.name = name
         self.join_operator = join_operator
+        self.mask_dev = mask_dev
         self.nlcd_years = nlcd_years
 
         ##### years objects
@@ -63,7 +64,9 @@ class ProcessingObject(object):
         self.traj_rfnd_dataset = self.series+"_traj_cdl"+self.res+"_b_"+self.datarange+'_rfnd'
         
         self.traj_dataset_path = defineGDBpath(['pre','trajectories']) + self.traj_dataset
-        self.yxc_dataset = self.name+self.res+'_'+self.datarange
+        # self.yxc_dataset = self.name+self.res+'_'+self.datarange
+
+        self.yxc_dataset = "s9_"+self.name+self.res+'_'+self.datarange+"_mmu5_nbl"
 
         #### nlcd datasets 
         self.nlcd_ven = 'or'.join(self.nlcd_years)
@@ -74,14 +77,16 @@ class ProcessingObject(object):
         def getYXCAttributes():
             if self.name == 'ytc':
                 self.mtr = '3'
-                self.subtypelist = ['bfc','fc']
+                # self.subtypelist = ['bfc','fc']
+                self.subtypelist = ['fc']
                 print 'yo', self.subtypelist
                 self.traj_change = 1
 
         
             elif self.name == 'yfc':
                 self.mtr = '4'
-                self.subtypelist = ['bfnc','fnc']
+                # self.subtypelist = ['bfnc','fnc']
+                self.subtypelist = ['fnc']
                 print 'yo', self.subtypelist
 
 
@@ -208,9 +213,9 @@ def attachCDL(subtype):
 
 
     # NOTE: Need to copy the yxc_clean dataset and rename it with subtype after it
-    arcpy.env.workspace=defineGDBpath(['refine',refine.name])
+    arcpy.env.workspace=defineGDBpath(['post',refine.name])
 
-    inputraster = defineGDBpath(['refine',refine.name])+refine.yxc_dataset
+    inputraster = defineGDBpath(['post',refine.name])+refine.yxc_dataset
 
     print "inputraster: ", inputraster
     
@@ -220,7 +225,7 @@ def attachCDL(subtype):
     ##copy binary years raster so it can be modified iteritively
     arcpy.CopyRaster_management(inputraster, output)
 
-    #note:checkout out spatial extension after creating a copy or issues
+    #note:checkout out spatial extension AFTER creating a copy or issues
     arcpy.CheckOutExtension("Spatial")
  
     wc = '*'+refine.res+'*'+subtype
@@ -287,7 +292,7 @@ def createMask_nlcd():
     nlcd2001 = Raster(defineGDBpath(['ancillary','nlcd'])+'nlcd'+refine.res+'_2001')
     nlcd2006 = Raster(defineGDBpath(['ancillary','nlcd'])+'nlcd'+refine.res+'_2006')
     nlcd2011 = Raster(defineGDBpath(['ancillary','nlcd'])+'nlcd'+refine.res+'_2011')
-    refinement_mtr = Raster(defineGDBpath(['refine','mtr'])+refine.series+'_traj_cdl'+refine.res+'_b_'+refine.datarange+'_mtr')
+    refinement_mtr = Raster(defineGDBpath(['refine','mtr'])+'traj_cdl'+refine.res+'_b_'+refine.datarange+'_mtr')
    
     if refine.join_operator == 'or':
         if refine.nlcd_count == 2:
@@ -342,7 +347,7 @@ def createMask_dev():
     print 'traj_ytc:', traj_ytc
 
 
-    output = defineGDBpath(['refine','masks'])+refine.traj_dataset+'_dev'
+    output = defineGDBpath(['refine','masks'])+refine.traj_dataset+'_dev122or123or124'
     print 'output:', output
 
     reclassArray = createReclassifyList() 
@@ -363,8 +368,7 @@ def createReclassifyList():
     query = (
     "SELECT DISTINCT \"Value\" "
     "FROM refinement.traj_"+refine.name+refine.res+"_"+refine.datarange+" "
-    "WHERE 121 = traj_array[1] "
-    "OR 122 = traj_array[1] "
+    "WHERE 122 = traj_array[1] "
     "OR 123 = traj_array[1] "
     "OR 124 = traj_array[1] "
     )
@@ -447,7 +451,7 @@ def createRefinedTrajectory():
     arcpy.env.workspace = defineGDBpath(['refine','masks'])
 
     ##### loop through each of the cdl rasters and make sure nlcd is last 
-    condlist = ['36and61', 'dev', 'nlcd'+refine.nlcd_ven]
+    condlist = ['36and61', refine.mask_dev, 'nlcd'+refine.nlcd_ven]
 
     ##### create a raster list to mosiac together make sure that the intial traj is first in list and nlcd mask is last in the list.
     filelist = [refine.traj_dataset_path]
@@ -474,15 +478,17 @@ def createRefinedTrajectory():
 ################ Instantiate the class to create yxc object  ########################
 refine = ProcessingObject(
       #series
-      's9',
+      's12',
       #resolution
       30,
       #data range---i.e. all the cdl years you are referencing 
       [2008,2016],
       #name
-      'yfc',
+      'ytc',
       #join_operator
       'or',
+      #devmask
+      'dev122to124',
       #nlcd datasets to use in mask
       ['2001','2006','2011']
       )

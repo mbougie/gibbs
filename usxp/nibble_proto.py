@@ -74,7 +74,8 @@ def getww(my_array):
 	# first create an indices list
 	indexlist = np.where(my_array == 255)
 	print indexlist
-	ww=np.column_stack((indexlist[0],indexlist[1]))
+	ww_entire=np.column_stack((indexlist[0],indexlist[1]))
+	ww = ww_entire[:10000]
 	print ww
 	return ww
 
@@ -84,36 +85,58 @@ def attachValue(ww):
 		# print x[0]
 		# print x[1]
 		if x[0] > 0 and x[0] < 13788 and x[1] < 21972:
-			w_arg = [x[0]-1,x[1]]
-			e_arg = [x[0]+1,x[1]]
 			n_arg = [x[0],x[1]+1]
+			ne_arg = [x[0]+1,x[1]+1]
+			e_arg = [x[0]+1,x[1]]
+			se_arg = [x[0]+1,x[1]-1]
 			s_arg = [x[0],x[1]-1]
+			sw_arg = [x[0]-1,x[1]-1]
+			w_arg = [x[0]-1,x[1]]
+			nw_arg = [x[0]-1,x[1]+1]
 
-			w = my_array[w_arg[0],w_arg[1]]
-			e = my_array[e_arg[0],e_arg[1]]
+
+
+
+
 			n = my_array[n_arg[0],n_arg[1]]
+			ne = my_array[ne_arg[0],ne_arg[1]]
+			e = my_array[e_arg[0],e_arg[1]]
+			se = my_array[se_arg[0],se_arg[1]]
 			s = my_array[s_arg[0],s_arg[1]]
+			sw = my_array[sw_arg[0],sw_arg[1]]
+			w = my_array[w_arg[0],w_arg[1]]
+			nw = my_array[nw_arg[0],nw_arg[1]]
 
 
-			cardinal = np.array([n,w,e,s])
-			print 'cardinal', cardinal
-			counts = np.bincount(cardinal)
-			print 'counts', counts
+			n4 = np.array([n,e,s,w])
+			print 'n4', n4
+			n8 = np.array([n,ne,e,se,s,sw,w,nw])
+			print 'n8', n8
+			counts = np.bincount(n4)
+			print 'counts4', counts
+			counts8 = np.bincount(n8)
+			print 'counts8', counts8
+
 
 
 		
-			a = np.argmax(counts)
-			# print 'max: ', a
+			a = np.argmax(counts8)
+			print 'max: ', a
 			if a == 255:
 				print 'a == 255 so get min value'
-				a = np.amin(cardinal)
-				print 'min: ', a
-				my_array[x[0],x[1]] = a
+				# print np.sort(n8, axis=None)
+				# u, counts = np.unique(n8, return_counts=True)
+				# print u
+				# print counts
+				print np.any(n8[:, 0] == value)
+			# 	a = np.amin(n4)
+			# 	print 'min: ', a
+			# 	my_array[x[0],x[1]] = a
 
-			else:
-				c = np.random.choice(np.flatnonzero(counts == counts.max()))
-				print 'random:', c
-				my_array[x[0],x[1]] = c
+			# else:
+			# 	c = np.random.choice(np.flatnonzero(counts == counts.max()))
+			# 	print 'random:', c
+			# 	my_array[x[0],x[1]] = c
 
 			# counter = counts[np.where(counts == 2)]
 			# a = np.argmax(counts)
@@ -126,7 +149,7 @@ def attachValue(ww):
 			# 		my_array[x[0],x[1]] = 3
 			# 		# print 'new label is 3' 
 			# 	elif index[0] == 255 or index[1] == 255:
-			# 		a = np.amin(cardinal)
+			# 		a = np.amin(n4)
 			# 		# print 'new label', a
 			# 		my_array[x[0],x[1]] = a
 			# 	else:
@@ -135,7 +158,7 @@ def attachValue(ww):
 			# 		my_array[x[0],x[1]] = a
 			
 			# elif a == 255:
-			# 	a = np.amin(cardinal)
+			# 	a = np.amin(n4)
 			# 	# print 'a ==255 new label', a
 			# else:
 			# 	# print 'new label', a
@@ -152,9 +175,9 @@ def attachValue(ww):
 			# 	print 'a', a
 
 			# if a == 255:
-			# 	a = np.amin(cardinal)
+			# 	a = np.amin(n4)
 			# 	# print 'change the value to:', a
-			# # if cardinal.count(cardinal[0]) == len(cardinal):
+			# # if n4.count(n4[0]) == len(n4):
 
 			# my_array[x[0],x[1]] = a
 
@@ -179,38 +202,38 @@ def attachValue(ww):
 ww = getww(my_array)
 attachValue(ww)
 
-u, counts = np.unique(my_array, return_counts=True)
-nodata_count = counts[5]
-print nodata_count
+# u, counts = np.unique(my_array, return_counts=True)
+# nodata_count = counts[5]
+# print nodata_count
 
-print my_array
+# print my_array
 
-# print fc_count
-outname = "tile_test30.tif"
+# # print fc_count
+# outname = "tile_test30.tif"
 
-#create
-outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/", r"tiles", outname)
+# #create
+# outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/", r"tiles", outname)
 
-cls = 21973
-rws = 13789
-outDs = driver.Create(outpath, cls, rws, 1, gdal.GDT_Int32)
+# cls = 21973
+# rws = 13789
+# outDs = driver.Create(outpath, cls, rws, 1, gdal.GDT_Int32)
 
-outBand = outDs.GetRasterBand(1)
+# outBand = outDs.GetRasterBand(1)
 
 	
-# # write the data
-outBand.WriteArray(my_array)
+# # # write the data
+# outBand.WriteArray(my_array)
 
-# flush data to disk, set the NoData value and calculate stats
-outBand.FlushCache()
+# # flush data to disk, set the NoData value and calculate stats
+# outBand.FlushCache()
 
-PIXEL_SIZE = 30  # size of the pixel...        
-YMax = 2758935
-XMin = -378525
+# PIXEL_SIZE = 30  # size of the pixel...        
+# YMax = 2758935
+# XMin = -378525
 
-outDs.SetGeoTransform((XMin,PIXEL_SIZE,0,YMax,0,-PIXEL_SIZE))  
-# outDs.SetGeoTransform(inDs.GetGeoTransform())
-outDs.SetProjection(inDs.GetProjection())
+# outDs.SetGeoTransform((XMin,PIXEL_SIZE,0,YMax,0,-PIXEL_SIZE))  
+# # outDs.SetGeoTransform(inDs.GetGeoTransform())
+# outDs.SetProjection(inDs.GetProjection())
 
 # del outData   
 

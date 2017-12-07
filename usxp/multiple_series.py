@@ -12,13 +12,14 @@ import core
 import parallel_regiongroup as prg
 import parallel_nibble as nibble
 import post
+import parallel_attachCDL as pp_cdl
 
 
 
 
 
 
-def run_series(series,res,mmu,years,pre_arg, pp_36and61mask_arg, core_arg, pp_rg_arg, pp_nbl_mtr_arg, post_arg, pp_nbl_ytc_arg):
+def run_series(series, res ,mmu, years, pre_arg, refine_arg, pp_36and61mask_arg, core_arg, pp_rg_arg, pp_nbl_mtr_arg, post_arg, pp_nbl_ytc_arg, pp_cdl_arg):
 	
 
 	####  CREATE INSTANCES  ##################################################################
@@ -53,11 +54,12 @@ def run_series(series,res,mmu,years,pre_arg, pp_36and61mask_arg, core_arg, pp_rg
 
 
 	#---------- perform post processing  -------------------------------------------------
-	post.createYearbinaries()
-	post.createMask()
-	post.clipByMMU()
-	nibble.run(series, res, mmu, years, pp_nbl_ytc_arg['name'], pp_nbl_ytc_arg['pixel_type'])
-	post.addGDBTable2postgres()
+	# post.createYearbinaries()
+	# post.createMask()
+	# post.clipByMMU()
+	nibble.run(series, res, mmu, years, pp_nbl_ytc_arg['name'], pp_nbl_ytc_arg['subname'], pp_nbl_ytc_arg['pixel_type'])
+	# post.addGDBTable2postgres()
+	# pp_cdl.run(series, res, mmu, years, 'ytc')
 
 
 

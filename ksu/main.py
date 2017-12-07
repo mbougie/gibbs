@@ -54,22 +54,23 @@ arcpy.env.parallelProcessingFactor = "95%"
 #     print 'gdb path: ', gdb_path 
 #     return gdb_path
 
-rootpath = 'D:/projects/ksu/control/CLU_fields_by_county/'
+rootpath = 'D:/projects/ksu/control/clu/CLU_fields_by_county/'
 
 
 
 def mosiacCLU():
     ##get the sub-directories names
+    filelist = []
     for subdir in os.listdir(rootpath):
-        if subdir == 'AR_shps':
-            print subdir
-            filelist = []
-            for file in glob.glob(rootpath+subdir+'/*.shp'):
-                print file
-                filelist.append(file)
+        # if subdir == 'AR_shps':
+        print subdir
+        
+        for file in glob.glob(rootpath+subdir+'/*.shp'):
+            print file
+            filelist.append(file)
     print filelist
 
-    arcpy.Merge_management(filelist, 'D:/projects/ksu/ar_try.gdb/tryit')
+    arcpy.Merge_management(filelist, 'D:/projects/ksu/temp.gdb/clu_merged')
 
 
 
@@ -275,10 +276,40 @@ def createEmptyRaster(filename):
 
 
 
+def extractCellValueByPoint():
+    # Set local variables
+    # inPointFeatures = "poi.shp"
+    env.workspace = 'D:/projects/ksu/v2/cdl.gdb'
+    inRasterList = 
+    inRasterList = ["", ["redstd", "focalstd"], 
+    # ["redmin", "focalmin"]]
+
+    # Check out the ArcGIS Spatial Analyst extension license
+    # arcpy.CheckOutExtension("Spatial")
+
+    # # Execute ExtractValuesToPoints
+    # ExtractMultiValuesToPoints(inPointFeatures, inRasterList, "BILINEAR")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #####  call main function ##################
 # main()
 
-mosiacCLU()
+# mosiacCLU()
 
