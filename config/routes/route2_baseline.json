@@ -1,0 +1,13 @@
+{    
+	"series":"s9",
+	"route":"r2",
+	"res":30,
+	"mmu":5,
+	"years":[2008,2016],
+
+	"core_filter": {"filter_gdb":["sa", "filter"], "filter_key":"n8h"},
+	"pp_rg_arg": {"name":"mtr_subset", "rg_key":"8w", "gdb_parent":["sa","mtr"], "gdb_child":["sa","mmu"]},
+	"pp_mtr_arg": {"name":"mtr", "subname":"", "gdb_main":["sa", "filter"]},
+	"pp_nbl_mtr_arg": {"name":"mtr", "subname":"", "pixel_type":"8_BIT_UNSIGNED", "gdb_parent":["sa","mtr"], "gdb_child":["sa","mmu"]}
+
+}

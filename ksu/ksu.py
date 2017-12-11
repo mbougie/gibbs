@@ -661,7 +661,7 @@ def updateField():
 
 def exportPGtoCSV(state):
     cur = conn.cursor()
-    sys.stdout = open('D:\\projects\\ksu\\v2\\samples_'+state+'.csv', 'w')
+    sys.stdout = open('D:\\projects\\ksu\\v2\\csv\\samples_'+state+'.csv', 'w')
     
 
     cur.copy_expert("COPY samples.samples_"+state+" TO STDOUT WITH CSV HEADER", sys.stdout)

@@ -357,19 +357,19 @@ def getReclassifyValuesString():
 
 
 ################ Instantiate the class to create yxc object  ########################
-post = ProcessingObject(
-      "s9",
-      #resolution
-      30,
-      #mmu
-      5,
-      #data range---i.e. all the cdl years you are referencing 
-      [2008,2016],
-      #name
-      'yfc',
-      #subname
-      'fnc'
-      )
+# post = ProcessingObject(
+#       "s9",
+#       #resolution
+#       30,
+#       #mmu
+#       5,
+#       #data range---i.e. all the cdl years you are referencing 
+#       [2008,2016],
+#       #name
+#       'yfc',
+#       #subname
+#       'fnc'
+#       )
 
 ################ call functions  #####################################################
 # createYearbinaries_better()

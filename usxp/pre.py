@@ -270,14 +270,14 @@ def FindRedundantTrajectories():
 
 ###############  KEEP THIS PART OF CODE FOR NOW!!!!  ##################################
 
-pre = ProcessingObject(
-    #resolution
-    30,
-    #mmu
-    5,
-    #data-range
-    [2008,2016]
-)
+# pre = ProcessingObject(
+#     #resolution
+#     30,
+#     #mmu
+#     5,
+#     #data-range
+#     [2008,2016]
+# )
 
 
 

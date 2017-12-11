@@ -22,7 +22,7 @@ arcpy.env.parallelProcessingFactor = "95%"
 
 ###################  Define the environment  #######################################################
 #establish root path for this the main project (i.e. usxp)
-rootpath = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/data/usxp/'
+rootpath = 'C:/Users/Bougie/Desktop/Gibbs/data/usxp/'
 
 ### establish gdb path  ####
 def defineGDBpath(arg_list):
@@ -37,16 +37,30 @@ except:
 
 #################### class to create core object  ####################################################
 class ProcessingObject(object):
-    def __init__(self, series, res, mmu, years, filter):
+    def __init__(self, series, route, res, mmu, years, filter_gdb, filter_key):
         self.series = series
         self.res = str(res)
         self.years = years
+        self.filter_key = filter_key
+        self.filter_gdb = filter_gdb
+        self.mmu = mmu
+        self.route = route
+
+
+
+
         self.datarange = str(self.years[0])+'to'+str(self.years[1])
         print 'self.datarange', self.datarange
         self.traj_name = self.series+"_traj_cdl"+self.res+"_b_"+self.datarange+"_rfnd"
         self.traj_path = defineGDBpath(['pre','traj_refined'])+self.traj_name
-        self.filter = filter
-        self.mmu = mmu
+
+        self.filter_parentnode = self.getFilterParentNode()
+
+    def getFilterParentNode(self):
+        if self.route == 'r2' or self.route == 'r3':
+            return self.traj_name
+
+                
 
 
 
@@ -68,55 +82,61 @@ def addColorMap(inraster,template):
 
 
 
-def createMTR():
-    ## replace the arbitrary values in the trajectories dataset with the mtr values 1-5.
-    raster = defineGDBpath(['core','filter']) + core.traj_name+"_n8h"
-    print 'raster: ', raster
+# def createMTR():
+#     ## replace the arbitrary values in the trajectories dataset with the mtr values 1-5.
+#     # raster = defineGDBpath(['sa','mmu']) + core.traj_name+"_n8h"
+#     raster = defineGDBpath(['sa','mmu'])+"s9_traj_cdl30_b_2008to2016_rfnd_n8h_nbl"
+#     print 'raster: ', raster
 
-    output = defineGDBpath(['core','mtr'])+core.traj_name+"_n8h"+'_mtr'
-    print 'output:', output
+#     output = defineGDBpath(['sa','mtr'])+"s9_traj_cdl30_b_2008to2016_rfnd_n8h_nbl_mtr"
+#     print 'output:', output
 
-    reclassArray = createReclassifyList() 
+#     reclassArray = createReclassifyList() 
 
-    outReclass = Reclassify(Raster(raster), "Value", RemapRange(reclassArray), "NODATA")
+#     outReclass = Reclassify(Raster(raster), "Value", RemapRange(reclassArray), "NODATA")
     
-    outReclass.save(output)
+#     outReclass.save(output)
 
-    gen.buildPyramids(output)
+#     gen.buildPyramids(output)
 
 
 
-def createReclassifyList():
-    #this is a sub function for createMTR().  references the mtr value in psotgres to create a list containing arbitray trajectory value and associated new mtr value
-    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
-    query = 'SELECT "Value", mtr from pre.traj_cdl' + core.res + '_b_' + core.datarange + ' as a JOIN pre.traj_' + core.datarange + '_lookup as b ON a.traj_array = b.traj_array'
-    print 'query:', query
-    df = pd.read_sql_query(query, con=engine)
-    print df
-    fulllist=[[0,0,"NODATA"]]
-    for index, row in df.iterrows():
-        templist=[]
-        value=row['Value'] 
-        mtr=row['mtr']  
-        templist.append(int(value))
-        templist.append(int(mtr))
-        fulllist.append(templist)
-    print 'fulllist: ', fulllist
-    return fulllist
+# def createReclassifyList():
+#     #this is a sub function for createMTR().  references the mtr value in psotgres to create a list containing arbitray trajectory value and associated new mtr value
+#     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
+#     query = 'SELECT "Value", mtr from pre.traj_cdl' + core.res + '_b_' + core.datarange + ' as a JOIN pre.traj_' + core.datarange + '_lookup as b ON a.traj_array = b.traj_array'
+#     print 'query:', query
+#     df = pd.read_sql_query(query, con=engine)
+#     print df
+#     fulllist=[[0,0,"NODATA"]]
+#     for index, row in df.iterrows():
+#         templist=[]
+#         value=row['Value'] 
+#         mtr=row['mtr']  
+#         templist.append(int(value))
+#         templist.append(int(mtr))
+#         fulllist.append(templist)
+#     print 'fulllist: ', fulllist
+#     return fulllist
 
 
 
 def majorityFilter():
-    #filter_combos = {'n4h':["FOUR", "HALF"],'n4m':["FOUR", "MAJORITY"],'n8h':["EIGHT", "HALF"],'n8m':["EIGHT", "MAJORITY"]}
-    filter_combos = {'n8h':["EIGHT", "HALF"]}
-    for k, v in filter_combos.iteritems():
-        print k,v
+    filter_combos = {'n4h':["FOUR", "HALF"],'n4m':["FOUR", "MAJORITY"],'n8h':["EIGHT", "HALF"],'n8m':["EIGHT", "MAJORITY"]}
+    print 'filter_combo----', filter_combos[core.filter_key]
+    
+    output = defineGDBpath(core.filter_gdb)+core.filter_parentnode+'_'+core.filter_key
+    print 'output: ',output
 
-        output = defineGDBpath(['core','filter'])+core.traj_name+'_'+k
-        print 'output: ',output
-
-        # Execute MajorityFilter
-        outMajFilt = MajorityFilter(core.traj_path, v[0], v[1])
+    ## check if dataset already exists
+    if arcpy.Exists(output):
+        print 'dataset already exists'
+        return
+    
+    else:
+        print 'creating new filter dataset'
+        #Execute MajorityFilter
+        outMajFilt = MajorityFilter(core.traj_path, filter_combos[core.filter_key][0], filter_combos[core.filter_key][1])
         
         #save processed raster to new file
         outMajFilt.save(output)

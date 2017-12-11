@@ -20,7 +20,7 @@ case=['Bougie','Gibbs']
 arcpy.CheckOutExtension("Spatial")
 
 #establish root path for this the main project (i.e. usxp)
-rootpath = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/data/usxp/'
+rootpath = 'C:/Users/Bougie/Desktop/Gibbs/data/usxp/'
 # rootpath = 'D:/projects/ksu/v2/'
 
 ### establish gdb path  ####
@@ -34,58 +34,65 @@ def defineGDBpath(arg_list):
 #######  define raster and mask  ####################
 class ProcessingObject(object):
 
-    def __init__(self, series, res, mmu, years, name, subname, pixel_type):
+    def __init__(self, series, res, mmu, years, name, subname, pixel_type, gdb_parent, parent_seq, gdb_child, mask_seq, outraster_seq):
 		self.series = series
 		self.res = str(res)
 		self.mmu =str(mmu)
 
 		self.years = years
 		self.name = name
-		print 'self.name:', self.name
-		self.subname = subname
-		print 'self.subname:', self.subname
+		self.parent_seq = parent_seq
+		self.mask_seq = mask_seq
+		self.outraster_seq = outraster_seq
 
 		self.datarange = str(self.years[0])+'to'+str(self.years[1])
 		print 'self.datarange:', self.datarange
 
 		self.dir_tiles = 'C:/Users/Bougie/Desktop/Gibbs/tiles/'
+
 # s9_ytc30_2008to2016_mmu5_nbl_bfc
 
 		if self.name == 'mtr':
-			self.gdb_path = defineGDBpath(['core', 'mmu'])
-			self.raster_name = self.series+'_traj_cdl'+self.res+'_b_'+self.datarange+'_rfnd_n8h_mtr'
-			self.in_raster = defineGDBpath(['core', 'mtr']) + self.raster_name
-			print 'self.in_raster', self.in_raster
-			self.mask_name = self.raster_name + '_8w_msk' + self.mmu
-			self.in_mask_raster = self.gdb_path + self.mask_name
-			self.out_fishnet = defineGDBpath(['ancillary', 'shapefiles']) + 'fishnet_' + self.name
-			self.pixel_type = "8_BIT_UNSIGNED"
-		# else:
-		# 	self.gdb_path = defineGDBpath(['post', self.name])
-		# 	self.raster_name = self.series+'_'+self.name+self.res+'_'+self.datarange+'_mmu'+self.mmu
-		# 	self.in_raster = self.gdb_path + self.raster_name
-		# 	print 'self.in_raster', self.in_raster
-		# 	self.mask_name = self.raster_name + '_msk'
-		# 	self.in_mask_raster = self.gdb_path + self.mask_name
-		# 	self.out_fishnet = defineGDBpath(['ancillary', 'shapefiles']) + 'fishnet_ytc'
-		# 	self.pixel_type = "16_BIT_UNSIGNED"
-		# s9_ytc30_2008to2016_mmu5
-		else:
-			self.gdb_path = defineGDBpath(['post', self.name])
+			self.traj = self.series+'_traj_cdl'+self.res+'_b_'+self.datarange+'_rfnd'
+
+			self.gdb_parent = defineGDBpath(gdb_parent)
+			self.raster_parent = self.traj+self.parent_seq
+			self.path_parent = self.gdb_parent + self.raster_parent
+
+			self.gdb_child = defineGDBpath(gdb_child)
+			self.raster_mask = self.raster_parent + self.mask_seq
+			self.path_mask = self.gdb_child + self.raster_mask
+
+			self.raster_nbl = self.raster_parent + self.outraster_seq
+			self.path_nbl = self.gdb_child + self.raster_nbl
+
+			self.out_fishnet = defineGDBpath(['ancillary', 'shapefiles']) + 'counties_subset'
+			self.pixel_type = "16_BIT_UNSIGNED"
+				
 			
+
+		else:
+			self.gdb_parent = defineGDBpath(['post', self.name])
 			self.yxc_foundation = self.series+'_'+self.name+self.res+'_'+self.datarange+'_mmu'+self.mmu
 			print 'self.yxc_foundation', self.yxc_foundation
-			self.raster_name = self.yxc_foundation+'_nbl_'+self.subname
-			
-			self.in_raster = self.gdb_path + self.raster_name
-			print 'self.in_raster', self.in_raster
-			
-			self.mask_name = self.yxc_foundation + '_msk'
-			print 'self.mask_name', self.mask_name
-			self.in_mask_raster = self.gdb_path + self.mask_name
-			
+			self.raster_parent = self.yxc_foundation+'_nbl_'+self.subname
+			self.path_parent = self.gdb_parent + self.raster_parent
+			print 'self.path_parent', self.path_parent
+			self.raster_mask = self.yxc_foundation + '_msk'
+			print 'self.raster_mask', self.raster_mask
+			self.path_mask = self.gdb_parent + self.raster_mask
 			self.out_fishnet = defineGDBpath(['ancillary', 'shapefiles']) + 'fishnet_ytc'
 			self.pixel_type = "16_BIT_UNSIGNED"
+
+
+  #   def existsDataset(self):
+		# dataset = self.gdb_parent + self.raster_parent + '_nbl'
+		# if arcpy.Exists(dataset):
+		# 	print 'dataset already exists'
+		# 	return
+		# else:
+		# 	print 'dataset: ', dataset
+		# 	return self.raster_parent + '_nbl'
 
 
 
@@ -94,10 +101,10 @@ def create_fishnet():
 	arcpy.Delete_management(nibble.out_fishnet)
 
     #acquire parameters for creatfisnet function
-	XMin = nibble.in_raster.extent.XMin
-	YMin = nibble.in_raster.extent.YMin
-	XMax = nibble.in_raster.extent.XMax
-	YMax = nibble.in_raster.extent.YMax
+	XMin = nibble.path_parent.extent.XMin
+	YMin = nibble.path_parent.extent.YMin
+	XMax = nibble.path_parent.extent.XMax
+	YMax = nibble.path_parent.extent.YMax
 
 	origCord = "{} {}".format(XMin, YMin)
 	YAxisCord = "{} {}".format(XMin, YMax)
@@ -111,8 +118,8 @@ def create_fishnet():
 
 	geotype = "POLYGON"
 
-	arcpy.env.outputCoordinateSystem = nibble.in_raster.spatialReference
-	print nibble.in_raster.spatialReference.name
+	arcpy.env.outputCoordinateSystem = nibble.path_parent.spatialReference
+	print nibble.path_parent.spatialReference.name
 
     #call CreateFishnet_management function
 	arcpy.CreateFishnet_management(nibble.out_fishnet, origCord, YAxisCord, cellSizeW, cellSizeH, numRows, numCols, cornerCord, "NO_LABELS", "", geotype)
@@ -135,12 +142,12 @@ def execute_task(args):
 
 	#set environments
 	 #The brilliant thing here is that using the extents with the full dataset!!!!!!   DONT EVEN NEED TO CLIP THE FULL RASTER TO THE FISHNET BECASUE 
-	arcpy.env.snapRaster = nibble.in_raster
-	arcpy.env.cellsize = nibble.in_raster
+	arcpy.env.snapRaster = nibble.path_parent
+	arcpy.env.cellsize = nibble.path_parent
 	arcpy.env.extent = arcpy.Extent(XMin, YMin, XMax, YMax)
 
 	###  Execute Nibble  #####################
-	ras_out = arcpy.sa.Nibble(nibble.in_raster, nibble.in_mask_raster, "DATA_ONLY")
+	ras_out = arcpy.sa.Nibble(nibble.path_parent, nibble.path_mask, "DATA_ONLY")
 
 	#clear out the extent for next time
 	arcpy.ClearEnvironment("extent")
@@ -160,23 +167,22 @@ def mosiacRasters(nibble):
 	tilelist = glob.glob(nibble.dir_tiles+'*.tif')
 	print tilelist 
 	######mosiac tiles together into a new raster
-	nbl_raster = nibble.raster_name + '_nbl'
-	print 'nbl_raster: ', nbl_raster
 
-	arcpy.MosaicToNewRaster_management(tilelist, nibble.gdb_path, nbl_raster, Raster(nibble.in_raster).spatialReference, nibble.pixel_type, nibble.res, "1", "LAST","FIRST")
+
+	arcpy.MosaicToNewRaster_management(tilelist, nibble.gdb_child, nibble.raster_nbl, Raster(nibble.path_parent).spatialReference, nibble.pixel_type, nibble.res, "1", "LAST","FIRST")
 
 	##Overwrite the existing attribute table file
-	arcpy.BuildRasterAttributeTable_management(nibble.gdb_path + nbl_raster, "Overwrite")
+	arcpy.BuildRasterAttributeTable_management(nibble.path_nbl, "Overwrite")
 
 	## Overwrite pyramids
-	gen.buildPyramids(nibble.gdb_path + nbl_raster)
+	gen.buildPyramids(nibble.path_nbl)
 
 
 
   
-def run(series, res, mmu, years, name, subname, pixel_type):  
+def run(series, res, mmu, years, name, subname, pixel_type, gdb_parent, parent_seq, gdb_child, mask_seq, outraster_seq):  
 	#instantiate the class inside run() function
-	nibble = ProcessingObject(series, res, mmu, years, name, subname, pixel_type)
+	nibble = ProcessingObject(series, res, mmu, years, name, subname, pixel_type, gdb_parent, parent_seq, gdb_child, mask_seq, outraster_seq)
 	print nibble.res
 
 	# need to create a unique fishnet for each dataset
