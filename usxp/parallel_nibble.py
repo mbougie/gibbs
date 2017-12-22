@@ -25,8 +25,8 @@ rootpath = 'C:/Users/Bougie/Desktop/Gibbs/data/usxp/'
 
 ### establish gdb path  ####
 def defineGDBpath(arg_list):
-    gdb_path = rootpath + arg_list[0]+'/'+arg_list[1]+'.gdb/'
-    print 'gdb path: ', gdb_path 
+    gdb_path = '{}{}/{}/{}.gdb/'.format(rootpath,arg_list[0],arg_list[1],arg_list[2])
+    # print 'gdb path: ', gdb_path 
     return gdb_path
 
 
@@ -39,8 +39,10 @@ class ProcessingObject(object):
 		self.res = str(res)
 		self.mmu =str(mmu)
 
+
 		self.years = years
 		self.name = name
+		self.subname = subname
 		self.parent_seq = parent_seq
 		self.mask_seq = mask_seq
 		self.outraster_seq = outraster_seq
@@ -58,31 +60,40 @@ class ProcessingObject(object):
 			self.gdb_parent = defineGDBpath(gdb_parent)
 			self.raster_parent = self.traj+self.parent_seq
 			self.path_parent = self.gdb_parent + self.raster_parent
+			print 'self.path_parent', self.path_parent
 
 			self.gdb_child = defineGDBpath(gdb_child)
 			self.raster_mask = self.raster_parent + self.mask_seq
 			self.path_mask = self.gdb_child + self.raster_mask
 
+
 			self.raster_nbl = self.raster_parent + self.outraster_seq
 			self.path_nbl = self.gdb_child + self.raster_nbl
+			print 'self.path_nbl', self.path_nbl
 
-			self.out_fishnet = defineGDBpath(['ancillary', 'shapefiles']) + 'counties_subset'
+			self.out_fishnet = defineGDBpath(['ancillary','vector', 'shapefiles']) + 'fishnet_mtr'
+			print self.out_fishnet
 			self.pixel_type = "16_BIT_UNSIGNED"
 				
 			
 
 		else:
-			self.gdb_parent = defineGDBpath(['post', self.name])
+			self.gdb_parent = defineGDBpath(['s14', 'post', self.name])
 			self.yxc_foundation = self.series+'_'+self.name+self.res+'_'+self.datarange+'_mmu'+self.mmu
 			print 'self.yxc_foundation', self.yxc_foundation
-			self.raster_parent = self.yxc_foundation+'_nbl_'+self.subname
-			self.path_parent = self.gdb_parent + self.raster_parent
+			self.path_parent = self.gdb_parent + self.yxc_foundation
 			print 'self.path_parent', self.path_parent
 			self.raster_mask = self.yxc_foundation + '_msk'
-			print 'self.raster_mask', self.raster_mask
 			self.path_mask = self.gdb_parent + self.raster_mask
-			self.out_fishnet = defineGDBpath(['ancillary', 'shapefiles']) + 'fishnet_ytc'
+			print 'self.path_mask', self.path_mask
+			self.out_fishnet = defineGDBpath(['ancillary','vector', 'shapefiles']) + 'fishnet_ytc'
 			self.pixel_type = "16_BIT_UNSIGNED"
+
+
+			self.raster_nbl = self.yxc_foundation + '_nbl'
+			print 'self.raster_nbl:', self.raster_nbl
+			self.path_nbl = self.gdb_parent + self.raster_nbl
+			print 'self.path_nbl', self.path_nbl
 
 
   #   def existsDataset(self):
@@ -169,7 +180,7 @@ def mosiacRasters(nibble):
 	######mosiac tiles together into a new raster
 
 
-	arcpy.MosaicToNewRaster_management(tilelist, nibble.gdb_child, nibble.raster_nbl, Raster(nibble.path_parent).spatialReference, nibble.pixel_type, nibble.res, "1", "LAST","FIRST")
+	arcpy.MosaicToNewRaster_management(tilelist, nibble.gdb_parent, nibble.raster_nbl, Raster(nibble.path_parent).spatialReference, nibble.pixel_type, nibble.res, "1", "LAST","FIRST")
 
 	##Overwrite the existing attribute table file
 	arcpy.BuildRasterAttributeTable_management(nibble.path_nbl, "Overwrite")
@@ -212,6 +223,7 @@ def run(series, res, mmu, years, name, subname, pixel_type, gdb_parent, parent_s
 
 	######create a process and pass dictionary of extent to execute task
 	pool = Pool(processes=cpu_count())
+	# pool = Pool(processes=1)
 	pool.map(execute_task, [(ed, nibble) for ed in extDict.items()])
 	pool.close()
 	pool.join

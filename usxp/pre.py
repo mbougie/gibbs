@@ -65,7 +65,7 @@ class ProcessingObject(object):
         cdl_list = []
         for year in self.data_years:
             print 'year:', year
-            cdl_dataset = 'cdl'+str(self.res)+'_b_'+str(year)
+            cdl_dataset = 'cdl{0}_b_{1}'.format(str(self.res),str(year))
             cdl_list.append(cdl_dataset)
         print'cdl_list: ', cdl_list
         return cdl_list
@@ -75,38 +75,29 @@ class ProcessingObject(object):
 
      
 
-def reclassifyRaster(gdb_args_in, res, wc, reclass_degree, gdb_args_out):
+def reclassifyRaster():
     # Description: reclass cdl rasters based on the specific arc_reclassify_table 
-
+    gdb_args_in = ['ancillary', 'cdl']
     # Set environment settings
     arcpy.env.workspace = defineGDBpath(gdb_args_in)
-    
-    cond = gdb_args_in[1] + res + wc
-    print cond
-    #loop through each of the cdl rasters
-    for raster in arcpy.ListDatasets(cond, "Raster"): 
-        
-        print 'raster: ',raster
 
-        # outraster = raster.replace("_", "_"+reclasstable+"_")
-        outraster = gdb_args_in[1] + res + '_' + reclass_degree + raster[-5:]
-        print 'outraster: ', outraster
-       
-        #get the arc_reclassify table
-        # inRemapTable = 'C:/Users/Bougie/Desktop/Gibbs/arcgis/arc_reclassify_table/'+reclasstable
-        # print 'inRemapTable: ', inRemapTable
+    raster = 'cdl30_2009'    
+    print 'raster: ',raster
 
-        #define the output
-        output = defineGDBpath(gdb_args_out)+outraster
-        print 'output: ', output
+    outraster = raster.replace("_", "_b_")
+    print 'outraster: ', outraster
 
-        return_string=getReclassifyValuesString(gdb_args_in[1], reclass_degree)
+    #define the output
+    output = defineGDBpath(['pre', 'binaries'])+outraster
+    print 'output: ', output
 
-        # Execute Reclassify
-        arcpy.gp.Reclassify_sa(raster, "Value", return_string, output, "NODATA")
+    return_string=getReclassifyValuesString(gdb_args_in[1], 'b')
 
-        #create pyraminds
-        gen.buildPyramids(output)
+    # Execute Reclassify
+    arcpy.gp.Reclassify_sa(raster, "Value", return_string, output, "NODATA")
+
+    #create pyraminds
+    gen.buildPyramids(output)
 
 
 
@@ -232,8 +223,8 @@ def labelTrajectories():
 def FindRedundantTrajectories():
     # what is the purpose of this function??
     cur = conn.cursor()
-    table = 'pre.traj_cdl'+pre.res+'_b_'+pre.datarange
-    lookuptable = 'pre.traj_'''+pre.datarange+'_lookup'
+    table = 'pre.traj_cdl{0}_b_{1}'.format(pre.res, pre.datarange)
+    lookuptable = 'pre.traj_{}_lookup'.format(pre.datarange)
 
     query_list = []
     for year in pre.conversionyears:
@@ -270,17 +261,17 @@ def FindRedundantTrajectories():
 
 ###############  KEEP THIS PART OF CODE FOR NOW!!!!  ##################################
 
-# pre = ProcessingObject(
-#     #resolution
-#     30,
-#     #mmu
-#     5,
-#     #data-range
-#     [2008,2016]
-# )
+pre = ProcessingObject(
+    #resolution
+    30,
+    #mmu
+    5,
+    #data-range
+    [2008,2016]
+)
 
 
-
+# reclassifyRaster()
 # createTrajectories()
 # addGDBTable2postgres()
 # FindRedundantTrajectories()
@@ -296,6 +287,6 @@ def FindRedundantTrajectories():
     ###-----addGDBTable2postgres()
     # addGDBTable2postgres()
 
-
+    #######----these functions are to update the lookup tables!
     # labelTrajectories()
     # FindRedundantTrajectories()

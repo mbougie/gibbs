@@ -32,9 +32,11 @@ rootpath = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/data/usxp/'
 
 ### establish gdb path  ####
 def defineGDBpath(arg_list):
-    gdb_path = rootpath + arg_list[0]+'/'+arg_list[1]+'.gdb/'
+    gdb_path = '{}{}/{}/{}.gdb/'.format(rootpath,arg_list[0],arg_list[1],arg_list[2])
     print 'gdb path: ', gdb_path 
     return gdb_path
+
+
 
 
 #################### class to create yxc object  ####################################################
@@ -63,10 +65,11 @@ class ProcessingObject(object):
         self.traj_dataset = "traj_cdl"+self.res+"_b_"+self.datarange
         self.traj_rfnd_dataset = self.series+"_traj_cdl"+self.res+"_b_"+self.datarange+'_rfnd'
         
-        self.traj_dataset_path = defineGDBpath(['pre','trajectories']) + self.traj_dataset
+        self.traj_dataset_path = defineGDBpath(['pre', 'v2', 'trajectories']) + self.traj_dataset
         # self.yxc_dataset = self.name+self.res+'_'+self.datarange
 
-        self.yxc_dataset = "s9_"+self.name+self.res+'_'+self.datarange+"_mmu5_nbl"
+        self.yxc_dataset = self.name+self.res+'_'+self.datarange
+        print 'self.yxc_dataset:', self.yxc_dataset 
 
         #### nlcd datasets 
         self.nlcd_ven = 'or'.join(self.nlcd_years)
@@ -77,8 +80,8 @@ class ProcessingObject(object):
         def getYXCAttributes():
             if self.name == 'ytc':
                 self.mtr = '3'
-                # self.subtypelist = ['bfc','fc']
-                self.subtypelist = ['fc']
+                self.subtypelist = ['bfc','fc']
+                # self.subtypelist = ['bfc']
                 print 'yo', self.subtypelist
                 self.traj_change = 1
 
@@ -213,9 +216,9 @@ def attachCDL(subtype):
 
 
     # NOTE: Need to copy the yxc_clean dataset and rename it with subtype after it
-    arcpy.env.workspace=defineGDBpath(['post',refine.name])
+    arcpy.env.workspace=defineGDBpath(['refine',refine.name])
 
-    inputraster = defineGDBpath(['post',refine.name])+refine.yxc_dataset
+    inputraster = defineGDBpath(['refine',refine.name])+refine.yxc_dataset
 
     print "inputraster: ", inputraster
     
@@ -261,20 +264,20 @@ def createChangeTrajectories():
     #the rasters where combined in chronoloigal order with the recalssifed nlcd raster being in the inital spot.
 
     # Set environment settings
-    arcpy.env.workspace = defineGDBpath(['refine',refine.name])
+    arcpy.env.workspace = defineGDBpath(['refine','v2',refine.name])
     
     def getRasterList():
         orderedlist = []
         for subtype in refine.subtypelist:
-            orderedlist.append(refine.series+'_'+refine.name+refine.res+'_'+refine.datarange+'_'+subtype)
+            orderedlist.append(refine.name+refine.res+'_'+refine.datarange+'_'+subtype)
         print orderedlist
         return orderedlist
 
 
 
     
-    output = defineGDBpath(['refine','trajectories'])+refine.series+'_'+'traj_'+refine.name+refine.res+'_'+refine.datarange
-    print 'output', output
+    output = defineGDBpath(['refine','v2','trajectories'])+'traj_'+refine.name+refine.res+'_'+refine.datarange
+    print 'output----', output
 
     # ##Execute Combine
     outCombine = Combine(getRasterList())
@@ -289,30 +292,31 @@ def createChangeTrajectories():
 
 def createMask_nlcd():
 
-    nlcd2001 = Raster(defineGDBpath(['ancillary','nlcd'])+'nlcd'+refine.res+'_2001')
-    nlcd2006 = Raster(defineGDBpath(['ancillary','nlcd'])+'nlcd'+refine.res+'_2006')
-    nlcd2011 = Raster(defineGDBpath(['ancillary','nlcd'])+'nlcd'+refine.res+'_2011')
-    refinement_mtr = Raster(defineGDBpath(['refine','mtr'])+'traj_cdl'+refine.res+'_b_'+refine.datarange+'_mtr')
+    nlcd2001 = Raster(defineGDBpath(['ancillary','raster','nlcd'])+'nlcd'+refine.res+'_2001')
+    nlcd2006 = Raster(defineGDBpath(['ancillary','raster','nlcd'])+'nlcd'+refine.res+'_2006')
+    nlcd2011 = Raster(defineGDBpath(['ancillary','raster','nlcd'])+'nlcd'+refine.res+'_2011')
+    refinement_mtr = Raster(defineGDBpath(['refine','v2','mtr'])+'traj_cdl'+refine.res+'_b_'+refine.datarange+'_mtr')
+    print 'refinement_mtr:', refinement_mtr
    
     if refine.join_operator == 'or':
         if refine.nlcd_count == 2:
-            output = defineGDBpath(['refine','masks'])+refine.traj_dataset+'_nlcd'+refine.nlcd_ven
+            output = defineGDBpath(['refine','v2','masks'])+refine.traj_dataset+'_nlcd'+refine.nlcd_ven
             print 'output:', output
-            outCon = Con((nlcd2006 == 82) & (refinement_mtr == 3) & (ytc_clean <= 2011), getArbitraryCropValue(), Con((nlcd2006 == 82) & (refinement_mtr == 3) & (ytc_clean > 2011), getArbitraryCropValue())) 
+            outCon = Con((nlcd2006 == 82) & (refinement_mtr == 3) & (refine.yxc_dataset <= 2011), getArbitraryCropValue(), Con((nlcd2006 == 82) & (refinement_mtr == 3) & (refine.yxc_dataset > 2011), getArbitraryCropValue())) 
             print outCon
         if refine.nlcd_count == 3:
-            output = defineGDBpath(['refine','masks'])+refine.traj_dataset+'_nlcd'+refine.nlcd_ven
+            output = defineGDBpath(['refine','v2','masks'])+refine.traj_dataset+'_nlcd'+refine.nlcd_ven
             print output
-            outCon = Con((nlcd2001 == 82) & (refinement_mtr == 3) & (ytc_clean < 2012), getArbitraryCropValue(), Con((nlcd2006 == 82) & (refinement_mtr == 3), getArbitraryCropValue() , Con((nlcd2006 == 82) & (refinement_mtr == 3) & (ytc_clean > 2011), getArbitraryCropValue()))) 
+            outCon = Con((nlcd2001 == 82) & (refinement_mtr == 3) & (refine.yxc_dataset < 2012), getArbitraryCropValue(), Con((nlcd2006 == 82) & (refinement_mtr == 3), getArbitraryCropValue() , Con((nlcd2006 == 82) & (refinement_mtr == 3) & (refine.yxc_dataset > 2011), getArbitraryCropValue()))) 
             print outCon
     
     elif refine.join_operator == 'and':
-        output = defineGDBpath(['refine','masks'])+'traj_nlcd'+refine.res+'_b_'+refine.nlcd_years[0]+'and'+refine.nlcd_years[1]+'_'+refine.name+refine.datarange+'_mask'
+        output = defineGDBpath(['refine','v2','masks'])+'traj_nlcd'+refine.res+'_b_'+refine.nlcd_years[0]+'and'+refine.nlcd_years[1]+'_'+refine.name+refine.datarange+'_mask'
         print 'output:', output
         outCon = Con(((nlcd2001 == 82) & (nlcd2 == 82) & (refinement_mtr == 3)), getArbitraryCropValue())
     
     elif refine.join_operator == 'none':
-        output = defineGDBpath(['refine','masks'])+refine.traj_dataset+'_nlcd2011'
+        output = defineGDBpath(['refine','v2','masks'])+refine.traj_dataset+'_nlcd2011'
         print 'output:', output
         outCon = Con(((nlcd2011 == 82) & (refinement_mtr == 3)), getArbitraryCropValue())
     
@@ -343,11 +347,11 @@ def getArbitraryCropValue():
 
 def createMask_dev():
     #reclass the traj_yxc_datarange dataset to the arbitry value of non-crop where pixels are in condtion list
-    traj_ytc = defineGDBpath(['refine','trajectories'])+'traj_'+refine.yxc_dataset
+    traj_ytc = defineGDBpath(['refine','v2', 'trajectories'])+'traj_'+refine.yxc_dataset
     print 'traj_ytc:', traj_ytc
 
 
-    output = defineGDBpath(['refine','masks'])+refine.traj_dataset+'_dev122or123or124'
+    output = defineGDBpath(['refine','v2', 'masks'])+refine.traj_dataset+'_dev122or123or124'
     print 'output:', output
 
     reclassArray = createReclassifyList() 
@@ -421,8 +425,9 @@ def addGDBTable2postgres():
     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
 
     tablename = "traj_"+refine.name+refine.res+"_"+refine.datarange
+    print tablename
     # path to the table you want to import into postgres
-    input = defineGDBpath(['refine', 'trajectories'])+tablename
+    input = defineGDBpath(['refine', 'v2', 'trajectories'])+tablename
 
     # Execute AddField twice for two new fields
     fields = [f.name for f in arcpy.ListFields(input)]
@@ -437,10 +442,10 @@ def addGDBTable2postgres():
     print df
     
     # use pandas method to import table into psotgres
-    df.to_sql(tablename, engine, schema='refinement')
+    df.to_sql('v2_'+tablename, engine, schema='refinement')
     
     #add trajectory field to table
-    addTrajArrayField(tablename, fields, 'refinement')
+    addTrajArrayField('v2_'+tablename, fields, 'refinement')
 
 
 
@@ -448,7 +453,7 @@ def addGDBTable2postgres():
 def createRefinedTrajectory():
 
     ##### Set environment settings
-    arcpy.env.workspace = defineGDBpath(['refine','masks'])
+    arcpy.env.workspace = defineGDBpath(['refine', 'v2', 'masks'])
 
     ##### loop through each of the cdl rasters and make sure nlcd is last 
     condlist = ['36and61', refine.mask_dev, 'nlcd'+refine.nlcd_ven]
@@ -457,28 +462,29 @@ def createRefinedTrajectory():
     filelist = [refine.traj_dataset_path]
 
     for cond in condlist:
-
-        for raster in arcpy.ListDatasets('*'+refine.datarange+'*_'+cond, "Raster"): 
+        yo = '*'+refine.datarange+'*_'+cond
+        print yo 
+        for raster in arcpy.ListDatasets('*'+refine.datarange+'*'+cond, "Raster"): 
 
             print 'raster: ',raster
 
             filelist.append(raster)
 
-    print filelist
+    print 'filelist', filelist
     print 'lenght of list:', len(filelist)
 
     output = refine.traj_rfnd_dataset
     print "output:", output
 
     ##### mosaicRasters():
-    arcpy.MosaicToNewRaster_management(filelist, defineGDBpath(['pre','traj_refined']), output, Raster(refine.traj_dataset_path).spatialReference, '16_BIT_UNSIGNED', refine.res, "1", "LAST","FIRST")
+    arcpy.MosaicToNewRaster_management(filelist, defineGDBpath(['pre', 'v2', 'traj_refined']), output, Raster(refine.traj_dataset_path).spatialReference, '16_BIT_UNSIGNED', refine.res, "1", "LAST","FIRST")
 
 
 
 ################ Instantiate the class to create yxc object  ########################
 refine = ProcessingObject(
       #series
-      's12',
+      's13',
       #resolution
       30,
       #data range---i.e. all the cdl years you are referencing 
@@ -504,7 +510,7 @@ refine = ProcessingObject(
 ### attach the cld values to the years binaries  #######################
 for subtype in refine.subtypelist:
     print subtype
-    attachCDL(subtype)
+    # attachCDL(subtype)
 
 
 ### create change trajectories for subcategories in yxc ---- OK
@@ -525,5 +531,5 @@ for subtype in refine.subtypelist:
 
 ### create the refined trajectory ########################
 ###----hard coded still
-# createRefinedTrajectory()
+createRefinedTrajectory()
 

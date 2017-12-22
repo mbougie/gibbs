@@ -37,6 +37,8 @@ def getZonalinfo():
 
 
 def applyAPI():
+
+	### get each states tables from NASS using the NASS api and import each table into postgres database 
 	engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
 	api_key = '19FA0F9C-F4C3-31F3-AB57-AFA3C5346527'
 	api = nass.NassApi(api_key)
@@ -65,6 +67,8 @@ def applyAPI():
 
 
 def refInfoSchema():
+	## component function of CreateBaseHybrid() function --grandchild
+	## get all the tables with nass wildcard
 	engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
 	query = "SELECT table_name FROM information_schema.tables WHERE table_schema = 'nass' and table_name like '%%nass%%'"
 	df = pd.read_sql_query(query, engine)
@@ -77,6 +81,8 @@ def refInfoSchema():
 
 
 def createNassLookupList(query):
+	## component function of CreateBaseHybrid() function ---child
+	## create the lookup table by combining all the 
 	querylist = []
 	for table in refInfoSchema():
 		print table
@@ -89,7 +95,8 @@ def createNassLookupList(query):
 
 
 
-def UnionTables(query):
+def CreateBaseHybrid(query):
+	## create the base table by merging all states datasets from 2008 - 2016 together into one table
 	querylist = createNassLookupList(query)
 	query = ' UNION '.join(querylist)
 	print query
@@ -98,7 +105,7 @@ def UnionTables(query):
 
 
 
-def getPGtables():
+def updatePGtableWithStats():
 	print 'getPGtables()'
 	fipslist = loopThroughPGcolumn()
 	for fips in fipslist:
@@ -116,6 +123,7 @@ def getPGtables():
 
 
 def updatePGtable(fips, r_value, slope):
+	### function to update the r2 and slope stats columns in table
 	print 'updatePGtable(fips, r_value, slope)'
 	cur = conn.cursor()
 
@@ -129,10 +137,11 @@ def updatePGtable(fips, r_value, slope):
 
 
 def loopThroughPGcolumn():
-	print 'loopThroughPGcolumn()'
+	##loop though the base_hybrid_counts table to only get the states that have records
+	print 'loopThroughPGcolumn()-------------------------------------------------'
 	cur = conn.cursor()
 
-	query = "SELECT DISTINCT fips From nass.base_hybrid_counts WHERE state_name='IOWA'"
+	query = "SELECT DISTINCT fips From nass.base_hybrid_counts"
 	print query
 	cur.execute(query);
 
@@ -144,6 +153,7 @@ def loopThroughPGcolumn():
 
 
 def getStatsByFIPS(fips):
+	#### get the stats for each stats(slope and r_value) for the years 2008 to 2016
 	print 'fips:', fips
 	engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
 	query = """SELECT
@@ -183,11 +193,11 @@ def getStatsByFIPS(fips):
 
 
 ######  call functions  ###############################################
-getPGtables()
+# getPGtables()
 
 query1 = 'SELECT short_desc, statisticcat_desc, unit_desc FROM nass.{0} GROUP BY short_desc, statisticcat_desc, unit_desc'
 query2 = """SELECT nass_state.index, lookup.serial, nass_state."Value" as value,nass_state.state_alpha, nass_state.state_fips_code, nass_state.state_name, nass_state.county_name, nass_state.county_code, nass_state.short_desc, nass_state.statisticcat_desc, nass_state.unit_desc, nass_state.year FROM nass.{0} as nass_state, nass.lookup WHERE lookup.short_desc = nass_state.short_desc and lookup.hybrid = 'y'""" 
-# UnionTables(query2)
+CreateBaseHybrid(query2)
 
 
 # applyAPI()
@@ -203,7 +213,8 @@ query2 = """SELECT nass_state.index, lookup.serial, nass_state."Value" as value,
 
 
 
-######  save sql ###########################################
+######  SAVE SQL ###########################################
+####################QUERY1################################
 # create table nass.base_hybrid_counts as
 
 # SELECT 
@@ -225,9 +236,10 @@ query2 = """SELECT nass_state.index, lookup.serial, nass_state."Value" as value,
 
 #   ALTER TABLE nass.base_hybrid_counts ADD COLUMN fips text;
 #   ALTER TABLE nass.base_hybrid_counts ADD COLUMN acres_merged numeric;
-#UPDATE nass.base_hybrid SET value = NULL WHERE value = '                 (D)';
+# UPDATE nass.base_hybrid SET value = NULL WHERE value = '                 (D)';
 
-####################QUERY1################################
+####################QUERY2################################
+###DESCRIPTION:  This table 
 # UPDATE nass.base_hybrid_counts
 # SET fips = base_hybrid_counts.state_fips_code || base_hybrid_counts.county_code,
 #     acres_merged = sq.sum
@@ -255,7 +267,7 @@ query2 = """SELECT nass_state.index, lookup.serial, nass_state."Value" as value,
 # WHERE base_hybrid_counts.state_fips_code=sq.state_fips_code and base_hybrid_counts.county_code=sq.county_code and base_hybrid_counts.year=sq.year
 
 
-##############QUERY2######################################
+#####################QUERY3######################################
 # create table nass.base_hybrid_stats as
 # SELECT 
 #   state_alpha, 
@@ -281,5 +293,5 @@ query2 = """SELECT nass_state.index, lookup.serial, nass_state."Value" as value,
 #   counties.shape_area, 
 #   counties.geom
 
-  # ALTER TABLE nass.base_hybrid_stats ADD COLUMN r2 numeric;
-  # ALTER TABLE nass.base_hybrid_stats ADD COLUMN slope numeric;
+#   ALTER TABLE nass.base_hybrid_stats ADD COLUMN r2 numeric;
+#   ALTER TABLE nass.base_hybrid_stats ADD COLUMN slope numeric;

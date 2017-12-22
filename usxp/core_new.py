@@ -36,32 +36,57 @@ except:
     print "I am unable to connect to the database"
 
 
+def getSeries():
+
+
+    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
+    query = "SELECT * FROM series.params inner join series.core using(series) where params.series='s15';"
+    print 'query:', query
+    df = pd.read_sql_query(query, con=engine)
+    # print df
+    for index, row in df.iterrows():
+        # print row
+        return row
+    
+
+
+returned_row = getSeries()
+core = returned_row['n1']
+# print data
+
+###convert unicide to string datatype
+# core = { str(key):str(value) for key,value in data.items() }
+print core['filter']
+print type(core['filter'])
+
+# def foo():
+#     print 'gfgfgf'
 
 
 #################### class to create core object  ####################################################
-class ProcessingObject(object):
-    def __init__(self, series, route, res, mmu, years, filter_gdb, filter_key):
-        self.series = series
-        self.res = str(res)
-        self.years = years
-        self.filter_key = filter_key
-        self.filter_gdb = filter_gdb
-        self.mmu = mmu
-        self.route = route
+# class ProcessingObject(object):
+#     def __init__(self, core['series'], route, res, mmu, years, filter_gdb, filter_key):
+#         self.core['series'] = core['series']
+#         self.res = str(res)
+#         self.years = years
+#         self.filter_key = filter_key
+#         self.filter_gdb = filter_gdb
+#         self.mmu = mmu
+#         self.route = route
 
 
 
 
-        self.datarange = str(self.years[0])+'to'+str(self.years[1])
-        print 'self.datarange', self.datarange
-        self.traj_name = self.series+"_traj_cdl"+self.res+"_b_"+self.datarange+"_rfnd"
-        self.traj_path = defineGDBpath(['pre','v2','traj_refined'])+self.traj_name
+#         self.datarange = str(self.years[0])+'to'+str(self.years[1])
+#         print 'self.datarange', self.datarange
+#         self.traj_name = self.series+"_traj_cdl"+self.res+"_b_"+self.datarange+"_rfnd"
+#         self.traj_path = defineGDBpath(['pre','v2','traj_refined'])+self.traj_name
 
-        self.filter_parentnode = self.getFilterParentNode()
+#         self.filter_parentnode = self.getFilterParentNode()
 
-    def getFilterParentNode(self):
-        if self.route == 'r2' or self.route == 'r3':
-            return self.traj_name
+#     def getFilterParentNode(self):
+#         if self.route == 'r2' or self.route == 'r3':
+#             return self.traj_name
 
                 
 
@@ -86,21 +111,22 @@ def addColorMap(inraster,template):
 
 
 def createMTR():
+    print 'createMTR()----------------------------------------------------------------------'
     ## replace the arbitrary values in the trajectories dataset with the mtr values 1-5.
     # raster = defineGDBpath(['sa','mmu']) + core.traj_name+"_n8h"
-    raster = defineGDBpath(['s14','core','core'])+"s14_traj_cdl30_b_2008to2016_rfnd_n8h"
+    raster = defineGDBpath(['s15','core','core'])+"s13_traj_cdl30_b_2008to2016_rfnd_n4h"
     print 'raster: ', raster
 
-    output = defineGDBpath(['s14','core','core'])+"s14_traj_cdl30_b_2008to2016_rfnd_n8h_mtr"
+    output = defineGDBpath(['s15','core','core'])+"s13_traj_cdl30_b_2008to2016_rfnd_n4h_mtr"
     print 'output:', output
 
-    reclassArray = createReclassifyList() 
+    # reclassArray = createReclassifyList() 
 
-    outReclass = Reclassify(Raster(raster), "Value", RemapRange(reclassArray), "NODATA")
+    # outReclass = Reclassify(Raster(raster), "Value", RemapRange(reclassArray), "NODATA")
     
-    outReclass.save(output)
+    # outReclass.save(output)
 
-    gen.buildPyramids(output)
+    # gen.buildPyramids(output)
 
 
 
@@ -125,29 +151,29 @@ def createReclassifyList():
 
 
 def majorityFilter():
-    filter_combos = {'n4h':["FOUR", "HALF"],'n4m':["FOUR", "MAJORITY"],'n8h':["EIGHT", "HALF"],'n8m':["EIGHT", "MAJORITY"]}
-    print 'filter_combo----', filter_combos[core.filter_key]
+    filter_combos = {'n4h':["FOUR", "HALF"],'n4m':["FOUR", "MAJORITY"],'nh8':["EIGHT", "HALF"],'n8m':["EIGHT", "MAJORITY"]}
+    print 'filter_combo----', filter_combos[core['filter']]
     
-    parent_raster = core.traj_path
-    print 'parent raster', parent_raster
-    output = defineGDBpath(core.filter_gdb)+core.filter_parentnode+'_'+core.filter_key
-    print 'output: ',output
+    # parent_raster = core.traj_path
+    # print 'parent raster', parent_raster
+    # output = defineGDBpath(core.filter_gdb)+core.filter_parentnode+'_'+core.filter_key
+    # print 'output: ',output
 
-    ## check if dataset already exists
-    if arcpy.Exists(output):
-        print 'dataset already exists'
-        return
+    # ## check if dataset already exists
+    # if arcpy.Exists(output):
+    #     print 'dataset already exists'
+    #     return
     
 
-    else:
-        print 'creating new filter dataset...............................'
-        #Execute MajorityFilter
-        outMajFilt = MajorityFilter(core.traj_path, filter_combos[core.filter_key][0], filter_combos[core.filter_key][1])
+    # else:
+    #     print 'creating new filter dataset...............................'
+    #     #Execute MajorityFilter
+    #     outMajFilt = MajorityFilter(core.traj_path, filter_combos[core.filter_key][0], filter_combos[core.filter_key][1])
         
-        #save processed raster to new file
-        outMajFilt.save(output)
+    #     #save processed raster to new file
+    #     outMajFilt.save(output)
 
-        gen.buildPyramids(output)
+    #     gen.buildPyramids(output)
 
 
 
@@ -264,3 +290,15 @@ def AddNullValuesToRaster():
 
 
 # AddNullValuesToRaster()
+
+
+def bar():
+    print 'ddgfdffqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq'
+
+dispatcher = {'foobar': [createMTR, majorityFilter]}
+
+def fire_all(func_list):
+    for f in func_list:
+        f()
+
+fire_all(dispatcher['foobar'])

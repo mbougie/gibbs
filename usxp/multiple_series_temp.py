@@ -5,14 +5,32 @@ Run multiple series.
 import sys
 import os
 from config import from_config
+from sqlalchemy import create_engine
+import pandas as pd
 
 import pre
 import parallel_61and36mask as pp_36and61mask
 import core
 import parallel_regiongroup as prg
-import parallel_nibble as nibble
-import post
+import parallel_nibble_temp as nibble
+import post_temp as post
 import parallel_attachCDL as pp_cdl
+import createJSON
+
+
+
+
+
+
+def getSeries(step):
+    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
+    query = "SELECT * FROM series.params inner join series.{} using(series) where params.series='s15';".format(step)
+    print 'query:-------------------------------->', query
+    df = pd.read_sql_query(query, con=engine)
+    # print df
+    for index, row in df.iterrows():
+        print row
+        return row
 
 
 
@@ -26,8 +44,7 @@ def run_series(series, res ,mmu, years, pre_arg, refine_arg, pp_36and61mask_arg,
 	# pre.pre = pre.ProcessingObject(series,res,mmu,years)
 	# core.core = core.ProcessingObject(series,res,mmu,years,core_arg['filter'])
 	# core.core = core.ProcessingObject(series,'r2',res,mmu,years,core_filter['filter_gdb'], core_filter['filter_key'])
-	post.post = post.ProcessingObject(series,res,mmu,years,post_arg['name'],post_arg['subname'])
-
+	# post.post = post.ProcessingObject(series,res,mmu,years,post_arg['name'],post_arg['subname'])
 
 
 
@@ -47,16 +64,18 @@ def run_series(series, res ,mmu, years, pre_arg, refine_arg, pp_36and61mask_arg,
 	# pp_36and61mask.run(series, res, mmu, years, 'ytc')
 
 	#----------  perform core processing  ------------------------------------------------
-	mtr_parent = '_'+core_filter['filter_key']
-	mtr_child = mtr_parent+'_mtr'
+	# mtr_parent = '_'+core_filter['filter_key']
+	# mtr_child = mtr_parent+'_mtr'
 
-	parent_rg = mtr_parent+'_mtr'
-	print parent_rg
-	child_rg = '_'+pp_rg_arg['rg_key']+'_rgmask'+str(mmu)
-	print child_rg
+	# parent_rg = mtr_parent+'_mtr'
+	# print parent_rg
+	# child_rg = '_'+pp_rg_arg['rg_key']+'_rgmask'+str(mmu)
+	# print child_rg
 
-	child_mmu = '_'+pp_rg_arg['rg_key']+'_mmu'+str(mmu)
-	print child_mmu
+	# child_mmu = '_'+pp_rg_arg['rg_key']+'_mmu'+str(mmu)
+	# print child_mmu
+
+
 
 	#### filter ####################
 	# core.majorityFilter()
@@ -70,8 +89,11 @@ def run_series(series, res ,mmu, years, pre_arg, refine_arg, pp_36and61mask_arg,
 	# post.createYearbinaries()
 	# post.createMask()
 	# post.clipByMMU()
+
+	post.run(getSeries('post'))
+	# nibble.run(getSeries('post'))
 	# nibble.run(series, res, mmu, years, pp_nbl_ytc_arg['name'], pp_nbl_ytc_arg['subname'], pp_nbl_ytc_arg['pixel_type'], pp_nbl_ytc_arg['gdb_parent'], parent_rg, pp_nbl_ytc_arg['gdb_child'], child_rg, child_mmu)
-	post.addGDBTable2postgres()
+	# post.addGDBTable2postgres()
 	# pp_cdl.run(series, res, mmu, years, 'ytc')
 
 

@@ -21,10 +21,11 @@ arcpy.CheckOutExtension("Spatial")
 #establish root path for this the main project (i.e. usxp)
 rootpath = 'C:/Users/Bougie/Desktop/Gibbs/data/usxp/'
 
+
 ### establish gdb path  ####
 def defineGDBpath(arg_list):
-    gdb_path = rootpath + arg_list[0]+'/'+arg_list[1]+'.gdb/'
-    print 'gdb path: ', gdb_path 
+    gdb_path = '{}{}/{}/{}.gdb/'.format(rootpath,arg_list[0],arg_list[1],arg_list[2])
+    # print 'gdb path: ', gdb_path 
     return gdb_path
 
 
@@ -47,13 +48,15 @@ class ProcessingObject(object):
 		self.parent_seq = parent_seq
 		self.raster_parent = self.traj+self.parent_seq
 		self.path_parent = self.gdb_parent + self.raster_parent
+		print 'self.path_parent:', self.path_parent
 
 		self.gdb_child = defineGDBpath(gdb_child)
 		self.child_seq = child_seq
 		self.raster_child = self.raster_parent+self.child_seq
 		self.path_child = self.gdb_child + self.raster_child
+		print 'self.path_child:', self.path_child
 
-		self.out_fishnet = defineGDBpath(['ancillary', 'shapefiles']) + 'counties_subset'
+		self.out_fishnet = defineGDBpath(['ancillary', 'vector', 'shapefiles']) + 'fishnet_mtr'
 		self.pixel_type = "32_BIT_UNSIGNED"
 		
 
@@ -89,7 +92,7 @@ def execute_task(args):
 	    print k,v
 	    # Execute RegionGroup
 	    ras_out = RegionGroup(Raster(prg.path_parent), v[0], v[1],"NO_LINK")
-
+        
 		#clear out the extent for next time
         arcpy.ClearEnvironment("extent")
 	    

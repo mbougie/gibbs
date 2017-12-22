@@ -12,6 +12,7 @@ from arcpy.sa import *
 import glob
 import psycopg2
 import general as gen 
+import pprint
 
 
 '''######## DEFINE THESE EACH TIME ##########'''
@@ -26,106 +27,50 @@ except:
 
 ###################  Define the environment  #######################################################
 #establish root path for this the main project (i.e. usxp)
-rootpath = 'C:/Users/Bougie/Desktop/Gibbs/data/usxp/'
+rootpath = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/data/usxp/'
 
 ### establish gdb path  ####
-def defineGDBpath(arg_list):
-    gdb_path = '{}{}/{}/{}.gdb/'.format(rootpath,arg_list[0],arg_list[1],arg_list[2])
+def defineGDBpath(args_list):
+    gdb_path = '{}{}/{}/{}.gdb/'.format(rootpath,args_list[0],args_list[1],args_list[2])
     # print 'gdb path: ', gdb_path 
     return gdb_path
 
 
+
+
+
 #################### class to create yxc object  ####################################################
 
-class ProcessingObject(object):
-
-    def __init__(self, series, res, mmu, years, name, subname):
-        self.series = series
-        self.name = name
-        self.subname = subname
-        self.res = str(res)
-        self.mmu = str(mmu)
-        self.years = years
-        
-        self.datarange = str(self.years[0])+'to'+str(self.years[1])
-        print 'self.datarange:', self.datarange
-        
-        self.conversionyears = range(self.years[0]+2, self.years[1])
-        print 'self.conversionyears:', self.conversionyears
-        
-        self.traj_dataset = self.series+"_traj_cdl"+self.res+"_b_"+self.datarange+'_rfnd'
-        self.mtr_dataset = self.series+"_traj_cdl"+self.res+"_b_"+self.datarange+'_rfnd_n8h_mtr_8w_mmu'+self.mmu
-        self.yxc_dataset = self.series+"_"+self.name+self.res+'_'+self.datarange
-        self.yxc_mmu_dataset = self.yxc_dataset+'_mmu'+self.mmu
-        self.yxc_mask_dataset = self.yxc_mmu_dataset+'_msk'
-        
-        self.mmu_gdb=defineGDBpath(['s14', 'core', 'core'])
 
 
-        # mtr = defineGDBpath(['core','mtr'])+'traj_cdl30_b_2008to2016_rfnd_n8h_mtr'
-        # ytc = defineGDBpath(['post','ytc'])+'ytc30_2008to2016_mmu5'
-        # outCon = Con((mtr == 3) & (ytc >= 2008), ytc, Con((mtr == 3) & (IsNull(ytc)), 3))
-
-        # output = defineGDBpath(['post','ytc'])+'ytc30_2008to2016_mmu5_msk'
-
-        # if self.years[1] == 2016:
-        #     self.datarange = str(self.years[0])+'to'+str(self.years[1]-1)
-        #     print 'self.datarange:', self.datarange
-        #     self.conversionyears = range(self.years[0]+1, self.years[1])
-        #     print 'self.conversionyears:', self.conversionyears
-        # else:
-        #     self.datarange = str(self.years[0])+'to'+str(self.years[1])
-        #     print 'self.datarange:', self.datarange
-        #     self.conversionyears = range(self.years[0]+1, self.years[1] + 1)
-        #     print 'self.conversionyears:', self.conversionyears
-        
-
-        if self.name == 'ytc':
-            self.mtr = 3
-        elif self.name == 'yfc':
-            self.mtr = 4
+    #     if self.name == 'ytc':
+    #         self.mtr = 3
+    #     elif self.name == 'yfc':
+    #         self.mtr = 4
     
-    #function for to get correct cdl for the attachCDL() function
-    def getAssociatedCDL(self, year):
-        if self.subname == 'bfc' or  self.subname == 'bfnc':
-            # subtract 1 from every year in list
-            cdl_file = defineGDBpath(['ancillary','cdl'])+'cdl_'+ str(year - 1)
-            return cdl_file
+    # #function for to get correct cdl for the attachCDL() function
+    # def getAssociatedCDL(self, year):
+    #     if self.subname == 'bfc' or  self.subname == 'bfnc':
+    #         # subtract 1 from every year in list
+    #         cdl_file = defineGDBpath(['ancillary','cdl'])+'cdl_'+ str(year - 1)
+    #         return cdl_file
 
-        elif self.subname == 'fc' or  self.subname == 'fnc':
-            # subtract 1 from every year in list
-            cdl_file = defineGDBpath(['ancillary','cdl'])+'cdl_'+ str(year)
-            return cdl_file
+    #     elif self.subname == 'fc' or  self.subname == 'fnc':
+    #         # subtract 1 from every year in list
+    #         cdl_file = defineGDBpath(['ancillary','cdl'])+'cdl_'+ str(year)
+    #         return cdl_file
 
         
 
-def addColorMap(inraster,template):
-    ##Add Colormap
-    ##Usage: AddColormap_management in_raster {in_template_raster} {input_CLR_file}
 
-    try:
-        import arcpy
-        # arcpy.env.workspace = r'C:/Users/Bougie/Documents/ArcGIS/Default.gdb'
-        
-        ##Assign colormap using template image
-        arcpy.AddColormap_management(inraster, "#", template)
-        
-
-    except:
-        print "Add Colormap example failed."
-        print arcpy.GetMessages()
-
-
-
-def createYearbinaries():
+def createYearbinaries(data):
         # DESCRIPTION:attach the appropriate cdl value to each year binary dataset
     print "-----------------  createYearbinaries()  -------------------------------"
-
     def createReclassifyList():
         #this is a sub function for createYearbinaries_better().  references the mtr value in psotgres to create a list containing arbitray trajectory value and associated new mtr value
 
         engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
-        query = 'SELECT * from pre.v2_traj_cdl'+post.res+"_b_"+post.datarange + ' as a JOIN pre.traj_' + post.datarange + '_lookup as b ON a.traj_array = b.traj_array WHERE '+post.name+' IS NOT NULL'
+        query = 'SELECT * FROM {} as a JOIN {} as b ON a.traj_array = b.traj_array WHERE {} IS NOT NULL'.format(data['paths_global']['traj'], data['paths_global']['traj_lookup'], data['paths_global']['name'])
         print 'query:', query
         df = pd.read_sql_query(query, con=engine)
         print df
@@ -133,7 +78,7 @@ def createYearbinaries():
         for index, row in df.iterrows():
             templist=[]
             value=row['Value'] 
-            yxc=row[post.name]  
+            yxc=row[data['paths_global']['name']]  
             templist.append(int(value))
             templist.append(int(yxc))
             fulllist.append(templist)
@@ -142,10 +87,12 @@ def createYearbinaries():
 
 
     ## replace the arbitrary values in the trajectories dataset with the yxc values.
-    raster = Raster(defineGDBpath(['pre', 'v2', 'traj_refined'])+post.traj_dataset)
+    # raster = Raster(defineGDBpath(['pre', 'v2', 'traj_refined'])+post.traj_dataset)
+    raster = Raster(data['paths_post']['createYearbinaries']['input'])
     print 'raster:', raster
 
-    output = defineGDBpath(['s14', 'post', post.name])+post.yxc_dataset
+    # output = defineGDBpath(['s14', 'post', post.name])+post.yxc_dataset
+    output = Raster(data['paths_post']['createYearbinaries']['output'])
     print 'output: ', output
 
     reclassArray = createReclassifyList() 
@@ -157,7 +104,7 @@ def createYearbinaries():
     gen.buildPyramids(output)
 
 
-#####  NOTE!!  ACTUALLY CREATE THE MASK FIRST ANFD THEN CREATE THE MMU DATASET
+# #####  NOTE!!  ACTUALLY CREATE THE MASK FIRST ANFD THEN CREATE THE MMU DATASET
 
 def createMask():
     print "-----------------createMask() function-------------------------------"
@@ -188,9 +135,9 @@ def clipByMMU():
 
 
 
-def attachCDL(gdb_args_in):
+def attachCDL(gdb_argss_in):
     # DESCRIPTION:attach the appropriate cdl value to each year binary dataset
-    arcpy.env.workspace=defineGDBpath(gdb_args_in)
+    arcpy.env.workspace=defineGDBpath(gdb_argss_in)
     
     # arcpy.env.rasterStatistics = 'STATISTICS'
     # # Set the cell size environment using a raster dataset.
@@ -358,39 +305,20 @@ def getReclassifyValuesString():
 
 
 
-################ Instantiate the class to create yxc object  ########################
-# post = ProcessingObject(
-#       "s9",
-#       #resolution
-#       30,
-#       #mmu
-#       5,
-#       #data range---i.e. all the cdl years you are referencing 
-#       [2008,2016],
-#       #name
-#       'yfc',
-#       #subname
-#       'fnc'
-#       )
+def run(data): 
+    print data
+    pp = pprint.PrettyPrinter(indent=4)
+    pp.pprint(data['paths_global'])
 
-################ call functions  #####################################################
-# createYearbinaries_better()
-# clipByMMU()
-# createMask()
-
-
-
-
-
-######### old #########################
-# createYearbinaries()
-# removeArbitraryValuesFromYearbinaries()
-# attachCDL(['post',post.name])
-
-
-# addGDBTable2postgres()
-# createSpecificLUCMask()
-
+    
+    # post = data['paths_global']
+    # print 'post', post
+    # data['paths_global']
+    # print post['createYearbinaries']
+    # # print post[]
+    # createYearbinaries(data)
+    # # createMask()
+    # # clipByMMU()
 
 
 
