@@ -9,12 +9,13 @@ from arcpy.sa import *
 # import glob
 import psycopg2
 import general as gen
+import json
 
 
 
 '''######## DEFINE THESE EACH TIME ##########'''
 #Note: need to change this each time on different machine
-case=['Bougie','Gibbs']
+# case=['Bougie','Gibbs']
 
 #import extension
 arcpy.CheckOutExtension("Spatial")
@@ -22,13 +23,13 @@ arcpy.env.parallelProcessingFactor = "95%"
 
 ###################  Define the environment  #######################################################
 #establish root path for this the main project (i.e. usxp)
-rootpath = 'C:/Users/Bougie/Desktop/Gibbs/data/usxp/'
+# rootpath = 'C:/Users/Bougie/Desktop/Gibbs/data/usxp/'
 
-### establish gdb path  ####
-def defineGDBpath(arg_list):
-    gdb_path = '{}{}/{}/{}.gdb/'.format(rootpath,arg_list[0],arg_list[1],arg_list[2])
-    # print 'gdb path: ', gdb_path 
-    return gdb_path
+# ### establish gdb path  ####
+# def defineGDBpath(arg_list):
+#     gdb_path = '{}{}/{}/{}.gdb/'.format(rootpath,arg_list[0],arg_list[1],arg_list[2])
+#     # print 'gdb path: ', gdb_path 
+#     return gdb_path
 
 try:
     conn = psycopg2.connect("dbname='usxp' user='mbougie' host='144.92.235.105' password='Mend0ta!'")
@@ -36,31 +37,53 @@ except:
     print "I am unable to connect to the database"
 
 
-def getSeries():
+# def getSeries():
 
 
-    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
-    query = "SELECT * FROM series.params inner join series.core using(series) where params.series='s15';"
-    print 'query:', query
-    df = pd.read_sql_query(query, con=engine)
-    # print df
-    for index, row in df.iterrows():
-        # print row
-        return row
+#     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
+#     query = "SELECT * FROM series.params inner join series.core using(series) where params.series='s15';"
+#     print 'query:', query
+#     df = pd.read_sql_query(query, con=engine)
+#     # print df
+#     for index, row in df.iterrows():
+#         # print row
+#         return row
     
 
 
-returned_row = getSeries()
-core = returned_row['n1']
-# print data
+# returned_row = getSeries()
+# core = returned_row['n1']
+# # print data
 
-###convert unicide to string datatype
-# core = { str(key):str(value) for key,value in data.items() }
-print core['filter']
-print type(core['filter'])
+# ###convert unicide to string datatype
+# # core = { str(key):str(value) for key,value in data.items() }
+# print core['filter']
+# print type(core['filter'])
 
 # def foo():
 #     print 'gfgfgf'
+
+
+
+
+def getJSONfile():
+    with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\config\\test\\series_test4.json') as json_data:
+        template = json.load(json_data)
+        # print(template)
+        # print type(template)
+        return template
+
+
+
+
+data = getJSONfile()
+print data
+
+
+
+
+
+
 
 
 #################### class to create core object  ####################################################
@@ -150,30 +173,34 @@ def createReclassifyList():
 
 
 
-def majorityFilter():
-    filter_combos = {'n4h':["FOUR", "HALF"],'n4m':["FOUR", "MAJORITY"],'nh8':["EIGHT", "HALF"],'n8m':["EIGHT", "MAJORITY"]}
-    print 'filter_combo----', filter_combos[core['filter']]
+def majorityFilter(rasters):
+    print 'rasters', rasters
+    filter_combos = {'n4h':["FOUR", "HALF"],'n4m':["FOUR", "MAJORITY"],'n8h':["EIGHT", "HALF"],'n8m':["EIGHT", "MAJORITY"]}
+    filter_key = data['core']['filter']
+    print 'filter_key', filter_key
+    print 'filter_combo----', filter_combos[data['core']['filter']]
     
-    # parent_raster = core.traj_path
-    # print 'parent raster', parent_raster
-    # output = defineGDBpath(core.filter_gdb)+core.filter_parentnode+'_'+core.filter_key
-    # print 'output: ',output
+    
+    raster_in = rasters['input']
+    print 'raster_in', raster_in
+    raster_out = rasters['output']
+    print 'raster_out: ',raster_out
 
-    # ## check if dataset already exists
-    # if arcpy.Exists(output):
-    #     print 'dataset already exists'
-    #     return
+    ## check if dataset already exists
+    if arcpy.Exists(raster_out):
+        print 'dataset already exists'
+        return
     
 
-    # else:
-    #     print 'creating new filter dataset...............................'
-    #     #Execute MajorityFilter
-    #     outMajFilt = MajorityFilter(core.traj_path, filter_combos[core.filter_key][0], filter_combos[core.filter_key][1])
+    else:
+        print 'creating new filter dataset...............................'
+        ##Execute MajorityFilter
+        outMajFilt = MajorityFilter(raster_in, filter_combos[filter_key][0], filter_combos[filter_key][1])
         
-    #     #save processed raster to new file
-    #     outMajFilt.save(output)
+        ##save processed raster to new file
+        outMajFilt.save(raster_out)
 
-    #     gen.buildPyramids(output)
+        gen.buildPyramids(raster_out)
 
 
 
@@ -281,7 +308,13 @@ def AddNullValuesToRaster():
 
 
 
-
+def routes():
+    if data['core']['route'] == 'r2':
+        majorityFilter({'input':'\\'.join((data['pre']['traj_rfnd']['gdb'],data['pre']['traj_rfnd']['filename'])),
+                        'output':'\\'.join((data['core']['gdb'],data['core']['filename']['majorityfilter']))
+                       })
+        # createMTR()
+        
 
 
 #### COMMENTS ##########################################
@@ -292,13 +325,16 @@ def AddNullValuesToRaster():
 # AddNullValuesToRaster()
 
 
-def bar():
-    print 'ddgfdffqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq'
+# def bar():
+#     print 'ddgfdffqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq'
 
-dispatcher = {'foobar': [createMTR, majorityFilter]}
+# dispatcher = {'foobar': [createMTR, majorityFilter]}
 
-def fire_all(func_list):
-    for f in func_list:
-        f()
+# def fire_all(func_list):
+#     for f in func_list:
+#         f()
 
-fire_all(dispatcher['foobar'])
+# fire_all(dispatcher['foobar'])
+
+
+routes()

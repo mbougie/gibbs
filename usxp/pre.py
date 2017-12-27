@@ -10,7 +10,8 @@ import numpy as np
 import psycopg2
 from itertools import groupby
 import general as gen
-
+import json
+import fnmatch
 
 
 arcpy.CheckOutExtension("Spatial")
@@ -22,59 +23,37 @@ except:
     print "I am unable to connect to the database"
 
 
-#########  global variables   ################
-#acccounts for different machines having different cases in path
-case=['Bougie','Gibbs']
 
-
-###################  Define the environment  #######################################################
-#establish root path for this the main project (i.e. usxp)
-rootpath = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/data/usxp/'
-
-### establish gdb path  ####
-def defineGDBpath(arg_list):
-    gdb_path = rootpath + arg_list[0]+'/'+arg_list[1]+'.gdb/'
-    print 'gdb path: ', gdb_path 
-    return gdb_path
+def getGDBpath(wc):
+    for root, dirnames, filenames in os.walk("C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\"):
+        for dirnames in fnmatch.filter(dirnames, '*{}*.gdb'.format(wc)):
+            print dirnames
+            gdbmatches = os.path.join(root, dirnames)
+    print gdbmatches
+    # return json.dumps(gdbmatches)
+    return gdbmatches
 
 
 
 
 
-class ProcessingObject(object):
+def getJSONfile():
+    with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\config\\test\\series_test4.json') as json_data:
+        template = json.load(json_data)
+        # print(template)
+        # print type(template)
+        return template
 
-    def __init__(self, res, mmu, years):
-        self.res = res
-        self.mmu = mmu
-        self.years = years
-        self.data_years = range(self.years[0], self.years[1] + 1)
-        print self.data_years
-        self.datarange = str(self.years[0])+'to'+str(self.years[1])
-        print self.datarange
-        print years[0]
-        self.traj_dataset = "traj_cdl"+str(self.res)+"_b_"+str(self.datarange)
-        
 
-        # self.yearcount=len(range(self.years[0], self.years[1]+1))
 
-    def __str__(self):
-        return 'ProcessingObject(res: {}, years: {})'.format(self.res, str(self.years))
+
+data = getJSONfile()
+print data
+
+
+
+
     
-
-    def getCDLlist(self):
-        cdl_list = []
-        for year in self.data_years:
-            print 'year:', year
-            cdl_dataset = 'cdl{0}_b_{1}'.format(str(self.res),str(year))
-            cdl_list.append(cdl_dataset)
-        print'cdl_list: ', cdl_list
-        return cdl_list
-
-
-
-
-     
-
 def reclassifyRaster():
     # Description: reclass cdl rasters based on the specific arc_reclassify_table 
     gdb_args_in = ['ancillary', 'cdl']
@@ -128,18 +107,32 @@ def getReclassifyValuesString(ds, reclass_degree):
     return columnList
 
 
+
+def getCDLlist():
+    cdl_list = []
+    for year in data['globals']['years']:
+        print 'year:', year
+        cdl_dataset = 'cdl{0}_b_{1}'.format(str(data['globals']['res']),str(year))
+        cdl_list.append(cdl_dataset)
+    print'cdl_list: ', cdl_list
+    return cdl_list
+
+
+
+
+
 def createTrajectories():
     # Description: "Combines multiple rasters so that a unique output value is assigned to each unique combination of input values" -arcGIS def
     #the rasters where combined in chronoloigal order with the recalssifed nlcd raster being in the inital spot.
 
     # Set environment settings
-    arcpy.env.workspace = defineGDBpath(['pre','binaries'])
-    
-    output = defineGDBpath(['pre','trajectories'])+pre.traj_dataset
+    arcpy.env.workspace = getGDBpath('binaries')
+
+    output = '\\'.join([ data['pre']['traj']['gdb'],data['pre']['traj']['filename'] ])
     print 'output', output
     
-    ###Execute Combine
-    outCombine = Combine(pre.getCDLlist())
+    # ###Execute Combine
+    outCombine = Combine(getCDLlist())
   
     ###Save the output 
     outCombine.save(output)
@@ -155,7 +148,7 @@ def addGDBTable2postgres():
     
     # tablename = 'traj_'+wc
     # path to the table you want to import into postgres
-    input = defineGDBpath(['pre','trajectories'])+pre.traj_dataset
+    input = '\\'.join([ data['pre']['traj']['gdb'],data['pre']['traj']['filename'] ])
 
     # Execute AddField twice for two new fields
     fields = [f.name for f in arcpy.ListFields(input)]
@@ -170,7 +163,7 @@ def addGDBTable2postgres():
     print df
     
     # use pandas method to import table into psotgres
-    df.to_sql(pre.traj_dataset, engine, schema='pre')
+    df.to_sql(data['pre']['traj']['filename'], engine, schema='pre')
     
     #add trajectory field to table
     addTrajArrayField(fields)
@@ -179,7 +172,6 @@ def addGDBTable2postgres():
 
 def addTrajArrayField(fields):
     #this is a sub function for addGDBTable2postgres()
-    
     cur = conn.cursor()
     
     #convert the rasterList into a string
@@ -187,10 +179,10 @@ def addTrajArrayField(fields):
     print columnList
 
     #DDL: add column to hold arrays
-    cur.execute('ALTER TABLE pre.' + pre.traj_dataset + ' ADD COLUMN traj_array integer[];');
+    cur.execute('ALTER TABLE pre.{} ADD COLUMN traj_array integer[];'.format(data['pre']['traj']['filename']));
     
     #DML: insert values into new array column
-    cur.execute('UPDATE pre.' + pre.traj_dataset + ' SET traj_array = ARRAY['+columnList+'];');
+    cur.execute('UPDATE pre.{} SET traj_array = ARRAY[{}];'.format(data['pre']['traj']['filename'], columnList));
     
     conn.commit()
     print "Records created successfully";
@@ -259,34 +251,11 @@ def FindRedundantTrajectories():
 
 
 
-###############  KEEP THIS PART OF CODE FOR NOW!!!!  ##################################
-
-pre = ProcessingObject(
-    #resolution
-    30,
-    #mmu
-    5,
-    #data-range
-    [2008,2016]
-)
+####  these functions create the trajectory table  #############
+createTrajectories()
+addGDBTable2postgres()
 
 
-# reclassifyRaster()
-# createTrajectories()
-# addGDBTable2postgres()
+#######  these functions are to update the lookup tables  ######
+# labelTrajectories()
 # FindRedundantTrajectories()
-
-
-# def run():
-#     # print "pre is: {}".format(str(pre))
-#     # print pre.traj_dataset
-#     ###-----createTrajectories()-----------------------------------------------
-#     createTrajectories()
-
-
-    ###-----addGDBTable2postgres()
-    # addGDBTable2postgres()
-
-    #######----these functions are to update the lookup tables!
-    # labelTrajectories()
-    # FindRedundantTrajectories()

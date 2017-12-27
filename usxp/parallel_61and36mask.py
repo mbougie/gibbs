@@ -74,7 +74,7 @@ class ProcessingObject(object):
 		self.inTraj_name = 'v2_traj_'+ self.inYTC_name
 		self.inTraj = defineGDBpath(['refine','v2', 'trajectories'])+self.inTraj_name
 
-		self.inComp = defineGDBpath(['ancillary','raster','temp'])+'composite'
+		self.inComp = defineGDBpath(['ancillary','raster','misc'])+'composite'
 
 		self.out_fishnet = defineGDBpath(['ancillary','vector','shapefiles']) + 'fishnet_' + self.name
 		self.pixel_type = "8_BIT_UNSIGNED"
@@ -313,7 +313,7 @@ def run(series, res, mmu, years, name):
 	print'extDict.items',  extDict.items()
 
 	#######create a process and pass dictionary of extent to execute task
-	# pool = Pool(processes=5)
+	pool = Pool(processes=1)
 	# # pool.map(execute_task, extDict.items())
 	# pool.map(execute_task, [(ed, nibble) for ed in extDict.items()])
 	# pool.close()

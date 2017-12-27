@@ -757,3 +757,17 @@ def getWorkSpaces(rootdir):
      
     return workspaces
 
+
+
+
+def commitQuery(query):
+    #small wrapper function to commit a query
+    cur = conn.cursor()
+
+    cur.execute(query)
+
+    conn.commit()
+    print "Records created successfully";
+    # conn.close()
+
+
