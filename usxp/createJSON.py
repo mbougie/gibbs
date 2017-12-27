@@ -103,7 +103,7 @@ class ProcessingObject(object):
         #call the methods in order to modifiy the tempalte json
         self.updateKernel = self.updateKernel(kernel)
         self.updatePreObject = self.updatePreObject(kernel)
-        self.updateRefineObject = self.updateRefineObject()
+        self.updateRefineObject = self.updateRefineObject(kernel)
         self.updateCoreObject = self.updateCoreObject(kernel)
         
         #export modified object to json file
@@ -135,11 +135,11 @@ class ProcessingObject(object):
 
 
 
-    def updateRefineObject(self):
+    def updateRefineObject(self, kernel):
         ##define attributes
         self.data['refine']['gdb'] = getGDBpath('refine')
-        # self.data['pre']['traj']['gdb'] = getGDBpath('{}_traj'.format(self.data['pre']['traj']['version']))
-        # self.data['pre']['traj']['filename'] = '_'.join(['traj',self.data['pre']['traj']['version'],'cdl'+self.data['globals']['res'],'b',self.data['globals']['datarange']])
+        self.data['refine']['operator'] = kernel['refine']['operator']
+        self.data['refine']['years_nlcd'] = kernel['refine']['years_nlcd']
 
  
 
@@ -191,7 +191,7 @@ pre = ProcessingObject(
             'years_conv':range(2009,2013)
         },
         'pre':{'version':{'traj':'v3', 'traj_rfnd':'v2'}},
-        'refine':{'join_operator':'or', 'dev_mask':'dev122to124', 'nlcd_masks':['2001','2006','2011']},
+        'refine':{'operator':'or', 'years_nlcd':[2001,2006]},
         'core':{'filter':'n8h', "route":"r2", 'mmu':'5'}
     }
 )
