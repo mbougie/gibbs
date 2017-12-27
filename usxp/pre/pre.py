@@ -1,4 +1,6 @@
 # Import system modules
+import sys 
+# sys.path.append("C:\Users\Bougie\Desktop\Gibbs\scripts\usxp\\misc")
 import arcpy
 from arcpy import env
 from arcpy.sa import *
@@ -9,6 +11,7 @@ import pandas as pd
 import numpy as np
 import psycopg2
 from itertools import groupby
+sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\misc\\')
 import general as gen
 import json
 import fnmatch
@@ -252,8 +255,8 @@ def FindRedundantTrajectories():
 
 
 ####  these functions create the trajectory table  #############
-createTrajectories()
-addGDBTable2postgres()
+# createTrajectories()
+# addGDBTable2postgres()
 
 
 #######  these functions are to update the lookup tables  ######

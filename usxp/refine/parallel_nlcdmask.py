@@ -1,9 +1,12 @@
-# Import system modules
+import sys
+import os
+#import modules from other folders
+sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\misc\\')
 import arcpy
 from arcpy import env
 from arcpy.sa import *
 import glob
-import os
+
 from sqlalchemy import create_engine
 import pandas as pd
 import numpy as np
@@ -81,7 +84,7 @@ def createReclassifyList():
 	return rows
 	
 
-getthelist = createReclassifyList()
+location_list = createReclassifyList()
 
 
 
@@ -124,7 +127,7 @@ def execute_task(in_extentDict):
 	years = data['refine']['years_nlcd']
 
 	# find the location of each pixel labeled with specific arbitray value in the rows list  
-	for row in getthelist:
+	for row in location_list:
 
 		#Return the indices of the pixels that have values of the ytc arbitrsy values of the traj.
 		indices = (arr_traj == row[0]).nonzero()

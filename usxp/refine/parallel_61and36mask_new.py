@@ -1,9 +1,12 @@
-# Import system modules
+import sys
+import os
+#import modules from other folders
+sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\misc\\')
 import arcpy
 from arcpy import env
 from arcpy.sa import *
 import glob
-import os
+
 from sqlalchemy import create_engine
 import pandas as pd
 import numpy as np
