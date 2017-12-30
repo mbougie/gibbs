@@ -31,7 +31,7 @@
             "filename": "traj_v3_cdl30_b_2008to2012"
         }
     }, 
-    "global": {
+    "globals": {
         "series": "s21", 
         "years": [
             2008, 
@@ -47,25 +47,26 @@
             2012
         ], 
         "datarange": "2008to2012", 
-        "res": 30
+        "res": "30"
     }, 
     "refine": {
         "mask_nlcd": {
-            "operator": "or", 
-            "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\refine\\v2_masks.gdb\\mask_nlcd_v2_2008to2012", 
-            "arbitrary": 28, 
             "years_nlcd": [
                 2001, 
                 2006
             ], 
-            "filename": "mask_nlcd_v2_2008to2012"
+            "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\refine\\v2_masks.gdb\\mask_nlcd_2008to2012", 
+            "arbitrary": 28, 
+            "operator": "or", 
+            "filename": "mask_nlcd_2008to2012"
         }, 
         "gdb": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\refine\\v2_masks.gdb", 
         "mask_dev_alfalfa_fallow": {
-            "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\refine\\v2_masks.gdb\\mask_dev_alfalfa_fallow_v2_2008to2012", 
+            "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\refine\\v2_masks.gdb\\mask_dev_alfalfa_fallow_2008to2012", 
             "arbitrary": 1, 
-            "filename": "mask_dev_alfalfa_fallow_v2_2008to2012"
-        }
+            "filename": "mask_dev_alfalfa_fallow_2008to2012"
+        }, 
+        "version": "v2"
     }, 
     "core": {
         "filter": "n8h", 

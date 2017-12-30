@@ -231,7 +231,7 @@ def getDistinctValues():
 	# # fetch all rows from table
 	rows = cur.fetchall()
 	return rows
-#######################################################################################################
+#######################################  end of grouping ##################################################
 
 
 
@@ -350,24 +350,3 @@ if __name__ == '__main__':
 	#### file in the r2 and slope fields
 	updatePGtableWithStats() 
 							  
-
-
-
-
-
-
-
-
-	# getPGtables()
-
-	# applyAPI()
-	# temp()
-	# loopThroughPGcolumn()
-
-
-	# getStatsByFIPS('19029')
-
-
-
-
-	# CreateDerivedTables
