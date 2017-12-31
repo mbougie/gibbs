@@ -135,11 +135,11 @@ class ProcessingObject(object):
 
     def updateKernel(self, kernel):
         #add kenel object to json 
-        self.data['globals']=kernel['globals']
+        self.data['global']=kernel['global']
 
         print 'fdfdfd', self.data
         #add datarange to kernel object
-        self.data['globals']['datarange'] = '{}to{}'.format(str(self.data['globals']['years'][0]), str(self.data['globals']['years'][-1]))
+        self.data['global']['datarange'] = '{}to{}'.format(str(self.data['global']['years'][0]), str(self.data['global']['years'][-1]))
 
 
  
@@ -150,14 +150,14 @@ class ProcessingObject(object):
         ##define attributes
         self.data['pre']['traj']['version'] = kernel['pre']['version']['traj']
         self.data['pre']['traj']['gdb'] = getGDBpath('{}_traj'.format(self.data['pre']['traj']['version']))
-        self.data['pre']['traj']['filename'] = '_'.join(['traj', self.data['pre']['traj']['version'], 'cdl'+self.data['globals']['res'], 'b', self.data['globals']['datarange']])
-        self.data['pre']['traj']['lookup'] = 'traj_{}_lookup'.format(self.data['globals']['datarange'])
-        self.data['pre']['traj']['path']  = '\\'.join([self.data['pre']['traj']['gdb'],self.data['pre']['traj']['filename']]) 
+        self.data['pre']['traj']['filename'] = '_'.join(['traj', self.data['pre']['traj']['version'], 'cdl'+self.data['global']['res'], 'b', self.data['global']['datarange']])
+        self.data['pre']['traj']['lookup'] = 'traj_{}_lookup'.format(self.data['global']['datarange'])
+        self.data['pre']['traj']['path']  = '\\'.join([self.data['pre']['traj']['gdb'], self.data['pre']['traj']['filename']]) 
 
         self.data['pre']['traj_rfnd']['version'] = kernel['pre']['version']['traj_rfnd']
         self.data['pre']['traj_rfnd']['gdb'] = getGDBpath('{}_traj_rfnd'.format(self.data['pre']['traj_rfnd']['version']))
-        self.data['pre']['traj_rfnd']['filename'] = '_'.join([self.data['pre']['traj']['filename'],'rfnd',self.data['pre']['traj_rfnd']['version']])
-        self.data['pre']['traj_rfnd']['path']  = '\\'.join([self.data['pre']['traj_rfnd']['gdb'],self.data['pre']['traj_rfnd']['filename']])  
+        self.data['pre']['traj_rfnd']['filename'] = '_'.join([self.data['pre']['traj']['filename'],'rfnd', self.data['pre']['traj_rfnd']['version']])
+        self.data['pre']['traj_rfnd']['path']  = '\\'.join([self.data['pre']['traj_rfnd']['gdb'], self.data['pre']['traj_rfnd']['filename']])  
 
 
 
@@ -169,43 +169,66 @@ class ProcessingObject(object):
         self.data['refine']['gdb'] = getGDBpath('{}_masks'.format(self.data['refine']['version']))
         
 
-        self.data['refine']['mask_nlcd']['filename'] = 'mask_nlcd_{}'.format(self.data['globals']['datarange'])
-        self.data['refine']['mask_nlcd']['path'] = '\\'.join([self.data['refine']['gdb'],self.data['refine']['mask_nlcd']['filename']])
-        self.data['refine']['mask_nlcd']['arbitrary'] = getArbitraryCropValue(self.data['pre']['traj']['filename'], self.data['globals']['years'], 'crop')
+        self.data['refine']['mask_nlcd']['filename'] = '{}_mask_nlcd_{}'.format(self.data['refine']['version'], self.data['global']['datarange'])
+        self.data['refine']['mask_nlcd']['path'] = '\\'.join([self.data['refine']['gdb'], self.data['refine']['mask_nlcd']['filename']])
+        self.data['refine']['mask_nlcd']['arbitrary'] = getArbitraryCropValue(self.data['pre']['traj']['filename'], self.data['global']['years'], 'crop')
         self.data['refine']['mask_nlcd']['years_nlcd'] = kernel['refine']['years_nlcd']
         self.data['refine']['mask_nlcd']['operator'] = kernel['refine']['operator']
         
         
-        self.data['refine']['mask_dev_alfalfa_fallow']['filename'] = 'mask_dev_alfalfa_fallow_{}'.format(self.data['globals']['datarange'])
-        self.data['refine']['mask_dev_alfalfa_fallow']['path'] = '\\'.join([self.data['refine']['gdb'],self.data['refine']['mask_dev_alfalfa_fallow']['filename']])
-        self.data['refine']['mask_dev_alfalfa_fallow']['arbitrary'] = getArbitraryCropValue(self.data['pre']['traj']['filename'], self.data['globals']['years'], 'noncrop')
+        self.data['refine']['mask_dev_alfalfa_fallow']['filename'] = '{}_mask_dev_alfalfa_fallow_{}'.format(self.data['refine']['version'], self.data['global']['datarange'])
+        self.data['refine']['mask_dev_alfalfa_fallow']['path'] = '\\'.join([self.data['refine']['gdb'], self.data['refine']['mask_dev_alfalfa_fallow']['filename']])
+        self.data['refine']['mask_dev_alfalfa_fallow']['arbitrary'] = getArbitraryCropValue(self.data['pre']['traj']['filename'], self.data['global']['years'], 'noncrop')
         
 
 
  
-
+    #####   core functions  ################################################################################
     def updateCoreObject(self, kernel):
         ##define attributes
         self.data['core']['gdb'] = getGDBpath('core')
         self.data['core']['filter'] = kernel['core']['filter']
         self.data['core']['route'] = kernel['core']['route']
+        self.data['core']['rg'] = kernel['core']['rg']
         self.data['core']['mmu'] = kernel['core']['mmu']
         self.defineRoute = self.defineRoute()
 
     
     def defineRoute(self):
-        self.data['core']['filename'] = self.createFileNames()
+        self.data['core']['filename'] = self.createCoreFileNames()
+        self.data['core']['path'] = self.createCorePaths()
+        self.data['core']['function'] = self.createCoreFunctionArguments()
 
                                                 
-    def createFileNames(self):
+    def createCoreFileNames(self):
         file_dict = {}
         if self.data['core']['route'] == 'r2':
-            file_dict['majorityfilter']='_'.join((self.data['globals']['series'],self.data['pre']['traj_rfnd']['filename'],self.data['core']['filter']))
-            file_dict['createMTR']='_'.join((file_dict['majorityfilter'],'mtr'))
-            file_dict['createMMU']='_'.join((file_dict['createMTR'],'mmu'+self.data['core']['mmu']))
+            file_dict['filter']='_'.join((self.data['global']['series'], self.data['pre']['traj_rfnd']['filename'], self.data['core']['filter']))
+            file_dict['mtr']='_'.join((file_dict['filter'],'mtr'))
+            file_dict['rg']='{}_{}_rgmask{}'.format(file_dict['mtr'], self.data['core']['rg'], self.data['core']['mmu'])
+            file_dict['mmu']='{}_mmu{}'.format(file_dict['mtr'], self.data['core']['mmu'])
         return file_dict
 
+    def createCorePaths(self):
+        path_dict = {}
+        if self.data['core']['route'] == 'r2':
+            path_dict['filter']='\\'.join([self.data['core']['gdb'], self.data['core']['filename']['filter']])
+            path_dict['mtr']='\\'.join([self.data['core']['gdb'], self.data['core']['filename']['mtr']])
+            path_dict['mmu']='\\'.join([self.data['core']['gdb'], self.data['core']['filename']['mmu']])
+        return path_dict
 
+# s14_traj_cdl30_b_2008to2016_rfnd_n8h_mtr_8w_rgmask5
+
+    def createCoreFunctionArguments(self):
+        fct_dict = {}
+        if self.data['core']['route'] == 'r2':
+            fct_dict['majorityFilter']={'input':self.data['pre']['traj_rfnd']['path'], 'output':self.data['core']['filename']['filter']}
+            fct_dict['createMTR']={'input':self.data['core']['filename']['filter'], 'output':self.data['core']['filename']['mtr']}
+            fct_dict['parallel_rg']={'input':self.data['core']['filename']['mtr'], 'output':self.data['core']['filename']['rg']}
+            fct_dict['createMMU']={'input':self.data['core']['filename']['mtr'], 'output':self.data['core']['filename']['mmu']}
+        return fct_dict
+
+    #####   core functions end  ################################################################################
 
 
 
@@ -221,15 +244,15 @@ class ProcessingObject(object):
 
 pre = ProcessingObject(
     {
-        'globals':{
-            'series':'s21',
+        'global':{
+            'series':'s15',
             'res':'30',
             'years':range(2008,2013),
             'years_conv':range(2009,2013)
         },
         'pre':{'version':{'traj':'v3', 'traj_rfnd':'v2'}},
         'refine':{'version':'v2', 'operator':'or', 'years_nlcd':[2001,2006]},
-        'core':{'filter':'n8h', "route":"r2", 'mmu':'5'}
+        'core':{'filter':'n8h','route':'r2', 'rg':'8w', 'mmu':'5'}
     }
 )
 

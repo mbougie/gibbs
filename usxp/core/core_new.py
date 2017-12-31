@@ -8,6 +8,7 @@ from arcpy import env
 from arcpy.sa import *
 # import glob
 import psycopg2
+sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\misc\\')
 import general as gen
 import json
 
@@ -21,49 +22,11 @@ import json
 arcpy.CheckOutExtension("Spatial")
 arcpy.env.parallelProcessingFactor = "95%"
 
-###################  Define the environment  #######################################################
-#establish root path for this the main project (i.e. usxp)
-# rootpath = 'C:/Users/Bougie/Desktop/Gibbs/data/usxp/'
-
-# ### establish gdb path  ####
-# def defineGDBpath(arg_list):
-#     gdb_path = '{}{}/{}/{}.gdb/'.format(rootpath,arg_list[0],arg_list[1],arg_list[2])
-#     # print 'gdb path: ', gdb_path 
-#     return gdb_path
 
 try:
     conn = psycopg2.connect("dbname='usxp' user='mbougie' host='144.92.235.105' password='Mend0ta!'")
 except:
     print "I am unable to connect to the database"
-
-
-# def getSeries():
-
-
-#     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
-#     query = "SELECT * FROM series.params inner join series.core using(series) where params.series='s15';"
-#     print 'query:', query
-#     df = pd.read_sql_query(query, con=engine)
-#     # print df
-#     for index, row in df.iterrows():
-#         # print row
-#         return row
-    
-
-
-# returned_row = getSeries()
-# core = returned_row['n1']
-# # print data
-
-# ###convert unicide to string datatype
-# # core = { str(key):str(value) for key,value in data.items() }
-# print core['filter']
-# print type(core['filter'])
-
-# def foo():
-#     print 'gfgfgf'
-
-
 
 
 def getJSONfile():
@@ -81,82 +44,30 @@ print data
 
 
 
-
-
-
-
-
-#################### class to create core object  ####################################################
-# class ProcessingObject(object):
-#     def __init__(self, core['series'], route, res, mmu, years, filter_gdb, filter_key):
-#         self.core['series'] = core['series']
-#         self.res = str(res)
-#         self.years = years
-#         self.filter_key = filter_key
-#         self.filter_gdb = filter_gdb
-#         self.mmu = mmu
-#         self.route = route
-
-
-
-
-#         self.datarange = str(self.years[0])+'to'+str(self.years[1])
-#         print 'self.datarange', self.datarange
-#         self.traj_name = self.series+"_traj_cdl"+self.res+"_b_"+self.datarange+"_rfnd"
-#         self.traj_path = defineGDBpath(['pre','v2','traj_refined'])+self.traj_name
-
-#         self.filter_parentnode = self.getFilterParentNode()
-
-#     def getFilterParentNode(self):
-#         if self.route == 'r2' or self.route == 'r3':
-#             return self.traj_name
-
-                
-
-
-
-def addColorMap(inraster,template):
-    ##Add Colormap
-    ##Usage: AddColormap_management in_raster {in_template_raster} {input_CLR_file}
-
-    try:
-        import arcpy
-        # arcpy.env.workspace = r'C:/Users/Bougie/Documents/ArcGIS/Default.gdb'
-        
-        ##Assign colormap using template image
-        arcpy.AddColormap_management(inraster, "#", template)
-        
-
-    except:
-        print "Add Colormap example failed."
-        print arcpy.GetMessages()
-
-
-
 def createMTR():
     print 'createMTR()----------------------------------------------------------------------'
     ## replace the arbitrary values in the trajectories dataset with the mtr values 1-5.
-    # raster = defineGDBpath(['sa','mmu']) + core.traj_name+"_n8h"
-    raster = defineGDBpath(['s15','core','core'])+"s13_traj_cdl30_b_2008to2016_rfnd_n4h"
-    print 'raster: ', raster
+    arcpy.env.workspace = data['core']['gdb']
 
-    output = defineGDBpath(['s15','core','core'])+"s13_traj_cdl30_b_2008to2016_rfnd_n4h_mtr"
-    print 'output:', output
+    raster_in = data['core']['function']['createMTR']['input']
+    print 'raster_in', raster_in
+    raster_out = data['core']['function']['createMTR']['output']
+    print 'raster_out: ',raster_out
 
-    # reclassArray = createReclassifyList() 
+    reclassArray = createReclassifyList() 
 
-    # outReclass = Reclassify(Raster(raster), "Value", RemapRange(reclassArray), "NODATA")
+    outReclass = Reclassify(Raster(raster_in), "Value", RemapRange(reclassArray), "NODATA")
     
-    # outReclass.save(output)
+    outReclass.save(raster_out)
 
-    # gen.buildPyramids(output)
+    gen.buildPyramids(raster_out)
 
 
 
 def createReclassifyList():
     #this is a sub function for createMTR().  references the mtr value in psotgres to create a list containing arbitray trajectory value and associated new mtr value
     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
-    query = 'SELECT "Value", mtr from pre.v2_traj_cdl' + core.res + '_b_' + core.datarange + ' as a JOIN pre.traj_' + core.datarange + '_lookup as b ON a.traj_array = b.traj_array'
+    query = 'SELECT "Value", mtr from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array'.format(data['pre']['traj']['filename'], data['pre']['traj']['lookup'])
     print 'query:', query
     df = pd.read_sql_query(query, con=engine)
     print df
@@ -173,34 +84,29 @@ def createReclassifyList():
 
 
 
-def majorityFilter(rasters):
-    print 'rasters', rasters
-    filter_combos = {'n4h':["FOUR", "HALF"],'n4m':["FOUR", "MAJORITY"],'n8h':["EIGHT", "HALF"],'n8m':["EIGHT", "MAJORITY"]}
+def majorityFilter():
+    arcpy.env.workspace = data['core']['gdb']
+
     filter_key = data['core']['filter']
     print 'filter_key', filter_key
-    print 'filter_combo----', filter_combos[data['core']['filter']]
+    
+    filter_combos = {'n4h':["FOUR", "HALF"],'n4m':["FOUR", "MAJORITY"],'n8h':["EIGHT", "HALF"],'n8m':["EIGHT", "MAJORITY"]}
+    print 'filter_combo----', filter_combos[filter_key]
     
     
-    raster_in = rasters['input']
+    raster_in = data['core']['function']['majorityFilter']['input']
     print 'raster_in', raster_in
-    raster_out = rasters['output']
+    raster_out = data['core']['function']['majorityFilter']['output']
     print 'raster_out: ',raster_out
 
-    ## check if dataset already exists
-    if arcpy.Exists(raster_out):
-        print 'dataset already exists'
-        return
+    print 'creating new filter dataset...............................'
+    ##Execute MajorityFilter
+    outMajFilt = MajorityFilter(raster_in, filter_combos[filter_key][0], filter_combos[filter_key][1])
     
+    ##save processed raster to new file
+    outMajFilt.save(raster_out)
 
-    else:
-        print 'creating new filter dataset...............................'
-        ##Execute MajorityFilter
-        outMajFilt = MajorityFilter(raster_in, filter_combos[filter_key][0], filter_combos[filter_key][1])
-        
-        ##save processed raster to new file
-        outMajFilt.save(raster_out)
-
-        gen.buildPyramids(raster_out)
+    gen.buildPyramids(raster_out)
 
 
 
@@ -308,12 +214,17 @@ def AddNullValuesToRaster():
 
 
 
-def routes():
-    if data['core']['route'] == 'r2':
-        majorityFilter({'input':'\\'.join((data['pre']['traj_rfnd']['gdb'],data['pre']['traj_rfnd']['filename'])),
-                        'output':'\\'.join((data['core']['gdb'],data['core']['filename']['majorityfilter']))
-                       })
-        # createMTR()
+def runRoutes():
+    if data['core']['route'] == 'r1':
+        majorityFilter()
+        createMTR()
+    elif data['core']['route'] == 'r2':
+        # majorityFilter()
+        createMTR()
+    elif data['core']['route'] == 'r3':
+        majorityFilter()
+        #mmu
+        createMTR()
         
 
 
@@ -337,4 +248,4 @@ def routes():
 # fire_all(dispatcher['foobar'])
 
 
-routes()
+runRoutes()

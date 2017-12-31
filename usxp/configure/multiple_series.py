@@ -83,14 +83,14 @@ import parallel_attachCDL as pp_cdl
 # @from_config
 # # Question: where do you call this function?
 # # Question: Where does series come from (is it the path to multiple_series.json)
-# def main(series):
-#     for series_filename in series:
-#     	print "series: {}".format(series_filename)
-#         from_config(run_series)(series_filename)
+def main(series):
+    for series_filename in series:
+    	print "series: {}".format(series_filename)
+        from_config(run_series)(series_filename)
 
 
 
-# if __name__ == '__main__':
-# 	#sys.argv tuple of arguments taht get passed to the script
-# 	# print sys.argv
-# 	main(sys.argv[1])
+if __name__ == '__main__':
+	#sys.argv tuple of arguments taht get passed to the script
+	# print sys.argv
+	main(sys.argv[1])

@@ -187,8 +187,6 @@ def mosiacRasters():
 
 # def run():  
 if __name__ == '__main__':
-	#instantiate the class inside run() function
-	# nibble = ProcessingObject(series, res, mmu, years, name)
 
 	tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
 	for tile in tiles:
@@ -219,7 +217,7 @@ if __name__ == '__main__':
 	pool.close()
 	pool.join
 
-	mosiacRasters(nibble)
+	mosiacRasters()
 
 
 # run()

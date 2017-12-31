@@ -254,9 +254,33 @@ def FindRedundantTrajectories():
 
 
 
+
+
+
+
+def createRefinedTrajectory():
+
+    ##### loop through each of the cdl rasters and make sure nlcd is last 
+    filelist = [data['pre']['traj']['path'], data['refine']['mask_dev_alfalfa_fallow']['path'], data['refine']['mask_nlcd']['path']]
+
+    ##### mosaicRasters():
+    arcpy.MosaicToNewRaster_management(filelist, data['pre']['traj_rfnd']['gdb'], data['pre']['traj_rfnd']['filename'], Raster(data['pre']['traj']['path']).spatialReference, '16_BIT_UNSIGNED', data['global']['res'], "1", "LAST","FIRST")
+
+    #Overwrite the existing attribute table file
+    arcpy.BuildRasterAttributeTable_management(data['pre']['traj_rfnd']['path'], "Overwrite")
+
+    # Overwrite pyramids
+    gen.buildPyramids(data['pre']['traj_rfnd']['path'])
+
+
+
+
+
+
 ####  these functions create the trajectory table  #############
 # createTrajectories()
 # addGDBTable2postgres()
+createRefinedTrajectory()
 
 
 #######  these functions are to update the lookup tables  ######

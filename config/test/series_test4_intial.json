@@ -73,9 +73,9 @@
         "gdb": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\series\\core\\core.gdb", 
         "route": "r2", 
         "filename": {
-            "majorityfilter": "s21_traj_v3_cdl30_b_2008to2012_rfnd_v2_n8h", 
-            "createMMU": "s21_traj_v3_cdl30_b_2008to2012_rfnd_v2_n8h_mtr_mmu5", 
-            "createMTR": "s21_traj_v3_cdl30_b_2008to2012_rfnd_v2_n8h_mtr"
+            "filter": "s21_traj_v3_cdl30_b_2008to2012_rfnd_v2_n8h", 
+            "mmu ": "s21_traj_v3_cdl30_b_2008to2012_rfnd_v2_n8h_mtr_mmu5", 
+            "mtr": "s21_traj_v3_cdl30_b_2008to2012_rfnd_v2_n8h_mtr"
         }
     }
 }
