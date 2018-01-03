@@ -15,12 +15,19 @@ import json
 
 
 '''######## DEFINE THESE EACH TIME ##########'''
+#Note: need to change this each time on different machine
+# case=['Bougie','Gibbs']
 
 #import extension
 arcpy.CheckOutExtension("Spatial")
 # arcpy.env.parallelProcessingFactor = "95%"
 arcpy.env.overwriteOutput = True
 arcpy.env.scratchWorkspace = "in_memory" 
+
+# try:
+#     conn = psycopg2.connect("dbname='usxp' user='mbougie' host='144.92.235.105' password='Mend0ta!'")
+# except:
+#     print "I am unable to connect to the database"
 
 
 def getJSONfile():
@@ -35,12 +42,8 @@ def getJSONfile():
 data = getJSONfile()
 print data
 
-filter_key = data['core']['filter']
-print 'filter_key', filter_key
 
-filter_combos = {'n4h':["FOUR", "HALF"],'n4m':["FOUR", "MAJORITY"],'n8h':["EIGHT", "HALF"],'n8m':["EIGHT", "MAJORITY"]}
-print 'filter_combo----', filter_combos[filter_key]
-
+  
 
 def execute_task(in_extentDict):
 	fc_count = in_extentDict[0]
@@ -53,19 +56,18 @@ def execute_task(in_extentDict):
 	YMax = procExt[3]
 
 	#set environments
+	 #The brilliant thing here is that using the extents with the full dataset!!!!!!   DONT EVEN NEED TO CLIP THE FULL RASTER TO THE FISHNET BECASUE 
+	arcpy.env.snapRaster = Raster(data['core']['function']['parallel_mmu']['input'])
+	arcpy.env.cellsize = Raster(data['core']['function']['parallel_mmu']['input'])
 	arcpy.env.extent = arcpy.Extent(XMin, YMin, XMax, YMax)
 
-	raster_in = data['core']['function']['majorityFilter']['input']
-	print 'raster_in', raster_in
-
-	print 'creating new filter dataset...............................'
-	##Execute MajorityFilter
-	ras_out = MajorityFilter(raster_in, filter_combos[filter_key][0], filter_combos[filter_key][1])
+	###  Execute Nibble  #####################
+	ras_out = arcpy.sa.Nibble(data['core']['function']['parallel_mmu']['input'], data['core']['function']['parallel_mmu']['mask'], "DATA_ONLY")
 
 	#clear out the extent for next time
 	arcpy.ClearEnvironment("extent")
-
-	# print fc_count
+    
+    # print fc_count
 	outname = "tile_" + str(fc_count) +'.tif'
 
 	#create Directory
@@ -73,6 +75,7 @@ def execute_task(in_extentDict):
 	outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/", r"tiles", outname)
 
 	ras_out.save(outpath)
+
 
 
 
@@ -84,17 +87,17 @@ def mosiacRasters():
 	#### need to wrap these paths with Raster() fct or complains about the paths being a string
 	inTraj=Raster(data['pre']['traj']['path'])
 
-	filename = data['core']['function']['majorityFilter']['output'].replace(data['core']['gdb']+'\\', '')
-	print 'filename', filename
+	filename = data['core']['function']['parallel_mmu']['output'].replace(data['core']['gdb']+'\\', '')
+	print 'filename:', filename
 	
 	######mosiac tiles together into a new raster
 	arcpy.MosaicToNewRaster_management(tilelist, data['core']['gdb'], filename, inTraj.spatialReference, "16_BIT_UNSIGNED", 30, "1", "LAST","FIRST")
 
 	#Overwrite the existing attribute table file
-	arcpy.BuildRasterAttributeTable_management(data['core']['function']['majorityFilter']['output'], "Overwrite")
+	arcpy.BuildRasterAttributeTable_management(data['core']['function']['parallel_mmu']['output'], "Overwrite")
 
 	# Overwrite pyramids
-	gen.buildPyramids(data['core']['function']['majorityFilter']['output'])
+	gen.buildPyramids(data['core']['function']['parallel_mmu']['output'])
 
 
 
@@ -128,8 +131,8 @@ if __name__ == '__main__':
 	print'extDict.items',  extDict.items()
 
 	#######create a process and pass dictionary of extent to execute task
-	pool = Pool(processes=5)
-	# pool = Pool(processes=cpu_count())
+	pool = Pool(processes=9)
+	pool = Pool(processes=cpu_count())
 	pool.map(execute_task, extDict.items())
 	pool.close()
 	pool.join

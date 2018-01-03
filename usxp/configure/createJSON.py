@@ -153,6 +153,7 @@ class ProcessingObject(object):
         self.data['pre']['traj']['gdb'] = getGDBpath('{}_traj'.format(self.data['pre']['traj']['version']))
         self.data['pre']['traj']['filename'] = '_'.join([self.data['pre']['traj']['version'], 'traj', 'cdl'+self.data['global']['res'], 'b', self.data['global']['datarange']])
         self.data['pre']['traj']['lookup'] = 'lookup_{}'.format(self.data['global']['datarange'])
+        self.data['pre']['traj']['lookup_version'] = kernel['pre']['version']['lookup_version']
         self.data['pre']['traj']['path']  = '\\'.join([self.data['pre']['traj']['gdb'], self.data['pre']['traj']['filename']]) 
 
         self.data['pre']['traj_rfnd']['version'] = kernel['pre']['version']['traj_rfnd']
@@ -207,13 +208,13 @@ class ProcessingObject(object):
             file_dict['filter']='_'.join((self.data['global']['series'], self.data['pre']['traj_rfnd']['filename'], self.data['core']['filter']))
             file_dict['mtr']='_'.join((file_dict['filter'],'mtr'))
             file_dict['rg']='{}_{}_rgmask{}'.format(file_dict['mtr'], self.data['core']['rg'], self.data['core']['mmu'])
-            file_dict['mtr_mmu']='{}_mmu{}'.format(file_dict['mtr'], self.data['core']['mmu'])
+            file_dict['mmu']='{}_mmu{}'.format(file_dict['mtr'], self.data['core']['mmu'])
             return file_dict
         elif self.data['core']['route'] == 'r3':
             file_dict['filter']='_'.join((self.data['global']['series'], self.data['pre']['traj_rfnd']['filename'], self.data['core']['filter']))
             file_dict['rg']='{}_{}_rgmask{}'.format(file_dict['filter'], self.data['core']['rg'], self.data['core']['mmu'])
-            file_dict['mtr_mmu']='{}_mmu{}'.format(file_dict['filter'], self.data['core']['mmu'])
-            file_dict['mtr']='_'.join((file_dict['mtr_mmu'],'mtr'))
+            file_dict['mmu']='{}_mmu{}'.format(file_dict['filter'], self.data['core']['mmu'])
+            file_dict['mtr']='_'.join((file_dict['mmu'],'mtr'))
             return file_dict
    
 
@@ -223,7 +224,7 @@ class ProcessingObject(object):
         path_dict['filter']='\\'.join([self.data['core']['gdb'], self.data['core']['filename']['filter']])
         path_dict['mtr']='\\'.join([self.data['core']['gdb'], self.data['core']['filename']['mtr']])
         path_dict['rg']='\\'.join([self.data['core']['gdb'], self.data['core']['filename']['rg']])
-        path_dict['mtr_mmu']='\\'.join([self.data['core']['gdb'], self.data['core']['filename']['mtr_mmu']])
+        path_dict['mmu']='\\'.join([self.data['core']['gdb'], self.data['core']['filename']['mmu']])
         return path_dict
 
 
@@ -232,15 +233,15 @@ class ProcessingObject(object):
         fct_dict = {}
         if self.data['core']['route'] == 'r2':
             fct_dict['majorityFilter']={'input':self.data['pre']['traj_rfnd']['path'], 'output':self.data['core']['filename']['filter']}
-            fct_dict['createMTR']={'input':self.data['core']['filename']['filter'], 'output':self.data['core']['filename']['mtr']}
+            fct_dict['parallel_mtr']={'input':self.data['core']['filename']['filter'], 'output':self.data['core']['filename']['mtr']}
             fct_dict['parallel_rg']={'input':self.data['core']['filename']['mtr'], 'output':self.data['core']['filename']['rg']}
-            fct_dict['parallel_mtr']={'input':self.data['core']['path']['mtr'], 'mask':self.data['core']['path']['rg'],'output':self.data['core']['path']['mtr_mmu']}
+            fct_dict['parallel_mmu']={'input':self.data['core']['path']['mtr'], 'mask':self.data['core']['path']['rg'],'output':self.data['core']['path']['mmu']}
             return fct_dict
         elif self.data['core']['route'] == 'r3':
             fct_dict['majorityFilter']={'input':self.data['pre']['traj_rfnd']['path'], 'output':self.data['core']['path']['filter']}
             fct_dict['parallel_rg']={'input':self.data['core']['path']['filter'], 'output':self.data['core']['path']['rg']}
-            fct_dict['createMTR']={'input':self.data['core']['path']['rg'], 'output':self.data['core']['path']['mtr']}
-            fct_dict['parallel_mtr']={'input':self.data['core']['path']['mtr'], 'mask':self.data['core']['path']['rg'],'output':self.data['core']['path']['mtr_mmu']}
+            fct_dict['parallel_mtr']={'input':self.data['core']['path']['mmu'], 'output':self.data['core']['path']['mtr']}
+            fct_dict['parallel_mmu']={'input':self.data['core']['path']['filter'], 'mask':self.data['core']['path']['rg'],'output':self.data['core']['path']['mmu']}
             return fct_dict
 
 
@@ -299,7 +300,7 @@ pre = ProcessingObject(
             'years':range(2008,2017),
             'years_conv':range(2009,2015)
         },
-        'pre':{'version':{'traj':'v3', 'traj_rfnd':'v2'}},
+        'pre':{'version':{'traj':'v3', 'traj_rfnd':'v2', 'lookup_version':'v2'}},
         'refine':{'version':'v2', 'operator':'or', 'years_nlcd':[2001,2006]},
         'core':{'filter':'n8h','route':'r3', 'rg':'8w', 'mmu':'5'}
     }

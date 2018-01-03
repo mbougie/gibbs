@@ -2,6 +2,8 @@ import arcpy
 from arcpy import env
 from arcpy.sa import *
 import multiprocessing
+from sqlalchemy import create_engine
+import pandas as pd
 import os
 import glob
 import sys
@@ -13,14 +15,12 @@ import general as gen
 import json
 
 
-
-'''######## DEFINE THESE EACH TIME ##########'''
-
 #import extension
 arcpy.CheckOutExtension("Spatial")
 # arcpy.env.parallelProcessingFactor = "95%"
 arcpy.env.overwriteOutput = True
 arcpy.env.scratchWorkspace = "in_memory" 
+
 
 
 def getJSONfile():
@@ -35,11 +35,34 @@ def getJSONfile():
 data = getJSONfile()
 print data
 
-filter_key = data['core']['filter']
-print 'filter_key', filter_key
 
-filter_combos = {'n4h':["FOUR", "HALF"],'n4m':["FOUR", "MAJORITY"],'n8h':["EIGHT", "HALF"],'n8m':["EIGHT", "MAJORITY"]}
-print 'filter_combo----', filter_combos[filter_key]
+
+def createReclassifyList():
+    #this is a sub function for createMTR().  references the mtr value in psotgres to create a list containing arbitray trajectory value and associated new mtr value
+    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
+    query = " SELECT \"Value\", mtr from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array AND version = '{}' ".format(data['pre']['traj']['filename'], data['pre']['traj']['lookup'], data['pre']['traj']['lookup_version'])
+    print 'query:', query
+    df = pd.read_sql_query(query, con=engine)
+    print df
+    fulllist=[[0,0,"NODATA"]]
+    for index, row in df.iterrows():
+        templist=[]
+        value=row['Value'] 
+        mtr=row['mtr']  
+        templist.append(int(value))
+        templist.append(int(mtr))
+        fulllist.append(templist)
+    print 'fulllist: ', fulllist
+    return fulllist
+
+ 
+
+reclassArray = createReclassifyList() 
+print 'reclassArray:', reclassArray
+
+
+
+
 
 
 def execute_task(in_extentDict):
@@ -51,21 +74,22 @@ def execute_task(in_extentDict):
 	YMin = procExt[1]
 	XMax = procExt[2]
 	YMax = procExt[3]
+ 
+	raster_in = data['core']['function']['parallel_mtr']['input']
+	print 'raster_in:', raster_in
 
-	#set environments
+    #set environments
+	arcpy.env.snapRaster = Raster(raster_in)
+	arcpy.env.cellsize = Raster(raster_in)
 	arcpy.env.extent = arcpy.Extent(XMin, YMin, XMax, YMax)
 
-	raster_in = data['core']['function']['majorityFilter']['input']
-	print 'raster_in', raster_in
-
-	print 'creating new filter dataset...............................'
-	##Execute MajorityFilter
-	ras_out = MajorityFilter(raster_in, filter_combos[filter_key][0], filter_combos[filter_key][1])
+	###  Execute Nibble  #####################
+	ras_out = Reclassify(Raster(raster_in), "Value", RemapRange(createReclassifyList()), "NODATA")
 
 	#clear out the extent for next time
 	arcpy.ClearEnvironment("extent")
-
-	# print fc_count
+    
+    # print fc_count
 	outname = "tile_" + str(fc_count) +'.tif'
 
 	#create Directory
@@ -73,6 +97,7 @@ def execute_task(in_extentDict):
 	outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/", r"tiles", outname)
 
 	ras_out.save(outpath)
+
 
 
 
@@ -84,17 +109,17 @@ def mosiacRasters():
 	#### need to wrap these paths with Raster() fct or complains about the paths being a string
 	inTraj=Raster(data['pre']['traj']['path'])
 
-	filename = data['core']['function']['majorityFilter']['output'].replace(data['core']['gdb']+'\\', '')
-	print 'filename', filename
+	filename = data['core']['function']['parallel_mtr']['output'].replace(data['core']['gdb']+'\\', '')
+	print 'filename:', filename
 	
 	######mosiac tiles together into a new raster
 	arcpy.MosaicToNewRaster_management(tilelist, data['core']['gdb'], filename, inTraj.spatialReference, "16_BIT_UNSIGNED", 30, "1", "LAST","FIRST")
 
 	#Overwrite the existing attribute table file
-	arcpy.BuildRasterAttributeTable_management(data['core']['function']['majorityFilter']['output'], "Overwrite")
+	arcpy.BuildRasterAttributeTable_management(data['core']['function']['parallel_mtr']['output'], "Overwrite")
 
 	# Overwrite pyramids
-	gen.buildPyramids(data['core']['function']['majorityFilter']['output'])
+	gen.buildPyramids(data['core']['function']['parallel_mtr']['output'])
 
 
 
@@ -128,8 +153,8 @@ if __name__ == '__main__':
 	print'extDict.items',  extDict.items()
 
 	#######create a process and pass dictionary of extent to execute task
-	pool = Pool(processes=5)
-	# pool = Pool(processes=cpu_count())
+	# pool = Pool(processes=9)
+	pool = Pool(processes=cpu_count())
 	pool.map(execute_task, extDict.items())
 	pool.close()
 	pool.join

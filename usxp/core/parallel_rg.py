@@ -1,26 +1,34 @@
 import arcpy
 from arcpy import env
 from arcpy.sa import *
-import multiprocessing
 import os
 import glob
 import sys
 import time
 import logging
+import multiprocessing
 from multiprocessing import Process, Queue, Pool, cpu_count, current_process, Manager
 sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\misc\\')
 import general as gen
 import json
+import psycopg2
 
 
 
 '''######## DEFINE THESE EACH TIME ##########'''
+#Note: need to change this each time on different machine
+# case=['Bougie','Gibbs']
 
 #import extension
 arcpy.CheckOutExtension("Spatial")
 # arcpy.env.parallelProcessingFactor = "95%"
 arcpy.env.overwriteOutput = True
 arcpy.env.scratchWorkspace = "in_memory" 
+
+try:
+    conn = psycopg2.connect("dbname='usxp' user='mbougie' host='144.92.235.105' password='Mend0ta!'")
+except:
+    print "I am unable to connect to the database"
 
 
 def getJSONfile():
@@ -35,13 +43,13 @@ def getJSONfile():
 data = getJSONfile()
 print data
 
-filter_key = data['core']['filter']
-print 'filter_key', filter_key
-
-filter_combos = {'n4h':["FOUR", "HALF"],'n4m':["FOUR", "MAJORITY"],'n8h':["EIGHT", "HALF"],'n8m':["EIGHT", "MAJORITY"]}
-print 'filter_combo----', filter_combos[filter_key]
 
 
+
+#######  define raster and mask  ####################
+
+
+	  
 def execute_task(in_extentDict):
 	fc_count = in_extentDict[0]
 	# print fc_count
@@ -53,56 +61,78 @@ def execute_task(in_extentDict):
 	YMax = procExt[3]
 
 	#set environments
+	arcpy.env.snapRaster = Raster(data['core']['function']['parallel_rg']['input'])
+	arcpy.env.cellsize = Raster(data['core']['function']['parallel_rg']['input'])
 	arcpy.env.extent = arcpy.Extent(XMin, YMin, XMax, YMax)
 
-	raster_in = data['core']['function']['majorityFilter']['input']
-	print 'raster_in', raster_in
+	###  Execute Region Group  #####################
 
-	print 'creating new filter dataset...............................'
-	##Execute MajorityFilter
-	ras_out = MajorityFilter(raster_in, filter_combos[filter_key][0], filter_combos[filter_key][1])
+	filter_combos = {'8w':["EIGHT", "WITHIN"]}
+	
+	for k, v in filter_combos.iteritems():
+	    print k,v
+	    # Execute RegionGroup
+	    ras_out = RegionGroup(Raster(data['core']['function']['parallel_rg']['input']), v[0], v[1],"NO_LINK")
+ 
+		#clear out the extent for next time
+        arcpy.ClearEnvironment("extent")
+	    
+	    # print fc_count
+        outname = "tile_" + str(fc_count) +'.tif'
 
-	#clear out the extent for next time
-	arcpy.ClearEnvironment("extent")
+		#create Directory
+        outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/", r"tiles", outname)
 
-	# print fc_count
-	outname = "tile_" + str(fc_count) +'.tif'
+        ras_out.save(outpath)
 
-	#create Directory
 
-	outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/", r"tiles", outname)
 
-	ras_out.save(outpath)
+
+def createMMUmaskTiles():
+    root_in = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\tiles\\'
+    rasterlist = glob.glob(root_in+"*.tif")
+    print rasterlist
+
+    for raster in rasterlist:
+        print raster
+
+        output = raster.replace('.', '_mask.')
+        print output
+
+        # for count in masks_list:
+        cond = "Count < " + str(gen.getPixelCount(str(data['global']['res']), int(data['core']['mmu'])))
+        print 'cond: ',cond
+
+        outSetNull = SetNull(raster, 1, cond)
+
+        # Save the output 
+        outSetNull.save(output)
+
 
 
 
 def mosiacRasters():
 	######Description: mosiac tiles together into a new raster
-	tilelist = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*.tif")
+	tilelist = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*mask.tif")
 	print 'tilelist:', tilelist 
 
 	#### need to wrap these paths with Raster() fct or complains about the paths being a string
 	inTraj=Raster(data['pre']['traj']['path'])
 
-	filename = data['core']['function']['majorityFilter']['output'].replace(data['core']['gdb']+'\\', '')
+	filename = data['core']['function']['parallel_rg']['output'].replace(data['core']['gdb']+'\\', '')
 	print 'filename', filename
 	
 	######mosiac tiles together into a new raster
 	arcpy.MosaicToNewRaster_management(tilelist, data['core']['gdb'], filename, inTraj.spatialReference, "16_BIT_UNSIGNED", 30, "1", "LAST","FIRST")
 
 	#Overwrite the existing attribute table file
-	arcpy.BuildRasterAttributeTable_management(data['core']['function']['majorityFilter']['output'], "Overwrite")
+	arcpy.BuildRasterAttributeTable_management(data['core']['function']['parallel_rg']['output'], "Overwrite")
 
 	# Overwrite pyramids
-	gen.buildPyramids(data['core']['function']['majorityFilter']['output'])
+	gen.buildPyramids(data['core']['function']['parallel_rg']['output'])
 
 
 
-
-
-
-
-  
 if __name__ == '__main__':
 
 	#####  remove a files in tiles directory
@@ -134,4 +164,16 @@ if __name__ == '__main__':
 	pool.close()
 	pool.join
 
+	createMMUmaskTiles()
+
 	mosiacRasters()
+
+
+
+
+
+# Notes:
+# 1)need to use in memory or issues with running the function...puts locks on the temp files created when
+# function is in use 
+# 2)need to have the fishnet with no null tiles or it acts funny....it throughs the python.exe stop running box
+   

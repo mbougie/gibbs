@@ -7,11 +7,12 @@
             "filename": "v3_traj_cdl30_b_2008to2016_rfnd_v2"
         }, 
         "traj": {
-            "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\pre\\traj\\v3\\v3_traj.gdb\\v3_traj_cdl30_b_2008to2016", 
+            "lookup_version": "v2", 
+            "filename": "v3_traj_cdl30_b_2008to2016", 
             "gdb": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\pre\\traj\\v3\\v3_traj.gdb", 
             "version": "v3", 
             "lookup": "lookup_2008to2016", 
-            "filename": "v3_traj_cdl30_b_2008to2016"
+            "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\pre\\traj\\v3\\v3_traj.gdb\\v3_traj_cdl30_b_2008to2016"
         }
     }, 
     "core": {
@@ -24,23 +25,23 @@
                 "input": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\series\\core\\core.gdb\\r3_1_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h", 
                 "output": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\series\\core\\core.gdb\\r3_1_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_8w_rgmask5"
             }, 
-            "createMTR": {
-                "input": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\series\\core\\core.gdb\\r3_1_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_8w_rgmask5", 
-                "output": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\series\\core\\core.gdb\\r3_1_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_mmu5_mtr"
-            }, 
-            "parallel_mtr": {
-                "input": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\series\\core\\core.gdb\\r3_1_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_mmu5_mtr", 
+            "parallel_mmu": {
+                "input": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\series\\core\\core.gdb\\r3_1_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h", 
                 "mask": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\series\\core\\core.gdb\\r3_1_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_8w_rgmask5", 
                 "output": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\series\\core\\core.gdb\\r3_1_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_mmu5"
+            }, 
+            "parallel_mtr": {
+                "input": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\series\\core\\core.gdb\\r3_1_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_mmu5", 
+                "output": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\series\\core\\core.gdb\\r3_1_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_mmu5_mtr"
             }
         }, 
         "mmu": "5", 
         "route": "r3", 
         "filename": {
             "filter": "r3_1_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h", 
-            "mtr": "r3_1_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_mmu5_mtr", 
-            "mtr_mmu": "r3_1_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_mmu5", 
-            "rg": "r3_1_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_8w_rgmask5"
+            "mmu": "r3_1_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_mmu5", 
+            "rg": "r3_1_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_8w_rgmask5", 
+            "mtr": "r3_1_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_mmu5_mtr"
         }, 
         "filter": "n8h", 
         "gdb": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\series\\core\\core.gdb", 
@@ -48,8 +49,8 @@
         "path": {
             "filter": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\series\\core\\core.gdb\\r3_1_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h", 
             "mtr": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\series\\core\\core.gdb\\r3_1_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_mmu5_mtr", 
-            "mtr_mmu": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\series\\core\\core.gdb\\r3_1_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_mmu5", 
-            "rg": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\series\\core\\core.gdb\\r3_1_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_8w_rgmask5"
+            "rg": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\series\\core\\core.gdb\\r3_1_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_8w_rgmask5", 
+            "mmu": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\series\\core\\core.gdb\\r3_1_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_mmu5"
         }
     }, 
     "global": {
