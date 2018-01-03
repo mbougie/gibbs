@@ -15,19 +15,12 @@ import json
 
 
 '''######## DEFINE THESE EACH TIME ##########'''
-#Note: need to change this each time on different machine
-# case=['Bougie','Gibbs']
 
 #import extension
 arcpy.CheckOutExtension("Spatial")
 # arcpy.env.parallelProcessingFactor = "95%"
 arcpy.env.overwriteOutput = True
 arcpy.env.scratchWorkspace = "in_memory" 
-
-# try:
-#     conn = psycopg2.connect("dbname='usxp' user='mbougie' host='144.92.235.105' password='Mend0ta!'")
-# except:
-#     print "I am unable to connect to the database"
 
 
 def getJSONfile():
@@ -56,13 +49,11 @@ def execute_task(in_extentDict):
 	YMax = procExt[3]
 
 	#set environments
-	 #The brilliant thing here is that using the extents with the full dataset!!!!!!   DONT EVEN NEED TO CLIP THE FULL RASTER TO THE FISHNET BECASUE 
-	# arcpy.env.snapRaster = nibble.path_parent
-	# arcpy.env.cellsize = nibble.path_parent
 	arcpy.env.extent = arcpy.Extent(XMin, YMin, XMax, YMax)
 
-	###  Execute Nibble  #####################
-	ras_out = arcpy.sa.Nibble(data['core']['function']['parallel_mtr']['input'], data['core']['function']['parallel_mtr']['mask'], "DATA_ONLY")
+	#########  Execute Nibble  #####################
+	### Nibble (in_raster, in_mask_raster, {nibble_values})
+	ras_out = arcpy.sa.Nibble(data['post']['ytc']['path_mmu'], data['post']['ytc']['path_mask'], "DATA_ONLY")
 
 	#clear out the extent for next time
 	arcpy.ClearEnvironment("extent")
@@ -103,13 +94,13 @@ def mosiacRasters():
 	inTraj=Raster(data['pre']['traj']['path'])
 	
 	######mosiac tiles together into a new raster
-	arcpy.MosaicToNewRaster_management(tilelist, data['core']['gdb'], data['core']['filename']['mtr_mmu'], inTraj.spatialReference, "16_BIT_UNSIGNED", 30, "1", "LAST","FIRST")
+	# arcpy.MosaicToNewRaster_management(tilelist, data['post']['ytc']['gdb'], data['post']['ytc']['filename_nbl'], inTraj.spatialReference, "16_BIT_UNSIGNED", 30, "1", "LAST","FIRST")
 
 	#Overwrite the existing attribute table file
-	arcpy.BuildRasterAttributeTable_management(data['core']['path']['mtr_mmu'], "Overwrite")
+	arcpy.BuildRasterAttributeTable_management(data['post']['ytc']['path_nbl'], "Overwrite")
 
 	# Overwrite pyramids
-	gen.buildPyramids(data['core']['path']['mtr_mmu'])
+	gen.buildPyramids(s15_ytc30_2008to2012_mmu5_nbl)
 
 
 
@@ -129,7 +120,7 @@ if __name__ == '__main__':
 	extDict = {}
 	count = 1 
 
-	for row in arcpy.da.SearchCursor(data['ancillary']['vector']['shapefiles']['fishnet_mtr'], ["SHAPE@"]):
+	for row in arcpy.da.SearchCursor(data['ancillary']['vector']['shapefiles']['fishnet_ytc'], ["SHAPE@"]):
 		extent_curr = row[0].extent
 		ls = []
 		ls.append(extent_curr.XMin)

@@ -1,4 +1,100 @@
 {
+    "pre": {
+        "traj_rfnd": {
+            "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\pre\\traj_rfnd\\v2\\v2_traj_rfnd.gdb\\v3_traj_cdl30_b_2008to2016_rfnd_v2", 
+            "gdb": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\pre\\traj_rfnd\\v2\\v2_traj_rfnd.gdb", 
+            "version": "v2", 
+            "filename": "v3_traj_cdl30_b_2008to2016_rfnd_v2"
+        }, 
+        "traj": {
+            "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\pre\\traj\\v3\\v3_traj.gdb\\v3_traj_cdl30_b_2008to2016", 
+            "gdb": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\pre\\traj\\v3\\v3_traj.gdb", 
+            "version": "v3", 
+            "lookup": "lookup_2008to2016", 
+            "filename": "v3_traj_cdl30_b_2008to2016"
+        }
+    }, 
+    "core": {
+        "function": {
+            "majorityFilter": {
+                "input": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\pre\\traj_rfnd\\v2\\v2_traj_rfnd.gdb\\v3_traj_cdl30_b_2008to2016_rfnd_v2", 
+                "output": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\series\\core\\core.gdb\\r3_1_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h"
+            }, 
+            "parallel_rg": {
+                "input": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\series\\core\\core.gdb\\r3_1_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h", 
+                "output": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\series\\core\\core.gdb\\r3_1_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_8w_rgmask5"
+            }, 
+            "createMTR": {
+                "input": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\series\\core\\core.gdb\\r3_1_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_8w_rgmask5", 
+                "output": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\series\\core\\core.gdb\\r3_1_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_mmu5_mtr"
+            }, 
+            "parallel_mtr": {
+                "input": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\series\\core\\core.gdb\\r3_1_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_mmu5_mtr", 
+                "mask": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\series\\core\\core.gdb\\r3_1_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_8w_rgmask5", 
+                "output": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\series\\core\\core.gdb\\r3_1_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_mmu5"
+            }
+        }, 
+        "mmu": "5", 
+        "route": "r3", 
+        "filename": {
+            "filter": "r3_1_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h", 
+            "mtr": "r3_1_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_mmu5_mtr", 
+            "mtr_mmu": "r3_1_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_mmu5", 
+            "rg": "r3_1_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_8w_rgmask5"
+        }, 
+        "filter": "n8h", 
+        "gdb": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\series\\core\\core.gdb", 
+        "rg": "8w", 
+        "path": {
+            "filter": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\series\\core\\core.gdb\\r3_1_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h", 
+            "mtr": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\series\\core\\core.gdb\\r3_1_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_mmu5_mtr", 
+            "mtr_mmu": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\series\\core\\core.gdb\\r3_1_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_mmu5", 
+            "rg": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\series\\core\\core.gdb\\r3_1_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_8w_rgmask5"
+        }
+    }, 
+    "global": {
+        "series": "r3_1", 
+        "years": [
+            2008, 
+            2009, 
+            2010, 
+            2011, 
+            2012, 
+            2013, 
+            2014, 
+            2015, 
+            2016
+        ], 
+        "years_conv": [
+            2009, 
+            2010, 
+            2011, 
+            2012, 
+            2013, 
+            2014
+        ], 
+        "datarange": "2008to2016", 
+        "res": "30"
+    }, 
+    "refine": {
+        "mask_nlcd": {
+            "years_nlcd": [
+                2001, 
+                2006
+            ], 
+            "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\refine\\v2_masks.gdb\\v2_mask_nlcd_2008to2016", 
+            "arbitrary": 178, 
+            "operator": "or", 
+            "filename": "v2_mask_nlcd_2008to2016"
+        }, 
+        "gdb": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\refine\\v2_masks.gdb", 
+        "mask_dev_alfalfa_fallow": {
+            "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\refine\\v2_masks.gdb\\v2_mask_dev_alfalfa_fallow_2008to2016", 
+            "arbitrary": 1, 
+            "filename": "v2_mask_dev_alfalfa_fallow_2008to2016"
+        }, 
+        "version": "v2"
+    }, 
     "ancillary": {
         "raster": {
             "nlcd": {
@@ -10,98 +106,19 @@
         }, 
         "vector": {
             "shapefiles": {
-                "fishnet": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\vector\\shapefiles.gdb\\fishnet", 
-                "fishnet_ytc": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\vector\\shapefiles.gdb\\fishnet_ytc", 
-                "fishnet_mtr": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\vector\\shapefiles.gdb\\fishnet_mtr"
+                "counties_subset": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\vector\\shapefiles.gdb\\counties_subset"
             }
         }
     }, 
-    "pre": {
-        "traj_rfnd": {
-            "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\pre\\traj_rfnd\\v2\\v2_traj_rfnd.gdb\\traj_v3_cdl30_b_2008to2012_rfnd_v2", 
-            "gdb": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\pre\\traj_rfnd\\v2\\v2_traj_rfnd.gdb", 
-            "version": "v2", 
-            "filename": "traj_v3_cdl30_b_2008to2012_rfnd_v2"
+    "post": {
+        "ytc": {
+            "path_nbl": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\series\\post\\ytc.gdb\\r3_1_ytc30_2008to2016_mmu5_nbl", 
+            "path_mmu": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\series\\post\\ytc.gdb\\r3_1_ytc30_2008to2016_mmu5", 
+            "filename": "r3_1_ytc30_2008to2016", 
+            "gdb": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\series\\post\\ytc.gdb", 
+            "path_mask": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\series\\post\\ytc.gdb\\r3_1_ytc30_2008to2016_mmu5_msk", 
+            "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\series\\post\\ytc.gdb\\r3_1_ytc30_2008to2016"
         }, 
-        "traj": {
-            "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\pre\\traj\\v3\\v3_traj.gdb\\traj_v3_cdl30_b_2008to2012", 
-            "gdb": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\pre\\traj\\v3\\v3_traj.gdb", 
-            "version": "v3", 
-            "lookup": "traj_2008to2012_lookup", 
-            "filename": "traj_v3_cdl30_b_2008to2012"
-        }
-    }, 
-    "global": {
-        "series": "s15", 
-        "years": [
-            2008, 
-            2009, 
-            2010, 
-            2011, 
-            2012
-        ], 
-        "years_conv": [
-            2009, 
-            2010, 
-            2011, 
-            2012
-        ], 
-        "datarange": "2008to2012", 
-        "res": "30"
-    }, 
-    "refine": {
-        "mask_nlcd": {
-            "years_nlcd": [
-                2001, 
-                2006
-            ], 
-            "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\refine\\v2_masks.gdb\\v2_mask_nlcd_2008to2012", 
-            "arbitrary": 28, 
-            "operator": "or", 
-            "filename": "v2_mask_nlcd_2008to2012"
-        }, 
-        "gdb": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\refine\\v2_masks.gdb", 
-        "mask_dev_alfalfa_fallow": {
-            "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\refine\\v2_masks.gdb\\v2_mask_dev_alfalfa_fallow_2008to2012", 
-            "arbitrary": 1, 
-            "filename": "v2_mask_dev_alfalfa_fallow_2008to2012"
-        }, 
-        "version": "v2"
-    }, 
-    "core": {
-        "function": {
-            "majorityFilter": {
-                "input": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\pre\\traj_rfnd\\v2\\v2_traj_rfnd.gdb\\traj_v3_cdl30_b_2008to2012_rfnd_v2", 
-                "output": "s15_traj_v3_cdl30_b_2008to2012_rfnd_v2_n8h"
-            }, 
-            "parallel_rg": {
-                "input": "s15_traj_v3_cdl30_b_2008to2012_rfnd_v2_n8h_mtr", 
-                "output": "s15_traj_v3_cdl30_b_2008to2012_rfnd_v2_n8h_mtr_8w_rgmask5"
-            }, 
-            "createMMU": {
-                "input": "s15_traj_v3_cdl30_b_2008to2012_rfnd_v2_n8h_mtr", 
-                "output": "s15_traj_v3_cdl30_b_2008to2012_rfnd_v2_n8h_mtr_mmu5"
-            }, 
-            "createMTR": {
-                "input": "s15_traj_v3_cdl30_b_2008to2012_rfnd_v2_n8h", 
-                "output": "s15_traj_v3_cdl30_b_2008to2012_rfnd_v2_n8h_mtr"
-            }
-        }, 
-        "mmu": "5", 
-        "route": "r2", 
-        "filename": {
-            "filter": "s15_traj_v3_cdl30_b_2008to2012_rfnd_v2_n8h", 
-            "mtr": "s15_traj_v3_cdl30_b_2008to2012_rfnd_v2_n8h_mtr", 
-            "rg": "s15_traj_v3_cdl30_b_2008to2012_rfnd_v2_n8h_mtr_8w_rgmask5", 
-            "mmu": "s15_traj_v3_cdl30_b_2008to2012_rfnd_v2_n8h_mtr_mmu5"
-        }, 
-        "filter": "n8h", 
-        "gdb": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\series\\core\\core.gdb", 
-        "rg": "8w", 
-        "path": {
-            "filter": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\series\\core\\core.gdb\\s15_traj_v3_cdl30_b_2008to2012_rfnd_v2_n8h", 
-            "mtr": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\series\\core\\core.gdb\\s15_traj_v3_cdl30_b_2008to2012_rfnd_v2_n8h_mtr", 
-            "mmu": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\series\\core\\core.gdb\\s15_traj_v3_cdl30_b_2008to2012_rfnd_v2_n8h_mtr_mmu5"
-        }
+        "yfc": {}
     }
 }

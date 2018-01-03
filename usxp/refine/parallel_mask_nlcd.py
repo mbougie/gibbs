@@ -64,8 +64,8 @@ def createReclassifyList():
 	
 
 ##create global objects to reference through the script
-location_list = createReclassifyList()
 data = getJSONfile()
+location_list = createReclassifyList()
 print data
 
 

@@ -11,12 +11,14 @@ from arcpy import env
 from arcpy.sa import *
 import glob
 import psycopg2
-import general as gen 
+sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\misc\\')
+import general as gen
+import json
 
 
-'''######## DEFINE THESE EACH TIME ##########'''
-#Note: need to change this each time on different machine
-case=['Bougie','Gibbs']
+#import extension
+arcpy.CheckOutExtension("Spatial")
+
 
 try:
     conn = psycopg2.connect("dbname='usxp' user='mbougie' host='144.92.235.105' password='Mend0ta!'")
@@ -24,133 +26,65 @@ except:
     print "I am unable to connect to the database"
 
 
-###################  Define the environment  #######################################################
-#establish root path for this the main project (i.e. usxp)
-rootpath = 'C:/Users/Bougie/Desktop/Gibbs/data/usxp/'
-
-### establish gdb path  ####
-def defineGDBpath(arg_list):
-    gdb_path = '{}{}/{}/{}.gdb/'.format(rootpath,arg_list[0],arg_list[1],arg_list[2])
-    # print 'gdb path: ', gdb_path 
-    return gdb_path
+def getJSONfile():
+    with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\config\\test\\series_test4.json') as json_data:
+        template = json.load(json_data)
+        # print(template)
+        # print type(template)
+        return template
 
 
-#################### class to create yxc object  ####################################################
 
-class ProcessingObject(object):
-
-    def __init__(self, series, res, mmu, years, name, subname):
-        self.series = series
-        self.name = name
-        self.subname = subname
-        self.res = str(res)
-        self.mmu = str(mmu)
-        self.years = years
-        
-        self.datarange = str(self.years[0])+'to'+str(self.years[1])
-        print 'self.datarange:', self.datarange
-        
-        self.conversionyears = range(self.years[0]+2, self.years[1])
-        print 'self.conversionyears:', self.conversionyears
-        
-        self.traj_dataset = self.series+"_traj_cdl"+self.res+"_b_"+self.datarange+'_rfnd'
-        self.mtr_dataset = self.series+"_traj_cdl"+self.res+"_b_"+self.datarange+'_rfnd_n8h_mtr_8w_mmu'+self.mmu
-        self.yxc_dataset = self.series+"_"+self.name+self.res+'_'+self.datarange
-        self.yxc_mmu_dataset = self.yxc_dataset+'_mmu'+self.mmu
-        self.yxc_mask_dataset = self.yxc_mmu_dataset+'_msk'
-        
-        self.mmu_gdb=defineGDBpath(['s14', 'core', 'core'])
-
-
-        # mtr = defineGDBpath(['core','mtr'])+'traj_cdl30_b_2008to2016_rfnd_n8h_mtr'
-        # ytc = defineGDBpath(['post','ytc'])+'ytc30_2008to2016_mmu5'
-        # outCon = Con((mtr == 3) & (ytc >= 2008), ytc, Con((mtr == 3) & (IsNull(ytc)), 3))
-
-        # output = defineGDBpath(['post','ytc'])+'ytc30_2008to2016_mmu5_msk'
-
-        # if self.years[1] == 2016:
-        #     self.datarange = str(self.years[0])+'to'+str(self.years[1]-1)
-        #     print 'self.datarange:', self.datarange
-        #     self.conversionyears = range(self.years[0]+1, self.years[1])
-        #     print 'self.conversionyears:', self.conversionyears
-        # else:
-        #     self.datarange = str(self.years[0])+'to'+str(self.years[1])
-        #     print 'self.datarange:', self.datarange
-        #     self.conversionyears = range(self.years[0]+1, self.years[1] + 1)
-        #     print 'self.conversionyears:', self.conversionyears
+data = getJSONfile()
+print data
         
 
-        if self.name == 'ytc':
-            self.mtr = 3
-        elif self.name == 'yfc':
-            self.mtr = 4
+    #     if self.name == 'ytc':
+    #         self.mtr = 3
+    #     elif self.name == 'yfc':
+    #         self.mtr = 4
     
-    #function for to get correct cdl for the attachCDL() function
-    def getAssociatedCDL(self, year):
-        if self.subname == 'bfc' or  self.subname == 'bfnc':
-            # subtract 1 from every year in list
-            cdl_file = defineGDBpath(['ancillary','cdl'])+'cdl_'+ str(year - 1)
-            return cdl_file
+    # #function for to get correct cdl for the attachCDL() function
+    # def getAssociatedCDL(self, year):
+    #     if self.subname == 'bfc' or  self.subname == 'bfnc':
+    #         # subtract 1 from every year in list
+    #         cdl_file = defineGDBpath(['ancillary','cdl'])+'cdl_'+ str(year - 1)
+    #         return cdl_file
 
-        elif self.subname == 'fc' or  self.subname == 'fnc':
-            # subtract 1 from every year in list
-            cdl_file = defineGDBpath(['ancillary','cdl'])+'cdl_'+ str(year)
-            return cdl_file
-
-        
-
-def addColorMap(inraster,template):
-    ##Add Colormap
-    ##Usage: AddColormap_management in_raster {in_template_raster} {input_CLR_file}
-
-    try:
-        import arcpy
-        # arcpy.env.workspace = r'C:/Users/Bougie/Documents/ArcGIS/Default.gdb'
-        
-        ##Assign colormap using template image
-        arcpy.AddColormap_management(inraster, "#", template)
-        
-
-    except:
-        print "Add Colormap example failed."
-        print arcpy.GetMessages()
+    #     elif self.subname == 'fc' or  self.subname == 'fnc':
+    #         # subtract 1 from every year in list
+    #         cdl_file = defineGDBpath(['ancillary','cdl'])+'cdl_'+ str(year)
+    #         return cdl_file
 
 
+
+
+def createReclassifyList():
+    cur = conn.cursor()
+
+    query = 'SELECT "Value",ytc from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array WHERE ytc IS NOT NULL'.format(data['pre']['traj']['filename'], data['pre']['traj']['lookup'])
+    print 'query:', query
+
+    cur.execute(query)
+    #create empty list
+    fulllist=[[0,0,"NODATA"]]
+
+    # fetch all rows from table
+    rows = cur.fetchall()
+    print rows
+    print 'number of records in lookup table:', len(rows)
+    return rows
+    
 
 def createYearbinaries():
-        # DESCRIPTION:attach the appropriate cdl value to each year binary dataset
-    print "-----------------  createYearbinaries()  -------------------------------"
-
-    def createReclassifyList():
-        #this is a sub function for createYearbinaries_better().  references the mtr value in psotgres to create a list containing arbitray trajectory value and associated new mtr value
-
-        engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
-        query = 'SELECT * from pre.v2_traj_cdl'+post.res+"_b_"+post.datarange + ' as a JOIN pre.traj_' + post.datarange + '_lookup as b ON a.traj_array = b.traj_array WHERE '+post.name+' IS NOT NULL'
-        print 'query:', query
-        df = pd.read_sql_query(query, con=engine)
-        print df
-        fulllist=[[0,0,"NODATA"]]
-        for index, row in df.iterrows():
-            templist=[]
-            value=row['Value'] 
-            yxc=row[post.name]  
-            templist.append(int(value))
-            templist.append(int(yxc))
-            fulllist.append(templist)
-        print 'fulllist: ', fulllist
-        return fulllist
-
-
     ## replace the arbitrary values in the trajectories dataset with the yxc values.
-    raster = Raster(defineGDBpath(['pre', 'v2', 'traj_refined'])+post.traj_dataset)
+    raster = Raster(data['pre']['traj_rfnd']['path'])
     print 'raster:', raster
 
-    output = defineGDBpath(['s14', 'post', post.name])+post.yxc_dataset
+    output = data['post']['ytc']['path']
     print 'output: ', output
 
-    reclassArray = createReclassifyList() 
-
-    outReclass = Reclassify(raster, "Value", RemapRange(reclassArray), "NODATA")
+    outReclass = Reclassify(raster, "Value", RemapRange(createReclassifyList()), "NODATA")
     
     outReclass.save(output)
 
@@ -160,29 +94,40 @@ def createYearbinaries():
 #####  NOTE!!  ACTUALLY CREATE THE MASK FIRST ANFD THEN CREATE THE MMU DATASET
 
 def createMask():
-    print "-----------------createMask() function-------------------------------"
-    path_mtr = Raster(defineGDBpath(['s14', 'core','core'])+post.mtr_dataset)
-    print 'path_mtr', path_mtr
-    path_yxc = Raster(defineGDBpath(['s14', 'post', post.name])+post.yxc_dataset)
-    print 'path_yxc', path_yxc
+    yxc = {'ytc':3, 'yfc':4}
 
+
+    print "-----------------createMask() function-------------------------------"
+    path_mtr = Raster(data['core']['path']['mtr_mmu'])
+    print 'path_mtr', path_mtr
+    path_yxc = Raster(data['post']['ytc']['path'])
+    print 'path_yxc', path_yxc
+    path_mask = data['post']['ytc']['path_mask']
+    print 'path_yxc', path_mask
+    
+    
     # outCon = Con((mtr == 3) & (ytc < 2008), 3, Con((mtr == 3) & (ytc >= 2008), ytc))
-    outCon = Con((path_mtr == post.mtr) & (path_yxc >= 2008), path_yxc)
-    output = defineGDBpath(['s14', 'post', post.name])+post.yxc_mask_dataset
-    outCon.save(output)
-    gen.buildPyramids(output)
+    outCon = Con((path_mtr == yxc['ytc']) & (path_yxc >= 2008), path_yxc)
+    outCon.save(path_mask)
+    gen.buildPyramids(path_mask)
 
 
 
 def clipByMMU():
-    print "-----------------clipByMMU() function-------------------------------"
-    path_mtr = Raster(defineGDBpath(['s14','core','core'])+post.mtr_dataset)
-    path_yxc_msk = Raster(defineGDBpath(['s14','post',post.name])+post.yxc_mask_dataset)
+    yxc = {'ytc':3, 'yfc':4}
 
-    outCon = Con((path_mtr == post.mtr) & (IsNull(path_yxc_msk)), post.mtr, Con((path_mtr == post.mtr) & (path_yxc_msk >= 2008), path_yxc_msk))
-    output = defineGDBpath(['s14','post',post.name])+post.yxc_mmu_dataset
-    outCon.save(output)
-    gen.buildPyramids(output)
+    print "-----------------clipByMMU() function-------------------------------"
+    path_mtr = Raster(data['core']['path']['mtr_mmu'])
+    print 'path_mtr', path_mtr
+    path_mask = data['post']['ytc']['path_mask']
+    print 'path_mask', path_mask
+    path_mmu = data['post']['ytc']['path_mmu']
+    print 'path_mmu', path_mmu
+
+
+    outCon = Con((path_mtr == yxc['ytc']) & (IsNull(path_mask)), yxc['ytc'], Con((path_mtr == yxc['ytc']) & (path_mask >= 2008), path_mask))
+    outCon.save(path_mmu)
+    gen.buildPyramids(path_mmu)
 
 
 
@@ -235,10 +180,10 @@ def addGDBTable2postgres():
     # set the engine.....
     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
 
-    arcpy.env.workspace = defineGDBpath(['s14','post','ytc'])
+    arcpy.env.workspace = data['post']['ytc']['gdb']
     
     # wc = '*'+core.res+'*'+core.datarange+'*'+core.filter+'*_msk5_nbl'
-    wc = 's14_ytc30_2008to2016_mmu5_nbl'
+    wc = data['post']['ytc']['filename_nbl']
     print wc
 
 
@@ -281,7 +226,7 @@ def addAcresField(tablename, schema):
     cur.execute('ALTER TABLE ' + schema + '.' + tablename + ' ADD COLUMN acres bigint;');
     
     #DML: insert values into new array column
-    cur.execute('UPDATE '+ schema + '.' + tablename + ' SET acres = count * ' + gen.getPixelConversion2Acres(post.res));
+    cur.execute('UPDATE '+ schema + '.' + tablename + ' SET acres = count * ' + gen.getPixelConversion2Acres(data['global']['res']));
     
     conn.commit()
     print "Records created successfully";
@@ -358,25 +303,11 @@ def getReclassifyValuesString():
 
 
 
-################ Instantiate the class to create yxc object  ########################
-# post = ProcessingObject(
-#       "s9",
-#       #resolution
-#       30,
-#       #mmu
-#       5,
-#       #data range---i.e. all the cdl years you are referencing 
-#       [2008,2016],
-#       #name
-#       'yfc',
-#       #subname
-#       'fnc'
-#       )
-
 ################ call functions  #####################################################
-# createYearbinaries_better()
-# clipByMMU()
+# createYearbinaries()
 # createMask()
+# clipByMMU()
+
 
 
 
@@ -388,7 +319,7 @@ def getReclassifyValuesString():
 # attachCDL(['post',post.name])
 
 
-# addGDBTable2postgres()
+addGDBTable2postgres()
 # createSpecificLUCMask()
 
 

@@ -219,12 +219,12 @@ def runRoutes():
         majorityFilter()
         createMTR()
     elif data['core']['route'] == 'r2':
-        # majorityFilter()
+        majorityFilter()
         createMTR()
     elif data['core']['route'] == 'r3':
         majorityFilter()
-        #mmu
-        createMTR()
+        # mmu()
+        # createMTR()
         
 
 

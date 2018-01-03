@@ -82,7 +82,7 @@ def insertGDBpaths(subpath, gdb):
 
 
 def getJSONfile():
-    with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\config\\test\\template.json') as json_data:
+    with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\config\\routes\\template_routes.json') as json_data:
         template = json.load(json_data)
         # print(template)
         # print type(template)
@@ -127,6 +127,7 @@ class ProcessingObject(object):
         self.updatePreObject = self.updatePreObject(kernel)
         self.updateRefineObject = self.updateRefineObject(kernel)
         self.updateCoreObject = self.updateCoreObject(kernel)
+        self.updatePostObject = self.updatePostObject(kernel)
         
         #export modified object to json file
         self.exportObject = self.exportObject()
@@ -150,8 +151,8 @@ class ProcessingObject(object):
         ##define attributes
         self.data['pre']['traj']['version'] = kernel['pre']['version']['traj']
         self.data['pre']['traj']['gdb'] = getGDBpath('{}_traj'.format(self.data['pre']['traj']['version']))
-        self.data['pre']['traj']['filename'] = '_'.join(['traj', self.data['pre']['traj']['version'], 'cdl'+self.data['global']['res'], 'b', self.data['global']['datarange']])
-        self.data['pre']['traj']['lookup'] = 'traj_{}_lookup'.format(self.data['global']['datarange'])
+        self.data['pre']['traj']['filename'] = '_'.join([self.data['pre']['traj']['version'], 'traj', 'cdl'+self.data['global']['res'], 'b', self.data['global']['datarange']])
+        self.data['pre']['traj']['lookup'] = 'lookup_{}'.format(self.data['global']['datarange'])
         self.data['pre']['traj']['path']  = '\\'.join([self.data['pre']['traj']['gdb'], self.data['pre']['traj']['filename']]) 
 
         self.data['pre']['traj_rfnd']['version'] = kernel['pre']['version']['traj_rfnd']
@@ -206,18 +207,26 @@ class ProcessingObject(object):
             file_dict['filter']='_'.join((self.data['global']['series'], self.data['pre']['traj_rfnd']['filename'], self.data['core']['filter']))
             file_dict['mtr']='_'.join((file_dict['filter'],'mtr'))
             file_dict['rg']='{}_{}_rgmask{}'.format(file_dict['mtr'], self.data['core']['rg'], self.data['core']['mmu'])
-            file_dict['mmu']='{}_mmu{}'.format(file_dict['mtr'], self.data['core']['mmu'])
-        return file_dict
+            file_dict['mtr_mmu']='{}_mmu{}'.format(file_dict['mtr'], self.data['core']['mmu'])
+            return file_dict
+        elif self.data['core']['route'] == 'r3':
+            file_dict['filter']='_'.join((self.data['global']['series'], self.data['pre']['traj_rfnd']['filename'], self.data['core']['filter']))
+            file_dict['rg']='{}_{}_rgmask{}'.format(file_dict['filter'], self.data['core']['rg'], self.data['core']['mmu'])
+            file_dict['mtr_mmu']='{}_mmu{}'.format(file_dict['filter'], self.data['core']['mmu'])
+            file_dict['mtr']='_'.join((file_dict['mtr_mmu'],'mtr'))
+            return file_dict
+   
 
     def createCorePaths(self):
         path_dict = {}
-        if self.data['core']['route'] == 'r2':
-            path_dict['filter']='\\'.join([self.data['core']['gdb'], self.data['core']['filename']['filter']])
-            path_dict['mtr']='\\'.join([self.data['core']['gdb'], self.data['core']['filename']['mtr']])
-            path_dict['mmu']='\\'.join([self.data['core']['gdb'], self.data['core']['filename']['mmu']])
+
+        path_dict['filter']='\\'.join([self.data['core']['gdb'], self.data['core']['filename']['filter']])
+        path_dict['mtr']='\\'.join([self.data['core']['gdb'], self.data['core']['filename']['mtr']])
+        path_dict['rg']='\\'.join([self.data['core']['gdb'], self.data['core']['filename']['rg']])
+        path_dict['mtr_mmu']='\\'.join([self.data['core']['gdb'], self.data['core']['filename']['mtr_mmu']])
         return path_dict
 
-# s14_traj_cdl30_b_2008to2016_rfnd_n8h_mtr_8w_rgmask5
+
 
     def createCoreFunctionArguments(self):
         fct_dict = {}
@@ -225,14 +234,39 @@ class ProcessingObject(object):
             fct_dict['majorityFilter']={'input':self.data['pre']['traj_rfnd']['path'], 'output':self.data['core']['filename']['filter']}
             fct_dict['createMTR']={'input':self.data['core']['filename']['filter'], 'output':self.data['core']['filename']['mtr']}
             fct_dict['parallel_rg']={'input':self.data['core']['filename']['mtr'], 'output':self.data['core']['filename']['rg']}
-            fct_dict['createMMU']={'input':self.data['core']['filename']['mtr'], 'output':self.data['core']['filename']['mmu']}
-        return fct_dict
+            fct_dict['parallel_mtr']={'input':self.data['core']['path']['mtr'], 'mask':self.data['core']['path']['rg'],'output':self.data['core']['path']['mtr_mmu']}
+            return fct_dict
+        elif self.data['core']['route'] == 'r3':
+            fct_dict['majorityFilter']={'input':self.data['pre']['traj_rfnd']['path'], 'output':self.data['core']['path']['filter']}
+            fct_dict['parallel_rg']={'input':self.data['core']['path']['filter'], 'output':self.data['core']['path']['rg']}
+            fct_dict['createMTR']={'input':self.data['core']['path']['rg'], 'output':self.data['core']['path']['mtr']}
+            fct_dict['parallel_mtr']={'input':self.data['core']['path']['mtr'], 'mask':self.data['core']['path']['rg'],'output':self.data['core']['path']['mtr_mmu']}
+            return fct_dict
 
-    #####   core functions end  ################################################################################
+
+
+    #####   core functions  ################################################################################
+    
+
+    def updatePostObject(self, kernel):
+
+        def getvalues():
+            ytc_dict = {}
+
+            ytc_dict['gdb'] = getGDBpath('ytc')
+            ytc_dict['filename'] = '{}_ytc{}_{}'.format(self.data['global']['series'], self.data['global']['res'], self.data['global']['datarange'])
+            ytc_dict['path']  = '\\'.join([ytc_dict['gdb'], ytc_dict['filename']]) 
+            ytc_dict['path_mask']  = '\\'.join([ytc_dict['gdb'], ytc_dict['filename']])+'_mmu'+str(self.data['core']['mmu'])+'_msk' 
+            ytc_dict['path_mmu']  = '\\'.join([ytc_dict['gdb'], ytc_dict['filename']])+'_mmu'+str(self.data['core']['mmu'])
+            ytc_dict['path_nbl']  = ytc_dict['path_mmu']+'_nbl'
+            return ytc_dict
+
+
+        self.data['post']['ytc'] = getvalues()
 
 
 
-
+     #####   export objects  ################################################################################
     def exportObject(self):
         with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\config\\test\\series_test4.json', 'w') as outfile:
             json.dump(self.data, outfile, indent=4)
@@ -242,17 +276,32 @@ class ProcessingObject(object):
 
 ###########  create instance of class ################################################
 
+# pre = ProcessingObject(
+#     {
+#         'global':{
+#             'series':'s16',
+#             'res':'30',
+#             'years':range(2008,2017),
+#             'years_conv':range(2009,2015)
+#         },
+#         'pre':{'version':{'traj':'v3', 'traj_rfnd':'v2'}},
+#         'refine':{'version':'v2', 'operator':'or', 'years_nlcd':[2001,2006,2011]},
+#         'core':{'filter':'n8h','route':'r2', 'rg':'8w', 'mmu':'5'}
+#     }
+# )
+
+
 pre = ProcessingObject(
     {
         'global':{
-            'series':'s15',
+            'series':'r3_1',
             'res':'30',
-            'years':range(2008,2013),
-            'years_conv':range(2009,2013)
+            'years':range(2008,2017),
+            'years_conv':range(2009,2015)
         },
         'pre':{'version':{'traj':'v3', 'traj_rfnd':'v2'}},
         'refine':{'version':'v2', 'operator':'or', 'years_nlcd':[2001,2006]},
-        'core':{'filter':'n8h','route':'r2', 'rg':'8w', 'mmu':'5'}
+        'core':{'filter':'n8h','route':'r3', 'rg':'8w', 'mmu':'5'}
     }
 )
 

@@ -48,7 +48,7 @@ def getJSONfile():
 def createReclassifyList():
 	cur = conn.cursor()
 
-	query = 'SELECT "Value",ytc from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array WHERE ytc IS NOT NULL'.format(data['pre']['traj']['filename'], data['pre']['traj']['lookup'])
+	query = "SELECT \"Value\",ytc from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array WHERE ytc IS NOT NULL AND version ='{}'".format(data['pre']['traj']['filename'], data['pre']['traj']['lookup'], data['pre']['traj']['version'])
 	print 'query:', query
 
 	cur.execute(query)
@@ -65,10 +65,10 @@ def createReclassifyList():
 
 
 ##create global objects to reference through the script
-location_list = createReclassifyList()
-data = getJSONfile()
-print data
 
+data = getJSONfile()
+# print data
+location_list = createReclassifyList()
 
 
 
@@ -218,7 +218,7 @@ if __name__ == '__main__':
 	extDict = {}
 	count = 1 
 
-	for row in arcpy.da.SearchCursor(data['ancillary']['vector']['shapefiles']['fishnet'], ["SHAPE@"]):
+	for row in arcpy.da.SearchCursor(data['ancillary']['vector']['shapefiles']['fishnet_mtr'], ["SHAPE@"]):
 		extent_curr = row[0].extent
 		ls = []
 		ls.append(extent_curr.XMin)

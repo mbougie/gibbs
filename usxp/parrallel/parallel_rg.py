@@ -134,9 +134,9 @@ def mosiacRasters():
 if __name__ == '__main__':
 
 	#####  remove a files in tiles directory
-	# tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
-	# for tile in tiles:
-	# 	os.remove(tile)
+	tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
+	for tile in tiles:
+		os.remove(tile)
 
 	#get extents of individual features and add it to a dictionary
 	extDict = {}
@@ -156,13 +156,22 @@ if __name__ == '__main__':
 	print'extDict.items',  extDict.items()
 
 	#######create a process and pass dictionary of extent to execute task
-	# pool = Pool(processes=5)
-	# # pool = Pool(processes=cpu_count())
-	# pool.map(execute_task, extDict.items())
-	# pool.close()
-	# pool.join
+	pool = Pool(processes=5)
+	# pool = Pool(processes=cpu_count())
+	pool.map(execute_task, extDict.items())
+	pool.close()
+	pool.join
 
-	# createMMUmaskTiles()
+	createMMUmaskTiles()
 
 	mosiacRasters()
-    
+
+
+
+
+
+# Notes:
+# 1)need to use in memory or issues with running the function...puts locks on the temp files created when
+# function is in use 
+# 2)need to have the fishnet with no null tiles or it acts funny....it throughs the python.exe stop running box
+   
