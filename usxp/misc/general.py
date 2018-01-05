@@ -46,15 +46,18 @@ def establishConn(db):
 
 #establish root path for this the main project (i.e. usxp)
 rootpath = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/data/usxp/'
+# rootpath = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/data/usxp/'
+# ### establish gdb path  ####
+# def defineGDBpath(arg_list):
+#     gdb_path = rootpath + arg_list[0]+'/'+arg_list[1]+'.gdb/'
+#     print 'gdb path: ', gdb_path 
+#     return gdb_path
 
-### establish gdb path  ####
-def defineGDBpath(arg_list):
-    gdb_path = rootpath + arg_list[0]+'/'+arg_list[1]+'.gdb/'
-    print 'gdb path: ', gdb_path 
+
+def defineGDBpath(args_list):
+    gdb_path = '{}{}/{}/{}.gdb/'.format(rootpath,args_list[0],args_list[1],args_list[2])
+    # print 'gdb path: ', gdb_path 
     return gdb_path
-
-
-
 
 
 
@@ -737,7 +740,7 @@ def deleteFiles():
 
 
 def getStatesField(field):
-    fc = defineGDBpath(['ancillary','shapefiles'])+'states'
+    fc = defineGDBpath(['ancillary', 'vector', 'shapefiles'])+'states'
     
     cursor = arcpy.SearchCursor(fc)
     states = []

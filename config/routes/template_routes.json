@@ -11,7 +11,9 @@
     	},
     	"vector":{
     		"shapefiles":{
-                "counties_subset":"C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\vector\\shapefiles.gdb\\counties_subset"
+                "counties_subset":"C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\vector\\shapefiles.gdb\\counties_subset",
+                "fishnet":"C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\vector\\shapefiles.gdb\\fishnet"
+
     		}
     	}
     },

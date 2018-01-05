@@ -117,10 +117,12 @@ def execute_task(in_extentDict):
 	for row in location_list:
 		#year of conversion for either expansion or abandonment
 		ytx = row[1]
+		print 'ytx', ytx
 		
 		#year before conversion for either expansion or abandonment
 		ybx = row[1]-1
-		
+		print 'ybx', ybx
+
 		#Return the indices of the pixels that have values of the ytc arbitrsy values of the traj.
 		indices = (arr_traj == row[0]).nonzero()
 
@@ -218,7 +220,7 @@ if __name__ == '__main__':
 	extDict = {}
 	count = 1 
 
-	for row in arcpy.da.SearchCursor(data['ancillary']['vector']['shapefiles']['fishnet_mtr'], ["SHAPE@"]):
+	for row in arcpy.da.SearchCursor(data['ancillary']['vector']['shapefiles']['counties_subset'], ["SHAPE@"]):
 		extent_curr = row[0].extent
 		ls = []
 		ls.append(extent_curr.XMin)
@@ -237,7 +239,7 @@ if __name__ == '__main__':
 	pool.close()
 	pool.join
 
-	mosiacRasters()
+	# mosiacRasters()
 
 
 # run()

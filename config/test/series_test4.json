@@ -54,6 +54,8 @@
         }
     }, 
     "global": {
+        "res": "30", 
+        "datarange": "2008to2016", 
         "series": "r3_1", 
         "years": [
             2008, 
@@ -67,15 +69,17 @@
             2016
         ], 
         "years_conv": [
-            2009, 
             2010, 
             2011, 
             2012, 
             2013, 
-            2014
+            2014, 
+            2015
         ], 
-        "datarange": "2008to2016", 
-        "res": "30"
+        "conv_years": [
+            2010, 
+            2015
+        ]
     }, 
     "refine": {
         "mask_nlcd": {
@@ -107,6 +111,7 @@
         }, 
         "vector": {
             "shapefiles": {
+                "fishnet": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\vector\\shapefiles.gdb\\fishnet", 
                 "counties_subset": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\vector\\shapefiles.gdb\\counties_subset"
             }
         }

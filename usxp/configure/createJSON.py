@@ -81,13 +81,20 @@ def insertGDBpaths(subpath, gdb):
 
 
 
-def getJSONfile():
+def getTemplatefile():
     with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\config\\routes\\template_routes.json') as json_data:
         template = json.load(json_data)
         # print(template)
         # print type(template)
         return template
 
+
+def getKernelfile(route, filename):
+    with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\config\\routes\\{}\\{}.json'.format(route, filename)) as json_data:
+        template = json.load(json_data)
+        # print(template)
+        # print type(template)
+        return template
 
 
 
@@ -117,10 +124,10 @@ def getArbitraryCropValue(table, years, croptype):
 class ProcessingObject(object):
 
     def __init__(self, kernel):
-        
+        print 'kernel', kernel
         ##get the template json
-        self.data = getJSONfile()
-        
+        self.data = getTemplatefile()
+        print self.data
 
         #call the methods in order to modifiy the tempalte json
         self.updateKernel = self.updateKernel(kernel)
@@ -136,10 +143,15 @@ class ProcessingObject(object):
 
     def updateKernel(self, kernel):
         #add kenel object to json 
+        print 'kernel', kernel['global']['years'][0]+1, kernel['global']['years'][1]-1
         self.data['global']=kernel['global']
 
-        print 'fdfdfd', self.data
-        #add datarange to kernel object
+        # print 'fdfdfd', self.data
+        # #add datarange to kernel object
+        #             'years':range(2008,2017),
+        #     'years_conv':range(2009,2015)
+        self.data['global']['years'] = range(kernel['global']['years'][0], kernel['global']['years'][1]+1)
+        self.data['global']['years_conv'] = range(kernel['global']['conv_years'][0], kernel['global']['conv_years'][1]+1)
         self.data['global']['datarange'] = '{}to{}'.format(str(self.data['global']['years'][0]), str(self.data['global']['years'][-1]))
 
 
@@ -277,32 +289,8 @@ class ProcessingObject(object):
 
 ###########  create instance of class ################################################
 
-# pre = ProcessingObject(
-#     {
-#         'global':{
-#             'series':'s16',
-#             'res':'30',
-#             'years':range(2008,2017),
-#             'years_conv':range(2009,2015)
-#         },
-#         'pre':{'version':{'traj':'v3', 'traj_rfnd':'v2'}},
-#         'refine':{'version':'v2', 'operator':'or', 'years_nlcd':[2001,2006,2011]},
-#         'core':{'filter':'n8h','route':'r2', 'rg':'8w', 'mmu':'5'}
-#     }
-# )
+ProcessingObject(getKernelfile('r3','r3_1'))
 
 
-pre = ProcessingObject(
-    {
-        'global':{
-            'series':'r3_1',
-            'res':'30',
-            'years':range(2008,2017),
-            'years_conv':range(2009,2015)
-        },
-        'pre':{'version':{'traj':'v3', 'traj_rfnd':'v2', 'lookup_version':'v2'}},
-        'refine':{'version':'v2', 'operator':'or', 'years_nlcd':[2001,2006]},
-        'core':{'filter':'n8h','route':'r3', 'rg':'8w', 'mmu':'5'}
-    }
-)
+
 

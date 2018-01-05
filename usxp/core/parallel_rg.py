@@ -72,7 +72,7 @@ def execute_task(in_extentDict):
 	for k, v in filter_combos.iteritems():
 	    print k,v
 	    # Execute RegionGroup
-	    ras_out = RegionGroup(Raster(data['core']['function']['parallel_rg']['input']), v[0], v[1],"NO_LINK")
+	    ras_out = RegionGroup(Raster(data['core']['function']['parallel_rg']['input']), v[0], v[1],"ADD_LINK")
  
 		#clear out the extent for next time
         arcpy.ClearEnvironment("extent")
@@ -164,9 +164,9 @@ if __name__ == '__main__':
 	pool.close()
 	pool.join
 
-	createMMUmaskTiles()
+	# createMMUmaskTiles()
 
-	mosiacRasters()
+	# mosiacRasters()
 
 
 
