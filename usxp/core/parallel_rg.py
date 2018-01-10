@@ -32,7 +32,7 @@ except:
 
 
 def getJSONfile():
-    with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\config\\test\\series_test4.json') as json_data:
+    with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\config\\current_instance.json') as json_data:
         template = json.load(json_data)
         # print(template)
         # print type(template)
@@ -72,7 +72,8 @@ def execute_task(in_extentDict):
 	for k, v in filter_combos.iteritems():
 	    print k,v
 	    # Execute RegionGroup
-	    ras_out = RegionGroup(Raster(data['core']['function']['parallel_rg']['input']), v[0], v[1],"ADD_LINK")
+	    # ras_out = RegionGroup(Raster(data['core']['function']['parallel_rg']['input']), v[0], v[1],"ADD_LINK")
+	    ras_out = RegionGroup(Raster(data['core']['function']['parallel_rg']['input']), v[0], v[1],"NO_LINK")
  
 		#clear out the extent for next time
         arcpy.ClearEnvironment("extent")
@@ -136,9 +137,9 @@ def mosiacRasters():
 if __name__ == '__main__':
 
 	#####  remove a files in tiles directory
-	tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
-	for tile in tiles:
-		os.remove(tile)
+	# tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
+	# for tile in tiles:
+	# 	os.remove(tile)
 
 	#get extents of individual features and add it to a dictionary
 	extDict = {}
@@ -158,11 +159,11 @@ if __name__ == '__main__':
 	print'extDict.items',  extDict.items()
 
 	#######create a process and pass dictionary of extent to execute task
-	pool = Pool(processes=5)
-	# pool = Pool(processes=cpu_count())
-	pool.map(execute_task, extDict.items())
-	pool.close()
-	pool.join
+	# pool = Pool(processes=5)
+	# # pool = Pool(processes=cpu_count())
+	# pool.map(execute_task, extDict.items())
+	# pool.close()
+	# pool.join
 
 	# createMMUmaskTiles()
 

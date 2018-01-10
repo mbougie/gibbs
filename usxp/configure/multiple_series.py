@@ -5,9 +5,11 @@ Run multiple series.
 import sys
 import os
 
-sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\pre\\')
-from config import from_config
+# sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\pre\\')
+# from config import from_config
 
+
+# sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\pre\\')
 import pre
 import parallel_61and36mask as pp_36and61mask
 import core

@@ -8,36 +8,40 @@ from config import from_config
 from sqlalchemy import create_engine
 import pandas as pd
 
+sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\pre\\')
+sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\core\\')
 import pre
-import parallel_61and36mask as pp_36and61mask
-import core
-import parallel_regiongroup as prg
-import parallel_nibble_temp as nibble
-import post_temp as post
-import parallel_attachCDL as pp_cdl
-import createJSON
+import parallel_mtr
+
+parallel_mtr.run()
+# import parallel_regiongroup as prg
+# import parallel_nibble_temp as nibble
+# import post_temp as post
+# import parallel_attachCDL as pp_cdl
+# import createJSON
 
 
 
 
 
 
-def getSeries(step):
-    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
-    query = "SELECT * FROM series.params inner join series.{} using(series) where params.series='s15';".format(step)
-    print 'query:-------------------------------->', query
-    df = pd.read_sql_query(query, con=engine)
-    # print df
-    for index, row in df.iterrows():
-        print row
-        return row
+# def getSeries(step):
+#     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
+#     query = "SELECT * FROM series.params inner join series.{} using(series) where params.series='s15';".format(step)
+#     print 'query:-------------------------------->', query
+#     df = pd.read_sql_query(query, con=engine)
+#     # print df
+#     for index, row in df.iterrows():
+#         print row
+#         return row
 
 
 
 
 
 
-def run_series(series, res ,mmu, years, pre_arg, refine_arg, pp_36and61mask_arg, core_filter, pp_rg_arg, pp_nbl_mtr_arg, post_arg, pp_nbl_ytc_arg, pp_cdl_arg):
+
+# def run_series(series, res ,mmu, years, pre_arg, refine_arg, pp_36and61mask_arg, core_filter, pp_rg_arg, pp_nbl_mtr_arg, post_arg, pp_nbl_ytc_arg, pp_cdl_arg):
 
 
 	####  CREATE INSTANCES  ##################################################################
@@ -90,7 +94,7 @@ def run_series(series, res ,mmu, years, pre_arg, refine_arg, pp_36and61mask_arg,
 	# post.createMask()
 	# post.clipByMMU()
 
-	post.run(getSeries('post'))
+	# post.run(getSeries('post'))
 	# nibble.run(getSeries('post'))
 	# nibble.run(series, res, mmu, years, pp_nbl_ytc_arg['name'], pp_nbl_ytc_arg['subname'], pp_nbl_ytc_arg['pixel_type'], pp_nbl_ytc_arg['gdb_parent'], parent_rg, pp_nbl_ytc_arg['gdb_child'], child_rg, child_mmu)
 	# post.addGDBTable2postgres()
@@ -99,18 +103,18 @@ def run_series(series, res ,mmu, years, pre_arg, refine_arg, pp_36and61mask_arg,
 
 
 
-# Question: @from_config?
-@from_config
-# Question: where do you call this function?
-# Question: Where does series come from (is it the path to multiple_series.json)
-def main(series):
-    for series_filename in series:
-    	print "series: {}".format(series_filename)
-        from_config(run_series)(series_filename)
+# # Question: @from_config?
+# @from_config
+# # Question: where do you call this function?
+# # Question: Where does series come from (is it the path to multiple_series.json)
+# def main(series):
+#     for series_filename in series:
+#     	print "series: {}".format(series_filename)
+#         from_config(run_series)(series_filename)
 
 
 
-if __name__ == '__main__':
-	#sys.argv tuple of arguments taht get passed to the script
-	# print sys.argv
-	main(sys.argv[1])
+# if __name__ == '__main__':
+# 	#sys.argv tuple of arguments taht get passed to the script
+# 	# print sys.argv
+# 	main(sys.argv[1])

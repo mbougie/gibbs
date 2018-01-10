@@ -49,7 +49,7 @@ def getJSONfile():
 def createReclassifyList():
 	cur = conn.cursor()
 	
-    query = "SELECT \"Value\", mtr from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array WHERE mtr = 3 AND version = '{}'".format(data['pre']['traj']['filename'], data['pre']['traj']['lookup'], data['refine']['version'])
+	query = "SELECT \"Value\", mtr from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array WHERE mtr = 3 AND version = '{}'".format(data['pre']['traj']['filename'], data['pre']['traj']['lookup'], data['refine']['version'])
 	print 'query:', query
 
 	cur.execute(query)
@@ -72,14 +72,19 @@ print data
 def execute_task(in_extentDict):
 
 	fc_count = in_extentDict[0]
+
 	print 'fc_count-------------------------------------', fc_count
 
 	procExt = in_extentDict[1]
-	# print procExt
-	XMin = procExt[0]
-	YMin = procExt[1]
-	XMax = procExt[2]
-	YMax = procExt[3]
+	print 'procExt', procExt
+
+	loc_x = procExt[0]
+	print 'loc_x', loc_x
+
+	for loc_x,loc_y in procExt:
+		print loc_x
+		print loc_y
+
 
 	#set environments
 	arcpy.env.snapRaster = data['pre']['traj']['path']
@@ -109,7 +114,7 @@ def execute_task(in_extentDict):
 	# find the location of each pixel labeled with specific arbitray value in the rows list  
 	for row in location_list:
 
-		#Return the indices of the pixels that have values of the ytc arbitrsy values of the traj.
+		#Return the indices of the pixels that have values of the ytc arbitrary values of the traj.
 		indices = (arr_traj == row[0]).nonzero()
 
 		#stack indices so easier to work with
@@ -139,18 +144,18 @@ def execute_task(in_extentDict):
 
 
 
-	arcpy.ClearEnvironment("extent")
+	# arcpy.ClearEnvironment("extent")
 
-	outname = "tile_" + str(fc_count) +'.tif'
+	# outname = "tile_" + str(fc_count) +'.tif'
 
-	# #create
-	outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/", r"tiles", outname)
+	# # #create
+	# outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/", r"tiles", outname)
 
-	# NumPyArrayToRaster (in_array, {lower_left_corner}, {x_cell_size}, {y_cell_size}, {value_to_nodata})
-	myRaster = arcpy.NumPyArrayToRaster(outData, lower_left_corner=arcpy.Point(XMin, YMin), x_cell_size=30, y_cell_size=30, value_to_nodata=0)
+	# # NumPyArrayToRaster (in_array, {lower_left_corner}, {x_cell_size}, {y_cell_size}, {value_to_nodata})
+	# myRaster = arcpy.NumPyArrayToRaster(outData, lower_left_corner=arcpy.Point(XMin, YMin), x_cell_size=30, y_cell_size=30, value_to_nodata=0)
 	
 
-	myRaster.save(outpath)
+	# myRaster.save(outpath)
 
 
 
@@ -188,38 +193,45 @@ def mosiacRasters():
 # def run():  
 if __name__ == '__main__':
 
-	tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
-	for tile in tiles:
-		os.remove(tile)
+	# tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
+	# for tile in tiles:
+	# 	os.remove(tile)
 
 	#get extents of individual features and add it to a dictionary
 	extDict = {}
 	count = 1 
-
-	for row in arcpy.da.SearchCursor(data['ancillary']['vector']['shapefiles']['fishnet_mtr'], ["SHAPE@"]):
-		extent_curr = row[0].extent
+	for row in arcpy.da.SearchCursor('C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\aa\\aa.gdb\\counties_r2_1', ["SHAPE@XY"]):
+		print row
+		print row[0]
+		# 	extent_curr = row[0].extent
 		ls = []
-		ls.append(extent_curr.XMin)
-		ls.append(extent_curr.YMin)
-		ls.append(extent_curr.XMax)
-		ls.append(extent_curr.YMax)
+		ls.append(row[0])
+		# 	ls.append(extent_curr.YMin)
+		# 	ls.append(extent_curr.XMax)
+		# 	ls.append(extent_curr.YMax)
 		extDict[count] = ls
 		count+=1
-    
+
 	print 'extDict', extDict
 	print'extDict.items',  extDict.items()
 
-	#######create a process and pass dictionary of extent to execute task
-	pool = Pool(processes=5)
+	# execute_task(extDict.items())
+
+	# #######create a process and pass dictionary of extent to execute task
+	pool = Pool(processes=1)
 	# pool = Pool(processes=cpu_count())
 	pool.map(execute_task, extDict.items())
 	# pool.map(execute_task, [(ed, nibble) for ed in extDict.items()])
 	pool.close()
 	pool.join
 
-	mosiacRasters()
+	# mosiacRasters()
 
 
 # run()
+
+
+
+
     
    

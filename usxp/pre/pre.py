@@ -40,8 +40,9 @@ def getGDBpath(wc):
 
 
 
+###make this a general function
 def getJSONfile():
-    with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\config\\test\\series_test4.json') as json_data:
+    with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\config\\current_instance.json') as json_data:
         template = json.load(json_data)
         # print(template)
         # print type(template)

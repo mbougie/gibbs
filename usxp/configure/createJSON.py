@@ -27,6 +27,9 @@ except:
     print "I am unable to connect to the database"
 
 
+# def getInfo(directory):
+#     return directory
+
 
 ###################  create classes ######################################################
 
@@ -81,20 +84,29 @@ def insertGDBpaths(subpath, gdb):
 
 
 
-def getTemplatefile():
-    with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\config\\routes\\template_routes.json') as json_data:
+def getTemplatefile(directory):
+    with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\config\\template.json'.format(directory)) as json_data:
         template = json.load(json_data)
-        # print(template)
-        # print type(template)
         return template
 
 
-def getKernelfile(route, filename):
-    with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\config\\routes\\{}\\{}.json'.format(route, filename)) as json_data:
-        template = json.load(json_data)
-        # print(template)
-        # print type(template)
-        return template
+def getKernelfile(args_list):
+    directory = args_list[0]
+
+    if directory == 'series':
+        filename = args_list[1]
+
+        with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\config\\{}\\{}.json'.format(directory, filename)) as json_data:
+            template = json.load(json_data)
+            return template, directory, filename
+    
+    elif directory == 'routes':
+        route = args_list[1]
+        filename = args_list[2]
+
+        with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\config\\{}\\{}\\{}.json'.format(directory, route, filename)) as json_data:
+            template = json.load(json_data)
+            return template, directory, filename      
 
 
 
@@ -123,33 +135,34 @@ def getArbitraryCropValue(table, years, croptype):
 
 class ProcessingObject(object):
 
-    def __init__(self, kernel):
+    def __init__(self, args):
+        kernel = args[0]
         print 'kernel', kernel
+        directory = args[1]
+        instance = args[2]
+        print instance
+
         ##get the template json
-        self.data = getTemplatefile()
+        self.data = getTemplatefile(directory)
         print self.data
 
         #call the methods in order to modifiy the tempalte json
-        self.updateKernel = self.updateKernel(kernel)
+        self.updateKernel = self.updateKernel(kernel, instance)
         self.updatePreObject = self.updatePreObject(kernel)
         self.updateRefineObject = self.updateRefineObject(kernel)
         self.updateCoreObject = self.updateCoreObject(kernel)
         self.updatePostObject = self.updatePostObject(kernel)
         
         #export modified object to json file
-        self.exportObject = self.exportObject()
+        self.exportObject = self.exportObject(directory)
     
 
 
-    def updateKernel(self, kernel):
+    def updateKernel(self, kernel, instance):
         #add kenel object to json 
-        print 'kernel', kernel['global']['years'][0]+1, kernel['global']['years'][1]-1
         self.data['global']=kernel['global']
 
-        # print 'fdfdfd', self.data
-        # #add datarange to kernel object
-        #             'years':range(2008,2017),
-        #     'years_conv':range(2009,2015)
+        self.data['global']['series'] = instance
         self.data['global']['years'] = range(kernel['global']['years'][0], kernel['global']['years'][1]+1)
         self.data['global']['years_conv'] = range(kernel['global']['conv_years'][0], kernel['global']['conv_years'][1]+1)
         self.data['global']['datarange'] = '{}to{}'.format(str(self.data['global']['years'][0]), str(self.data['global']['years'][-1]))
@@ -182,12 +195,14 @@ class ProcessingObject(object):
         self.data['refine']['version'] = kernel['refine']['version']
         self.data['refine']['gdb'] = getGDBpath('{}_masks'.format(self.data['refine']['version']))
         
-
-        self.data['refine']['mask_nlcd']['filename'] = '{}_mask_nlcd_{}'.format(self.data['refine']['version'], self.data['global']['datarange'])
-        self.data['refine']['mask_nlcd']['path'] = '\\'.join([self.data['refine']['gdb'], self.data['refine']['mask_nlcd']['filename']])
-        self.data['refine']['mask_nlcd']['arbitrary'] = getArbitraryCropValue(self.data['pre']['traj']['filename'], self.data['global']['years'], 'crop')
         self.data['refine']['mask_nlcd']['years_nlcd'] = kernel['refine']['years_nlcd']
         self.data['refine']['mask_nlcd']['operator'] = kernel['refine']['operator']
+        self.data['refine']['mask_nlcd']['arbitrary'] = getArbitraryCropValue(self.data['pre']['traj']['filename'], self.data['global']['years'], 'crop')
+        self.data['refine']['mask_nlcd']['filename'] = '{}_mask_nlcd_{}_{}'.format(self.data['refine']['version'], 'and'.join(str(e) for e in self.data['refine']['mask_nlcd']['years_nlcd']), self.data['global']['datarange'])
+        self.data['refine']['mask_nlcd']['path'] = '\\'.join([self.data['refine']['gdb'], self.data['refine']['mask_nlcd']['filename']])
+        
+        
+        
         
         
         self.data['refine']['mask_dev_alfalfa_fallow']['filename'] = '{}_mask_dev_alfalfa_fallow_{}'.format(self.data['refine']['version'], self.data['global']['datarange'])
@@ -200,6 +215,7 @@ class ProcessingObject(object):
     #####   core functions  ################################################################################
     def updateCoreObject(self, kernel):
         ##define attributes
+        
         self.data['core']['gdb'] = getGDBpath('core')
         self.data['core']['filter'] = kernel['core']['filter']
         self.data['core']['route'] = kernel['core']['route']
@@ -244,9 +260,9 @@ class ProcessingObject(object):
     def createCoreFunctionArguments(self):
         fct_dict = {}
         if self.data['core']['route'] == 'r2':
-            fct_dict['majorityFilter']={'input':self.data['pre']['traj_rfnd']['path'], 'output':self.data['core']['filename']['filter']}
-            fct_dict['parallel_mtr']={'input':self.data['core']['filename']['filter'], 'output':self.data['core']['filename']['mtr']}
-            fct_dict['parallel_rg']={'input':self.data['core']['filename']['mtr'], 'output':self.data['core']['filename']['rg']}
+            fct_dict['majorityFilter']={'input':self.data['pre']['traj_rfnd']['path'], 'output':self.data['core']['path']['filter']}
+            fct_dict['parallel_mtr']={'input':self.data['core']['path']['filter'], 'output':self.data['core']['path']['mtr']}
+            fct_dict['parallel_rg']={'input':self.data['core']['path']['mtr'], 'output':self.data['core']['path']['rg']}
             fct_dict['parallel_mmu']={'input':self.data['core']['path']['mtr'], 'mask':self.data['core']['path']['rg'],'output':self.data['core']['path']['mmu']}
             return fct_dict
         elif self.data['core']['route'] == 'r3':
@@ -280,16 +296,16 @@ class ProcessingObject(object):
 
 
      #####   export objects  ################################################################################
-    def exportObject(self):
-        with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\config\\test\\series_test4.json', 'w') as outfile:
+    def exportObject(self, directory):
+        with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\config\\current_instance.json'.format(directory), 'w') as outfile:
             json.dump(self.data, outfile, indent=4)
 
 
 
 
 ###########  create instance of class ################################################
-
-ProcessingObject(getKernelfile('r3','r3_1'))
+ProcessingObject(getKernelfile(['routes','r2','r2_2']))
+# ProcessingObject(getKernelfile(['series','s14']))
 
 
 

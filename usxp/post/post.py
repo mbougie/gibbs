@@ -26,8 +26,9 @@ except:
     print "I am unable to connect to the database"
 
 
+###make this a general function
 def getJSONfile():
-    with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\config\\test\\series_test4.json') as json_data:
+    with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\config\\current_instance.json') as json_data:
         template = json.load(json_data)
         # print(template)
         # print type(template)
@@ -61,8 +62,8 @@ print data
 
 def createReclassifyList():
     cur = conn.cursor()
-
-    query = 'SELECT "Value",ytc from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array WHERE ytc IS NOT NULL'.format(data['pre']['traj']['filename'], data['pre']['traj']['lookup'])
+    query = " SELECT \"Value\", ytc from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array WHERE ytc IS NOT NULL AND version = '{}' ".format(data['pre']['traj']['filename'], data['pre']['traj']['lookup'], data['pre']['traj']['lookup_version'])
+    # query = 'SELECT "Value",ytc from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array WHERE ytc IS NOT NULL'.format(data['pre']['traj']['filename'], data['pre']['traj']['lookup'])
     print 'query:', query
 
     cur.execute(query)
@@ -304,7 +305,7 @@ def getReclassifyValuesString():
 
 
 ################ call functions  #####################################################
-# createYearbinaries()
+createYearbinaries()
 # createMask()
 # clipByMMU()
 
@@ -319,7 +320,7 @@ def getReclassifyValuesString():
 # attachCDL(['post',post.name])
 
 
-addGDBTable2postgres()
+# addGDBTable2postgres()
 # createSpecificLUCMask()
 
 

@@ -36,8 +36,9 @@ arcpy.env.scratchWorkspace = "in_memory"
 
 
 
+###make this a general function
 def getJSONfile():
-    with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\config\\test\\series_test4.json') as json_data:
+    with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\config\\current_instance.json') as json_data:
         template = json.load(json_data)
         # print(template)
         # print type(template)
@@ -48,7 +49,7 @@ def getJSONfile():
 def createReclassifyList():
 	cur = conn.cursor()
 
-	query = "SELECT \"Value\",ytc from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array WHERE ytc IS NOT NULL AND version ='{}'".format(data['pre']['traj']['filename'], data['pre']['traj']['lookup'], data['pre']['traj']['version'])
+	query = "SELECT \"Value\", ytc from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array WHERE ytc IS NOT NULL AND version ='{}'".format(data['pre']['traj']['filename'], data['pre']['traj']['lookup'], data['refine']['version'])
 	print 'query:', query
 
 	cur.execute(query)

@@ -1,0 +1,44 @@
+{    
+    
+    "ancillary":{
+    	"raster":{
+        	"nlcd":{
+             	"nlcd30_1992":"C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\nlcd.gdb\\nlcd30_1992"
+        	},
+        	"misc":{
+ 				"composite":"C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\misc.gdb\\composite"
+        	}
+    	},
+    	"vector":{
+    		"shapefiles":{
+                "counties_subset":"C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\vector\\shapefiles.gdb\\counties_subset",
+                "fishnet":"C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\vector\\shapefiles.gdb\\fishnet",
+                "fishnet_mtr":"C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\vector\\shapefiles.gdb\\fishnet_mtr",
+                "fishnet_ytc":"C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\vector\\shapefiles.gdb\\fishnet_ytc"
+
+    		}
+    	}
+    },
+	"pre":{
+		"traj":{},
+		"traj_rfnd":{}
+	},
+	
+    "refine":{
+        "mask_dev_alfalfa_fallow":{},
+        "mask_nlcd":{}
+     },
+
+
+	"core":{
+		"gdb":"",
+        "filter":""
+	},
+
+    "post":{
+        "ytc":"",
+        "yfc":{}
+    }
+
+
+}

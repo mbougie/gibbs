@@ -7,6 +7,7 @@ import glob
 import sys
 import time
 import logging
+import psycopg2
 from multiprocessing import Process, Queue, Pool, cpu_count, current_process, Manager
 sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\misc\\')
 import general as gen
@@ -23,8 +24,9 @@ arcpy.env.overwriteOutput = True
 arcpy.env.scratchWorkspace = "in_memory" 
 
 
+###make this a general function
 def getJSONfile():
-    with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\config\\test\\series_test4.json') as json_data:
+    with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\config\\current_instance.json') as json_data:
         template = json.load(json_data)
         # print(template)
         # print type(template)
@@ -112,15 +114,15 @@ def mosiacRasters():
 if __name__ == '__main__':
 
 	#####  remove a files in tiles directory
-	# tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
-	# for tile in tiles:
-	# 	os.remove(tile)
+	tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
+	for tile in tiles:
+		os.remove(tile)
 
 	#get extents of individual features and add it to a dictionary
 	extDict = {}
 	count = 1 
 
-	for row in arcpy.da.SearchCursor(data['ancillary']['vector']['shapefiles']['fishnet_ytc'], ["SHAPE@"]):
+	for row in arcpy.da.SearchCursor(data['ancillary']['vector']['shapefiles']['counties_subset'], ["SHAPE@"]):
 		extent_curr = row[0].extent
 		ls = []
 		ls.append(extent_curr.XMin)
@@ -134,10 +136,10 @@ if __name__ == '__main__':
 	print'extDict.items',  extDict.items()
 
 	#######create a process and pass dictionary of extent to execute task
-	# pool = Pool(processes=5)
-	# pool = Pool(processes=cpu_count())
-	# pool.map(execute_task, extDict.items())
-	# pool.close()
-	# pool.join
+	pool = Pool(processes=5)
+	pool = Pool(processes=cpu_count())
+	pool.map(execute_task, extDict.items())
+	pool.close()
+	pool.join
 
 	mosiacRasters()

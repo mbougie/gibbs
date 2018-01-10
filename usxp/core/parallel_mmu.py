@@ -31,10 +31,8 @@ arcpy.env.scratchWorkspace = "in_memory"
 
 
 def getJSONfile():
-    with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\config\\test\\series_test4.json') as json_data:
+    with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\config\\current_instance.json') as json_data:
         template = json.load(json_data)
-        # print(template)
-        # print type(template)
         return template
 
 
@@ -132,7 +130,7 @@ if __name__ == '__main__':
 
 	#######create a process and pass dictionary of extent to execute task
 	pool = Pool(processes=9)
-	pool = Pool(processes=cpu_count())
+	##### pool = Pool(processes=cpu_count())
 	pool.map(execute_task, extDict.items())
 	pool.close()
 	pool.join
