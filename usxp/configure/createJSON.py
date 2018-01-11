@@ -133,6 +133,34 @@ def getArbitraryCropValue(table, years, croptype):
 
 
 
+
+
+
+
+
+# def createCDLdict(subtype, years):
+  
+    
+#     def getCDLpathsDict(subtype, years):
+#     #this is an aux function for attachCDL() function to get correct cdl for the attachCDL() function
+#         dict = {}
+#         for year in years:
+#             cdl_file = '{}{}cdl30_{}'.format(getGDBpath('cdl'), '\\', str(year))
+#             # print cdl_file
+#             if subtype == 'fc' or subtype == 'fnc':
+#                 dict[str(year)]=cdl_file
+#             elif subtype == 'bfc' or subtype == 'bfnc':
+#                 dict[str(year+1)]=cdl_file
+#         return dict
+    
+#     definedpath = '{}_ytc{}_{}_mmu{}'.format(self.data['global']['instance'], self.data['global']['res'], self.data['global']['datarange'], str(self.data['core']['mmu']))
+#     dictpath={"cdlpaths":getCDLpathsDict(years),"path":definedpath}
+#     print dictpath
+#     return dictpath
+
+
+
+
 class ProcessingObject(object):
 
     def __init__(self, args):
@@ -162,7 +190,7 @@ class ProcessingObject(object):
         #add kenel object to json 
         self.data['global']=kernel['global']
 
-        self.data['global']['series'] = instance
+        self.data['global']['instance'] = kernel['global']['instance']
         self.data['global']['years'] = range(kernel['global']['years'][0], kernel['global']['years'][1]+1)
         self.data['global']['years_conv'] = range(kernel['global']['conv_years'][0], kernel['global']['conv_years'][1]+1)
         self.data['global']['datarange'] = '{}to{}'.format(str(self.data['global']['years'][0]), str(self.data['global']['years'][-1]))
@@ -216,7 +244,7 @@ class ProcessingObject(object):
     def updateCoreObject(self, kernel):
         ##define attributes
         
-        self.data['core']['gdb'] = getGDBpath('core')
+        self.data['core']['gdb'] = getGDBpath('core_{}'.format(self.data['global']['instance']))
         self.data['core']['filter'] = kernel['core']['filter']
         self.data['core']['route'] = kernel['core']['route']
         self.data['core']['rg'] = kernel['core']['rg']
@@ -233,13 +261,13 @@ class ProcessingObject(object):
     def createCoreFileNames(self):
         file_dict = {}
         if self.data['core']['route'] == 'r2':
-            file_dict['filter']='_'.join((self.data['global']['series'], self.data['pre']['traj_rfnd']['filename'], self.data['core']['filter']))
+            file_dict['filter']='_'.join((self.data['global']['instance'], self.data['pre']['traj_rfnd']['filename'], self.data['core']['filter']))
             file_dict['mtr']='_'.join((file_dict['filter'],'mtr'))
             file_dict['rg']='{}_{}_rgmask{}'.format(file_dict['mtr'], self.data['core']['rg'], self.data['core']['mmu'])
             file_dict['mmu']='{}_mmu{}'.format(file_dict['mtr'], self.data['core']['mmu'])
             return file_dict
         elif self.data['core']['route'] == 'r3':
-            file_dict['filter']='_'.join((self.data['global']['series'], self.data['pre']['traj_rfnd']['filename'], self.data['core']['filter']))
+            file_dict['filter']='_'.join((self.data['global']['instance'], self.data['pre']['traj_rfnd']['filename'], self.data['core']['filter']))
             file_dict['rg']='{}_{}_rgmask{}'.format(file_dict['filter'], self.data['core']['rg'], self.data['core']['mmu'])
             file_dict['mmu']='{}_mmu{}'.format(file_dict['filter'], self.data['core']['mmu'])
             file_dict['mtr']='_'.join((file_dict['mmu'],'mtr'))
@@ -274,7 +302,7 @@ class ProcessingObject(object):
 
 
 
-    #####   core functions  ################################################################################
+    #####   post functions  ################################################################################
     
 
     def updatePostObject(self, kernel):
@@ -282,16 +310,42 @@ class ProcessingObject(object):
         def getvalues():
             ytc_dict = {}
 
-            ytc_dict['gdb'] = getGDBpath('ytc')
-            ytc_dict['filename'] = '{}_ytc{}_{}'.format(self.data['global']['series'], self.data['global']['res'], self.data['global']['datarange'])
+            ytc_dict['gdb'] = getGDBpath('ytc_{}'.format(self.data['global']['instance']))
+            ytc_dict['filename'] = '{}_ytc{}_{}_mmu{}'.format(self.data['global']['instance'], self.data['global']['res'], self.data['global']['datarange'], str(self.data['core']['mmu']))
             ytc_dict['path']  = '\\'.join([ytc_dict['gdb'], ytc_dict['filename']]) 
-            ytc_dict['path_mask']  = '\\'.join([ytc_dict['gdb'], ytc_dict['filename']])+'_mmu'+str(self.data['core']['mmu'])+'_msk' 
-            ytc_dict['path_mmu']  = '\\'.join([ytc_dict['gdb'], ytc_dict['filename']])+'_mmu'+str(self.data['core']['mmu'])
-            ytc_dict['path_nbl']  = ytc_dict['path_mmu']+'_nbl'
+            ytc_dict['fc'] = self.createCDLdict('fc', self.data['global']['years_conv'])
+            ytc_dict['bfc'] = self.createCDLdict('bfc', self.data['global']['years_conv'])
             return ytc_dict
 
 
         self.data['post']['ytc'] = getvalues()
+
+    def createCDLdict(self, subtype, years):
+
+        def getCDLpathsDict(years):
+            #this is an aux function for attachCDL() function to get correct cdl for the attachCDL() function
+            dict = {}
+            for year in years:
+                if subtype == 'fc' or subtype == 'fnc':
+                    cdl_file = '{}{}cdl30_{}'.format(getGDBpath('cdl'), '\\', str(year))
+                    dict[str(year)]=cdl_file
+                elif subtype == 'bfc' or subtype == 'bfnc':
+                    cdl_file = '{}{}cdl30_{}'.format(getGDBpath('cdl'), '\\', str(year-1))
+                    dict[str(year)]=cdl_file
+            return dict
+
+        definedfilename = '{}_ytc{}_{}_mmu{}_{}'.format(self.data['global']['instance'], self.data['global']['res'], self.data['global']['datarange'], str(self.data['core']['mmu']), subtype)
+        definedpath = '{}\\{}'.format(getGDBpath('ytc'), definedfilename)
+        dictpath={"cdlpaths":getCDLpathsDict(years),"filename":definedfilename, "path":definedpath}
+        print dictpath
+        return dictpath
+
+
+
+
+    ####  attach cdl ########################################################################################
+
+
 
 
 
@@ -304,7 +358,7 @@ class ProcessingObject(object):
 
 
 ###########  create instance of class ################################################
-ProcessingObject(getKernelfile(['routes','r2','r2_2']))
+ProcessingObject(getKernelfile(['routes','r2','r2_3']))
 # ProcessingObject(getKernelfile(['series','s14']))
 
 

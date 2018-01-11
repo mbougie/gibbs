@@ -22,7 +22,7 @@ arcpy.CheckOutExtension("Spatial")
 arcpy.env.overwriteOutput = True
 arcpy.env.scratchWorkspace = "in_memory" 
 
-
+subtype = 'bfc'
 
 
 def getJSONfile():
@@ -36,7 +36,6 @@ def getJSONfile():
 
 data = getJSONfile()
 print data
-
 
 
 def createReclassifyList():
@@ -57,10 +56,9 @@ def createReclassifyList():
 	return fulllist
 
 
-
+  
 def execute_task(in_extentDict):
 	yxc = {'ytc':3, 'yfc':4}
-
 
 	fc_count = in_extentDict[0]
 	# print fc_count
@@ -72,8 +70,6 @@ def execute_task(in_extentDict):
 	YMax = procExt[3]
 
 	path_traj_rfnd = data['pre']['traj_rfnd']['path']
-	print 'path_traj_rfnd:', path_traj_rfnd
-
 	path_mtr = Raster(data['core']['path']['mmu'])
 
 	#set environments
@@ -81,25 +77,37 @@ def execute_task(in_extentDict):
 	arcpy.env.cellsize = path_mtr
 	arcpy.env.extent = arcpy.Extent(XMin, YMin, XMax, YMax)
 
-	###  Execute the three functions  #####################
 	raster_yxc = Reclassify(Raster(path_traj_rfnd), "Value", RemapRange(createReclassifyList()), "NODATA")
-
 	raster_mask = Con((path_mtr == yxc['ytc']) & (raster_yxc >= 2008), raster_yxc)
 
-	raster_mmu = Con((path_mtr == yxc['ytc']) & (IsNull(raster_mask)), yxc['ytc'], Con((path_mtr == yxc['ytc']) & (raster_mask >= 2008), raster_mask))
+	for year, cdlpath in data['post']['ytc'][subtype]['cdlpaths'].iteritems():
+
+		# allow raster to be overwritten
+		arcpy.env.overwriteOutput = True
+		print "overwrite on? ", arcpy.env.overwriteOutput
+
+		#establish the condition
+		cond = "Value = " + year
+		print 'cond: ', cond
+
+		raster_mask = Con(raster_mask, cdlpath, raster_mask, cond)
+
+
+	# print fc_count
+
+	raster_mmu = Con((path_mtr == yxc['ytc']) & (IsNull(raster_mask)), 255, raster_mask)
 
 	raster_nibble = arcpy.sa.Nibble(raster_mmu, raster_mask, "DATA_ONLY")
 
-	#clear out the extent for next time
-	arcpy.ClearEnvironment("extent")
 
-	# print fc_count
 	outname = "tile_" + str(fc_count) +'.tif'
 
 	outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/", r"tiles", outname)
 
-	raster_nibble.save(outpath)
+	arcpy.ClearEnvironment("extent")
 
+	raster_nibble.save(outpath)
+        
 
 
 
@@ -111,17 +119,17 @@ def mosiacRasters():
 	#### need to wrap these paths with Raster() fct or complains about the paths being a string
 	inTraj=Raster(data['pre']['traj']['path'])
 
-	filename = data['post']['ytc']['path_nbl'].replace(data['post']['ytc']['gdb']+'\\', '')
+	filename = data['post']['ytc'][subtype]['filename']
 	print 'filename:', filename
 	
 	######mosiac tiles together into a new raster
 	arcpy.MosaicToNewRaster_management(tilelist, data['post']['ytc']['gdb'], filename, inTraj.spatialReference, "16_BIT_UNSIGNED", 30, "1", "LAST","FIRST")
 
 	#Overwrite the existing attribute table file
-	arcpy.BuildRasterAttributeTable_management(data['post']['ytc']['path_nbl'], "Overwrite")
+	arcpy.BuildRasterAttributeTable_management(data['post']['ytc'][subtype]['path'], "Overwrite")
 
 	# Overwrite pyramids
-	gen.buildPyramids(data['post']['ytc']['path_nbl'])
+	gen.buildPyramids(data['post']['ytc'][subtype]['path'])
 
 
 
@@ -152,8 +160,8 @@ if __name__ == '__main__':
 	print'extDict.items',  extDict.items()
 
 	#######create a process and pass dictionary of extent to execute task
-	pool = Pool(processes=8)
-	# pool = Pool(processes=cpu_count())
+	# pool = Pool(processes=1)
+	pool = Pool(processes=cpu_count())
 	pool.map(execute_task, extDict.items())
 	pool.close()
 	pool.join

@@ -38,31 +38,8 @@ data = getJSONfile()
 print data
 
 
-# def createMMUmaskTiles():
-#     root_in = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\tiles\\'
-#     rasterlist = glob.glob(root_in+"*.tif")
-#     print rasterlist
-
-#     for raster in rasterlist:
-#         print raster
-
-#         output = raster.replace('.', '_mask.')
-#         print output
-
-#         # for count in masks_list:
-#         cond = "Count < " + str(gen.getPixelCount(str(data['global']['res']), int(data['core']['mmu'])))
-#         print 'cond: ',cond
-
-#         outSetNull = SetNull(raster, 1, cond)
-
-#         # Save the output 
-#         outSetNull.save(output)
-
-
-
 
 def createReclassifyList():
-    #this is a sub function for createMTR().  references the mtr value in psotgres to create a list containing arbitray trajectory value and associated new mtr value
     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
     query = " SELECT \"Value\", mtr from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array AND version = '{}' ".format(data['pre']['traj']['filename'], data['pre']['traj']['lookup'], data['pre']['traj']['lookup_version'])
     # print 'query:', query
@@ -83,7 +60,6 @@ def createReclassifyList():
 
 reclassArray = createReclassifyList() 
 print 'reclassArray:', reclassArray
-
 
 
 
@@ -132,53 +108,6 @@ def execute_task(in_extentDict):
 		raster_nbl.save(outpath)
 
 
-
-
-
-
-
-
-# def execute_task(in_extentDict):
-# 	yxc = {'ytc':3, 'yfc':4}
-
-
-# 	fc_count = in_extentDict[0]
-# 	# print fc_count
-# 	procExt = in_extentDict[1]
-# 	# print procExt
-# 	XMin = procExt[0]
-# 	YMin = procExt[1]
-# 	XMax = procExt[2]
-# 	YMax = procExt[3]
-
-# 	path_traj_rfnd = data['pre']['traj_rfnd']['path']
-# 	print 'path_traj_rfnd:', path_traj_rfnd
-
-# 	path_mtr = Raster(data['core']['path']['mmu'])
-
-# 	#set environments
-# 	arcpy.env.snapRaster = path_mtr
-# 	arcpy.env.cellsize = path_mtr
-# 	arcpy.env.extent = arcpy.Extent(XMin, YMin, XMax, YMax)
-
-# 	###  Execute the three functions  #####################
-# 	raster_yxc = Reclassify(Raster(path_traj_rfnd), "Value", RemapRange(createReclassifyList()), "NODATA")
-
-# 	raster_mask = Con((path_mtr == yxc['ytc']) & (raster_yxc >= 2008), raster_yxc)
-
-# 	raster_mmu = Con((path_mtr == yxc['ytc']) & (IsNull(raster_mask)), yxc['ytc'], Con((path_mtr == yxc['ytc']) & (raster_mask >= 2008), raster_mask))
-
-# 	raster_nibble = arcpy.sa.Nibble(raster_mmu, raster_mask, "DATA_ONLY")
-
-# 	#clear out the extent for next time
-# 	arcpy.ClearEnvironment("extent")
-
-# 	# print fc_count
-# 	outname = "tile_" + str(fc_count) +'.tif'
-
-# 	outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/", r"tiles", outname)
-
-# 	raster_nibble.save(outpath)
 
 
 
