@@ -644,3 +644,12 @@ def deleteFiles():
     filelist = glob.glob("*")
     for f in filelist:
         os.remove(f)
+
+
+
+def createDirectory(directory):
+    try:
+        os.makedirs(directory)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise

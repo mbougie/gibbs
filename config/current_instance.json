@@ -16,42 +16,13 @@
         }
     }, 
     "core": {
-        "function": {
-            "majorityFilter": {
-                "input": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\pre\\traj_rfnd\\v2\\v2_traj_rfnd.gdb\\v3_traj_cdl30_b_2008to2016_rfnd_v2", 
-                "output": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\r2_3\\core\\core_r2_3.gdb\\r2_3_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h"
-            }, 
-            "parallel_rg": {
-                "input": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\r2_3\\core\\core_r2_3.gdb\\r2_3_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_mtr", 
-                "output": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\r2_3\\core\\core_r2_3.gdb\\r2_3_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_mtr_8w_rgmask20"
-            }, 
-            "parallel_mmu": {
-                "input": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\r2_3\\core\\core_r2_3.gdb\\r2_3_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_mtr", 
-                "mask": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\r2_3\\core\\core_r2_3.gdb\\r2_3_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_mtr_8w_rgmask20", 
-                "output": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\r2_3\\core\\core_r2_3.gdb\\r2_3_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_mtr_mmu20"
-            }, 
-            "parallel_mtr": {
-                "input": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\r2_3\\core\\core_r2_3.gdb\\r2_3_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h", 
-                "output": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\r2_3\\core\\core_r2_3.gdb\\r2_3_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_mtr"
-            }
-        }, 
-        "mmu": "20", 
+        "mmu": "1", 
         "route": "r2", 
-        "filename": {
-            "filter": "r2_3_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h", 
-            "mtr": "r2_3_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_mtr", 
-            "rg": "r2_3_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_mtr_8w_rgmask20", 
-            "mmu": "r2_3_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_mtr_mmu20"
-        }, 
+        "filename": "r2_4_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_mtr_mmu1", 
         "filter": "n8h", 
-        "gdb": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\r2_3\\core\\core_r2_3.gdb", 
+        "gdb": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\r2_4\\core\\core_r2_4.gdb", 
         "rg": "8w", 
-        "path": {
-            "filter": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\r2_3\\core\\core_r2_3.gdb\\r2_3_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h", 
-            "mtr": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\r2_3\\core\\core_r2_3.gdb\\r2_3_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_mtr", 
-            "rg": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\r2_3\\core\\core_r2_3.gdb\\r2_3_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_mtr_8w_rgmask20", 
-            "mmu": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\r2_3\\core\\core_r2_3.gdb\\r2_3_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_mtr_mmu20"
-        }
+        "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\r2_4\\core\\core_r2_4.gdb\\r2_4_v3_traj_cdl30_b_2008to2016_rfnd_v2_n8h_mtr_mmu1"
     }, 
     "global": {
         "datarange": "2008to2016", 
@@ -67,7 +38,7 @@
             2015, 
             2016
         ], 
-        "instance": "r2_3", 
+        "instance": "r2_4", 
         "years_conv": [
             2010, 
             2011, 
@@ -102,14 +73,6 @@
         "version": "v2"
     }, 
     "ancillary": {
-        "raster": {
-            "nlcd": {
-                "nlcd30_1992": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\nlcd.gdb\\nlcd30_1992"
-            }, 
-            "misc": {
-                "composite": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\misc.gdb\\composite"
-            }
-        }, 
         "vector": {
             "shapefiles": {
                 "fishnet": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\vector\\shapefiles.gdb\\fishnet", 
@@ -130,11 +93,11 @@
                     "2013": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2012", 
                     "2012": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2011"
                 }, 
-                "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\r2_3\\post\\ytc_r2_3.gdb\\r2_3_ytc30_2008to2016_mmu20_bfc", 
-                "filename": "r2_3_ytc30_2008to2016_mmu20_bfc"
+                "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\r2_4\\post\\ytc_r2_4.gdb\\r2_4_ytc30_2008to2016_mmu1_bfc", 
+                "filename": "r2_4_ytc30_2008to2016_mmu1_bfc"
             }, 
-            "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\r2_3\\post\\ytc_r2_3.gdb\\r2_3_ytc30_2008to2016_mmu20", 
-            "gdb": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\r2_3\\post\\ytc_r2_3.gdb", 
+            "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\r2_4\\post\\ytc_r2_4.gdb\\r2_4_ytc30_2008to2016_mmu1", 
+            "gdb": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\r2_4\\post\\ytc_r2_4.gdb", 
             "fc": {
                 "cdlpaths": {
                     "2015": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2015", 
@@ -144,10 +107,10 @@
                     "2013": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2013", 
                     "2012": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2012"
                 }, 
-                "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\r2_3\\post\\ytc_r2_3.gdb\\r2_3_ytc30_2008to2016_mmu20_fc", 
-                "filename": "r2_3_ytc30_2008to2016_mmu20_fc"
+                "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\r2_4\\post\\ytc_r2_4.gdb\\r2_4_ytc30_2008to2016_mmu1_fc", 
+                "filename": "r2_4_ytc30_2008to2016_mmu1_fc"
             }, 
-            "filename": "r2_3_ytc30_2008to2016_mmu20"
+            "filename": "r2_4_ytc30_2008to2016_mmu1"
         }, 
         "yfc": {}
     }

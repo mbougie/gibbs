@@ -23,18 +23,8 @@ arcpy.env.overwriteOutput = True
 arcpy.env.scratchWorkspace = "in_memory" 
 
 
-
-
-def getJSONfile():
-    with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\config\\current_instance.json') as json_data:
-        template = json.load(json_data)
-        # print(template)
-        # print type(template)
-        return template
-
-
-
-data = getJSONfile()
+##get the current instance
+data = gen.getJSONfile()
 print data
 
 
@@ -111,17 +101,17 @@ def mosiacRasters():
 	#### need to wrap these paths with Raster() fct or complains about the paths being a string
 	inTraj=Raster(data['pre']['traj']['path'])
 
-	filename = data['post']['ytc']['path_nbl'].replace(data['post']['ytc']['gdb']+'\\', '')
+	filename = data['post']['ytc']['filename']
 	print 'filename:', filename
 	
 	######mosiac tiles together into a new raster
 	arcpy.MosaicToNewRaster_management(tilelist, data['post']['ytc']['gdb'], filename, inTraj.spatialReference, "16_BIT_UNSIGNED", 30, "1", "LAST","FIRST")
 
 	#Overwrite the existing attribute table file
-	arcpy.BuildRasterAttributeTable_management(data['post']['ytc']['path_nbl'], "Overwrite")
+	arcpy.BuildRasterAttributeTable_management(data['post']['ytc']['path'], "Overwrite")
 
 	# Overwrite pyramids
-	gen.buildPyramids(data['post']['ytc']['path_nbl'])
+	gen.buildPyramids(data['post']['ytc']['path'])
 
 
 

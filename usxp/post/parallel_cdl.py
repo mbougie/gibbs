@@ -25,16 +25,8 @@ arcpy.env.scratchWorkspace = "in_memory"
 subtype = 'bfc'
 
 
-def getJSONfile():
-    with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\config\\current_instance.json') as json_data:
-        template = json.load(json_data)
-        # print(template)
-        # print type(template)
-        return template
-
-
-
-data = getJSONfile()
+##get the current instance
+data = gen.getJSONfile()
 print data
 
 

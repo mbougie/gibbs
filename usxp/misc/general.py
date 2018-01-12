@@ -4,9 +4,10 @@ from sqlalchemy import create_engine
 import arcpy
 from arcpy import env
 from arcpy.sa import *
-import os
+import os, errno
 import glob
 import math
+import json
 
 
 
@@ -772,5 +773,22 @@ def commitQuery(query):
     conn.commit()
     print "Records created successfully";
     # conn.close()
+
+
+def createDirectory(directory):
+    try:
+        os.makedirs(directory)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
+
+
+
+def getJSONfile():
+    with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\config\\current_instance.json') as json_data:
+        template = json.load(json_data)
+        return template
+
+
 
 

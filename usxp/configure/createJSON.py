@@ -62,9 +62,9 @@ def getObjectValues(row):
 def getGDBpath(wc):
     for root, dirnames, filenames in os.walk("C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\"):
         for dirnames in fnmatch.filter(dirnames, '*{}*.gdb'.format(wc)):
-            print dirnames
+            # print dirnames
             gdbmatches = os.path.join(root, dirnames)
-    print gdbmatches
+    # print gdbmatches
     # return json.dumps(gdbmatches)
     return gdbmatches
 
@@ -134,33 +134,6 @@ def getArbitraryCropValue(table, years, croptype):
 
 
 
-
-
-
-
-# def createCDLdict(subtype, years):
-  
-    
-#     def getCDLpathsDict(subtype, years):
-#     #this is an aux function for attachCDL() function to get correct cdl for the attachCDL() function
-#         dict = {}
-#         for year in years:
-#             cdl_file = '{}{}cdl30_{}'.format(getGDBpath('cdl'), '\\', str(year))
-#             # print cdl_file
-#             if subtype == 'fc' or subtype == 'fnc':
-#                 dict[str(year)]=cdl_file
-#             elif subtype == 'bfc' or subtype == 'bfnc':
-#                 dict[str(year+1)]=cdl_file
-#         return dict
-    
-#     definedpath = '{}_ytc{}_{}_mmu{}'.format(self.data['global']['instance'], self.data['global']['res'], self.data['global']['datarange'], str(self.data['core']['mmu']))
-#     dictpath={"cdlpaths":getCDLpathsDict(years),"path":definedpath}
-#     print dictpath
-#     return dictpath
-
-
-
-
 class ProcessingObject(object):
 
     def __init__(self, args):
@@ -201,7 +174,9 @@ class ProcessingObject(object):
 
 
     def updatePreObject(self, kernel):
-        ##define attributes
+        print '###############    updatePreObject()   #############################'
+
+        ###update traj
         self.data['pre']['traj']['version'] = kernel['pre']['version']['traj']
         self.data['pre']['traj']['gdb'] = getGDBpath('{}_traj'.format(self.data['pre']['traj']['version']))
         self.data['pre']['traj']['filename'] = '_'.join([self.data['pre']['traj']['version'], 'traj', 'cdl'+self.data['global']['res'], 'b', self.data['global']['datarange']])
@@ -209,6 +184,7 @@ class ProcessingObject(object):
         self.data['pre']['traj']['lookup_version'] = kernel['pre']['version']['lookup_version']
         self.data['pre']['traj']['path']  = '\\'.join([self.data['pre']['traj']['gdb'], self.data['pre']['traj']['filename']]) 
 
+        ### update traj rfnd
         self.data['pre']['traj_rfnd']['version'] = kernel['pre']['version']['traj_rfnd']
         self.data['pre']['traj_rfnd']['gdb'] = getGDBpath('{}_traj_rfnd'.format(self.data['pre']['traj_rfnd']['version']))
         self.data['pre']['traj_rfnd']['filename'] = '_'.join([self.data['pre']['traj']['filename'],'rfnd', self.data['pre']['traj_rfnd']['version']])
@@ -219,7 +195,7 @@ class ProcessingObject(object):
 
 
     def updateRefineObject(self, kernel):
-        ##define attributes
+        print '###############    updateRefineObject()   #############################'
         self.data['refine']['version'] = kernel['refine']['version']
         self.data['refine']['gdb'] = getGDBpath('{}_masks'.format(self.data['refine']['version']))
         
@@ -242,63 +218,25 @@ class ProcessingObject(object):
  
     #####   core functions  ################################################################################
     def updateCoreObject(self, kernel):
-        ##define attributes
+        print '###############    updateCoreObject()   #############################'
         
         self.data['core']['gdb'] = getGDBpath('core_{}'.format(self.data['global']['instance']))
+        print "self.data['core']['gdb']-----------------------", self.data['core']['gdb']
         self.data['core']['filter'] = kernel['core']['filter']
         self.data['core']['route'] = kernel['core']['route']
         self.data['core']['rg'] = kernel['core']['rg']
         self.data['core']['mmu'] = kernel['core']['mmu']
-        self.defineRoute = self.defineRoute()
 
-    
-    def defineRoute(self):
-        self.data['core']['filename'] = self.createCoreFileNames()
-        self.data['core']['path'] = self.createCorePaths()
-        self.data['core']['function'] = self.createCoreFunctionArguments()
-
-                                                
-    def createCoreFileNames(self):
-        file_dict = {}
         if self.data['core']['route'] == 'r2':
-            file_dict['filter']='_'.join((self.data['global']['instance'], self.data['pre']['traj_rfnd']['filename'], self.data['core']['filter']))
-            file_dict['mtr']='_'.join((file_dict['filter'],'mtr'))
-            file_dict['rg']='{}_{}_rgmask{}'.format(file_dict['mtr'], self.data['core']['rg'], self.data['core']['mmu'])
-            file_dict['mmu']='{}_mmu{}'.format(file_dict['mtr'], self.data['core']['mmu'])
-            return file_dict
+            self.data['core']['filename'] = '{}_{}_{}_mtr_mmu{}'.format(self.data['global']['instance'], self.data['pre']['traj_rfnd']['filename'], self.data['core']['filter'], self.data['core']['mmu'])
+            self.data['core']['path'] = '\\'.join([self.data['core']['gdb'], self.data['core']['filename']])
+            print "self.data['core']['path']----------------------", self.data['core']['path']
+
         elif self.data['core']['route'] == 'r3':
-            file_dict['filter']='_'.join((self.data['global']['instance'], self.data['pre']['traj_rfnd']['filename'], self.data['core']['filter']))
-            file_dict['rg']='{}_{}_rgmask{}'.format(file_dict['filter'], self.data['core']['rg'], self.data['core']['mmu'])
-            file_dict['mmu']='{}_mmu{}'.format(file_dict['filter'], self.data['core']['mmu'])
-            file_dict['mtr']='_'.join((file_dict['mmu'],'mtr'))
-            return file_dict
-   
+            self.data['core']['filename'] = '{}_{}_{}_mmu{}_mtr'.format(self.data['global']['instance'], self.data['pre']['traj_rfnd']['filename'], self.data['core']['filter'], self.data['core']['mmu'])
+            self.data['core']['path'] = '\\'.join([self.data['core']['gdb'], self.data['core']['filename']])
+            print "self.data['core']['path']----------------------", self.data['core']['path']
 
-    def createCorePaths(self):
-        path_dict = {}
-
-        path_dict['filter']='\\'.join([self.data['core']['gdb'], self.data['core']['filename']['filter']])
-        path_dict['mtr']='\\'.join([self.data['core']['gdb'], self.data['core']['filename']['mtr']])
-        path_dict['rg']='\\'.join([self.data['core']['gdb'], self.data['core']['filename']['rg']])
-        path_dict['mmu']='\\'.join([self.data['core']['gdb'], self.data['core']['filename']['mmu']])
-        return path_dict
-
-
-
-    def createCoreFunctionArguments(self):
-        fct_dict = {}
-        if self.data['core']['route'] == 'r2':
-            fct_dict['majorityFilter']={'input':self.data['pre']['traj_rfnd']['path'], 'output':self.data['core']['path']['filter']}
-            fct_dict['parallel_mtr']={'input':self.data['core']['path']['filter'], 'output':self.data['core']['path']['mtr']}
-            fct_dict['parallel_rg']={'input':self.data['core']['path']['mtr'], 'output':self.data['core']['path']['rg']}
-            fct_dict['parallel_mmu']={'input':self.data['core']['path']['mtr'], 'mask':self.data['core']['path']['rg'],'output':self.data['core']['path']['mmu']}
-            return fct_dict
-        elif self.data['core']['route'] == 'r3':
-            fct_dict['majorityFilter']={'input':self.data['pre']['traj_rfnd']['path'], 'output':self.data['core']['path']['filter']}
-            fct_dict['parallel_rg']={'input':self.data['core']['path']['filter'], 'output':self.data['core']['path']['rg']}
-            fct_dict['parallel_mtr']={'input':self.data['core']['path']['mmu'], 'output':self.data['core']['path']['mtr']}
-            fct_dict['parallel_mmu']={'input':self.data['core']['path']['filter'], 'mask':self.data['core']['path']['rg'],'output':self.data['core']['path']['mmu']}
-            return fct_dict
 
 
 
@@ -306,7 +244,7 @@ class ProcessingObject(object):
     
 
     def updatePostObject(self, kernel):
-
+        print '###############    updatePostObject()   #############################'
         def getvalues():
             ytc_dict = {}
 
@@ -358,7 +296,7 @@ class ProcessingObject(object):
 
 
 ###########  create instance of class ################################################
-ProcessingObject(getKernelfile(['routes','r2','r2_3']))
+ProcessingObject(getKernelfile(['routes','r2','r2_4']))
 # ProcessingObject(getKernelfile(['series','s14']))
 
 

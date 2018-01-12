@@ -10,10 +10,11 @@ import pandas as pd
 
 sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\pre\\')
 sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\core\\')
-import pre
-import parallel_mtr
-
-parallel_mtr.run()
+# import pre
+import parallel_core
+parallel_core.run()
+# os.system('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\core\\parallel_core.py')
+# parallel_core
 # import parallel_regiongroup as prg
 # import parallel_nibble_temp as nibble
 # import post_temp as post

@@ -39,19 +39,7 @@ def getGDBpath(wc):
 
 
 
-
-###make this a general function
-def getJSONfile():
-    with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\config\\current_instance.json') as json_data:
-        template = json.load(json_data)
-        # print(template)
-        # print type(template)
-        return template
-
-
-
-
-data = getJSONfile()
+data = gen.getJSONfile()
 print data
 
 
@@ -197,7 +185,7 @@ def createRefinedTrajectory():
 ####  these functions create the trajectory table  #############
 # createTrajectories()
 # addGDBTable2postgres()
-createRefinedTrajectory()
+# createRefinedTrajectory()
 
 
 #######  these functions are to update the lookup tables  ######
