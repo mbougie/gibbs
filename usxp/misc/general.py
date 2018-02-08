@@ -8,6 +8,7 @@ import os, errno
 import glob
 import math
 import json
+import shutil
 
 
 
@@ -791,4 +792,5 @@ def getJSONfile():
 
 
 
-
+def zipFolder():
+    shutil.make_archive(output_filename, 'zip', dir_name)

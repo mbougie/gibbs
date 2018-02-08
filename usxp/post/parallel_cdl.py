@@ -26,13 +26,13 @@ subtype = 'bfc'
 
 
 ##get the current instance
-data = gen.getJSONfile()
-print data
+# data = gen.getJSONfile()
+# print data
 
 
-def createReclassifyList():
+def createReclassifyList(data):
 	engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
-	query = " SELECT \"Value\", ytc from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array WHERE ytc IS NOT NULL AND version = '{}' ".format(data['pre']['traj']['filename'], data['pre']['traj']['lookup'], data['pre']['traj']['lookup_version'])
+	query = " SELECT \"Value\", ytc from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array WHERE ytc IS NOT NULL".format(data['pre']['traj']['filename'], data['core']['lookup'])
 	# print 'query:', query
 	df = pd.read_sql_query(query, con=engine)
 	print df
@@ -49,8 +49,11 @@ def createReclassifyList():
 
 
   
-def execute_task(in_extentDict):
+# def execute_task(in_extentDict):
+def execute_task(args):
+	in_extentDict, data = args
 	yxc = {'ytc':3, 'yfc':4}
+
 
 	fc_count = in_extentDict[0]
 	# print fc_count
@@ -62,17 +65,23 @@ def execute_task(in_extentDict):
 	YMax = procExt[3]
 
 	path_traj_rfnd = data['pre']['traj_rfnd']['path']
-	path_mtr = Raster(data['core']['path']['mmu'])
+	print 'path_traj_rfnd:', path_traj_rfnd
+
+	path_mtr = Raster(data['core']['path'])
 
 	#set environments
 	arcpy.env.snapRaster = path_mtr
 	arcpy.env.cellsize = path_mtr
 	arcpy.env.extent = arcpy.Extent(XMin, YMin, XMax, YMax)
 
-	raster_yxc = Reclassify(Raster(path_traj_rfnd), "Value", RemapRange(createReclassifyList()), "NODATA")
+	##  Execute the three functions  #####################
+	raster_yxc = Reclassify(Raster(path_traj_rfnd), "Value", RemapRange(createReclassifyList(data)), "NODATA")
+
 	raster_mask = Con((path_mtr == yxc['ytc']) & (raster_yxc >= 2008), raster_yxc)
 
 	for year, cdlpath in data['post']['ytc'][subtype]['cdlpaths'].iteritems():
+
+		print year, cdlpath
 
 		# allow raster to be overwritten
 		arcpy.env.overwriteOutput = True
@@ -85,7 +94,7 @@ def execute_task(in_extentDict):
 		raster_mask = Con(raster_mask, cdlpath, raster_mask, cond)
 
 
-	# print fc_count
+	print fc_count
 
 	raster_mmu = Con((path_mtr == yxc['ytc']) & (IsNull(raster_mask)), 255, raster_mask)
 
@@ -103,7 +112,7 @@ def execute_task(in_extentDict):
 
 
 
-def mosiacRasters():
+def mosiacRasters(data):
 	######Description: mosiac tiles together into a new raster
 	tilelist = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*.tif")
 	print 'tilelist:', tilelist 
@@ -127,8 +136,8 @@ def mosiacRasters():
 
 
 
-if __name__ == '__main__':
-
+def run(data):
+# if __name__ == '__main__':
 	#####  remove a files in tiles directory
 	tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
 	for tile in tiles:
@@ -138,7 +147,7 @@ if __name__ == '__main__':
 	extDict = {}
 	count = 1 
 
-	for row in arcpy.da.SearchCursor(data['ancillary']['vector']['shapefiles']['counties_subset'], ["SHAPE@"]):
+	for row in arcpy.da.SearchCursor(data['ancillary']['vector']['shapefiles']['fishnet_ytc'], ["SHAPE@"]):
 		extent_curr = row[0].extent
 		ls = []
 		ls.append(extent_curr.XMin)
@@ -152,10 +161,16 @@ if __name__ == '__main__':
 	print'extDict.items',  extDict.items()
 
 	#######create a process and pass dictionary of extent to execute task
-	# pool = Pool(processes=1)
-	pool = Pool(processes=cpu_count())
-	pool.map(execute_task, extDict.items())
+	pool = Pool(processes=5)
+	# pool = Pool(processes=cpu_count())
+	# pool.map(execute_task, extDict.items())
+	pool.map(execute_task, [(ed, data) for ed in extDict.items()])
 	pool.close()
 	pool.join
 
-	mosiacRasters()
+	mosiacRasters(data)
+
+
+
+if __name__ == '__main__':
+	run(data)

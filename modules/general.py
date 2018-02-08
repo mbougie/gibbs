@@ -61,13 +61,13 @@ def defineGDBpath(arg_list):
 
 def importCSVtoPG():
 
-    df = pd.read_excel('C:/Users/Bougie/Desktop/mutlu/trakya/hist_aea.xlsx')
+    df = pd.read_excel('C:\\Users\\Bougie\\Downloads\\noncropland_cropland_county\\.csv')
     df.columns = [c.lower() for c in df.columns] #postgres doesn't like capitals or spaces
 
     from sqlalchemy import create_engine
-    engine = create_engine('postgresql://postgres:postgres@localhost:5432/trakya')
+    engine = create_engine('postgresql://postgres:postgres@localhost:5432/usxp')
 
-    df.to_sql("iowa", engine, schema='attributes')
+    df.to_sql("fsa_2012", engine, schema='sa')
 
 
 

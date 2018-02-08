@@ -1,0 +1,11 @@
+{
+	"global":{
+		"instance":"r2_2",
+	    "res":"30",
+	    "years":[2008,2016],
+	    "conv_years":[2010,2015]
+	},
+	"pre":{"version":{"traj":"v3", "traj_rfnd":"v2", "lookup_version":"v2"}},
+	"refine":{"version":"v2", "operator":"or", "years_nlcd":[2001,2006,2011]},
+	"core":{"route":"r2", "filter":"n8h", "rg":"8w", "mmu":"20"}
+}

@@ -122,8 +122,8 @@ def mosiacRasters():
 
 
 
-def run():
-# if __name__ == '__main__':
+
+if __name__ == '__main__':
 
 	#####  remove a files in tiles directory
 	tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
@@ -154,8 +154,4 @@ def run():
 	pool.close()
 	pool.join
 
-	# mosiacRasters()
-
-
-
-run()
+	mosiacRasters()

@@ -60,4 +60,12 @@ def importCSVtoPG():
     df.to_sql("fsa_2012", engine, schema='qaqc')
 
 
-importCSVtoPG()
+# importCSVtoPG()
+
+
+
+
+
+
+outCon = Con((path_mtr == yxc['ytc']) & (path_yxc >= 2008), path_yxc)
+outCon.save(path_mask)

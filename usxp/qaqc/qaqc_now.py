@@ -14,213 +14,343 @@ import glob
 import psycopg2
 sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\misc\\')
 import general as gen
+import shutil
+import matplotlib.pyplot as plt
 
 
-
-
-'''######## DEFINE THESE EACH TIME ##########'''
-#Note: need to change this each time on different machine
-case=['Bougie','Gibbs']
 
 #import extension
 arcpy.CheckOutExtension("Spatial")
 arcpy.env.parallelProcessingFactor = "95%"
 
 
+try:
+    conn = psycopg2.connect("dbname='usxp' user='mbougie' host='144.92.235.105' password='Mend0ta!'")
+except:
+    print "I am unable to connect to the database"
 
 
-def getGDBpath(wc):
-    for root, dirnames, filenames in os.walk("C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\"):
-        for dirnames in fnmatch.filter(dirnames, '*{}*.gdb'.format(wc)):
-            print dirnames
-            gdbmatches = os.path.join(root, dirnames)
-    print gdbmatches
-    # return json.dumps(gdbmatches)
-    return gdbmatches
 
-
-
-
-data = gen.getJSONfile()
-print data
-
-
-
-
-def main_setUpGDB():
-
-    states =  gen.getStatesField("st_abbrev")
-    for state in states:
-        print state
-        # arcpy.CreateFileGDB_management(rootpath+'qaqc', state.lower()+".gdb")
-        years = [2014,2015,2016]
-        for year in years:
-            importRasterToGDB(state,year)
-
-
-
-
-
-def importRasterToGDB(state,year):
-
-  matches = []
-  for root, dirnames, filenames in os.walk('E:\\data\\CDL_confidence\\{}'.format(str(year))):
-    for filename in fnmatch.filter(filenames, '*_'+state+'_*.img'):
-      print 'filename:', filename[:-4]
-      matches.append(os.path.join(root, filename))
-      print matches
-      arcpy.CheckOutExtension("Spatial")
-
-
-      ######Use try/except to skip the states that dont have all years
-      try:
-          arcpy.CopyRaster_management(matches[0],defineGDBpath(['qaqc',state])+filename[:-4],"DEFAULTS","0","","","","8_BIT_UNSIGNED")
-      except:
-          pass
-
-
-
-
-
-
-
-
-
-
-def main_createFC():
-
-    states = gen.getStatesField("st_abbrev")
-    for state in states:
-        if state == 'IA':
-            print state
-            pgTableToFC(state)
-            years = [2010,2011,2012,2013]
-            for year in years:
-                zonalstatsTable(state,year)
-
-
-
-
-
-
-### run zonal stats
-def zonalstatsTable(state,year):
-    arcpy.env.workspace = defineGDBpath(['qaqc',state.lower()])
-
-    #define arguments
-    sf = state.lower()
-    zone_field = "LINK"
-    in_value_raster = 'cdl_30m_r_'+state+'_'+str(year)+'_albers_confidence'
-    out_table = sf+'_'+str(year)+'_conf'
-
-    # Check out the ArcGIS Spatial Analyst extension license
-    arcpy.CheckOutExtension("Spatial")
-
-    # Execute ZonalStatisticsAsTable
-    ZonalStatisticsAsTable(sf, zone_field, in_value_raster, out_table, "DATA", "ALL")
-
-    gen.addGDBTable2postgres(['qaqc',state.lower()],'*_'+str(year)+'_*','qaqc')
-    
-
-
-
-
-
-
-def pgTableToFC(state):
-    sf = 'C:/Users/Bougie/Desktop/Gibbs/data/usxp/qaqc/sf/'+state.lower()+'.shp'
-    sf_acea = sf.replace(".shp", "_acea")
-
-    command = 'pgsql2shp -f "'+sf+'" -h 144.92.235.105 -u mbougie -P Mend0ta! usxp "SELECT combo_bfc_fc_ytc_spatial.gid, combo_bfc_fc_ytc_spatial.gid::text as link, combo_bfc_fc_ytc.year, combo_bfc_fc_ytc_spatial.geom FROM qaqc.combo_bfc_fc_ytc, qaqc.combo_bfc_fc_ytc_spatial,spatial.states WHERE combo_bfc_fc_ytc_spatial.gridcode = combo_bfc_fc_ytc.value and st_within(combo_bfc_fc_ytc_spatial.geom, states.geom) and st_abbrev = \''+state+'\' "'
-    print command
-    os.system(command)
-
-    ### reproject shapefile to acea  ---still need
-    print 'define reprojection'
-    sr = arcpy.SpatialReference(5070)
-    print sr
-    arcpy.DefineProjection_management(sf, sr)
-
-    print 'reprojection'
-    arcpy.Project_management(sf, defineGDBpath(['qaqc',state])+state.lower(), "PROJCS['Albers_Conical_Equal_Area',GEOGCS['GCS_North_American_1983',DATUM['D_North_American_1983',SPHEROID['GRS_1980',6378137.0,298.257222101]],PRIMEM['Greenwich',0.0],UNIT['Degree',0.0174532925199433]],PROJECTION['Albers'],PARAMETER['false_easting',0.0],PARAMETER['false_northing',0.0],PARAMETER['central_meridian',-96.0],PARAMETER['standard_parallel_1',29.5],PARAMETER['standard_parallel_2',45.5],PARAMETER['latitude_of_origin',23.0],UNIT['Meters',1.0]]", "", "PROJCS['NAD_1983_UTM_Zone_15N',GEOGCS['GCS_North_American_1983',DATUM['D_North_American_1983',SPHEROID['GRS_1980',6378137.0,298.257222101]],PRIMEM['Greenwich',0.0],UNIT['Degree',0.0174532925199433]],PROJECTION['Transverse_Mercator'],PARAMETER['False_Easting',500000.0],PARAMETER['False_Northing',0.0],PARAMETER['Central_Meridian',-93.0],PARAMETER['Scale_Factor',0.9996],PARAMETER['Latitude_Of_Origin',0.0],UNIT['Meter',1.0]]", "NO_PRESERVE_SHAPE", "", "NO_VERTICAL")
-
-
-
-
-
-
-
-
-
-def testit():
-    cur = conn.cursor()
-
-
-    query = """Create Table qaqc.ia_merged as 
-              SELECT 
-              combo_bfc_fc.bfc, 
-              combo_bfc_fc.fc, 
-              combo_bfc_fc_ytc.value, 
-              combo_bfc_fc_ytc.year,
-              st_area(combo_bfc_fc_ytc_spatial.geom) * 0.000247105 as acres,
-              ia_2010_conf.mean as conf_2010,
-              ia_2011_conf.mean as conf_2011,
-              ia_2012_conf.mean as conf_2012,
-              ia_2013_conf.mean as conf_2013
-            FROM 
-              qaqc.combo_bfc_fc, 
-              qaqc.combo_bfc_fc_ytc, 
-              qaqc.combo_bfc_fc_ytc_spatial, 
-              qaqc.ia_2010_conf,
-              qaqc.ia_2011_conf,
-              qaqc.ia_2012_conf,
-              qaqc.ia_2013_conf
-            WHERE 
-              combo_bfc_fc.value = combo_bfc_fc_ytc.conv_traj AND
-              combo_bfc_fc_ytc.value = combo_bfc_fc_ytc_spatial.gridcode AND
-              combo_bfc_fc_ytc_spatial.gid::text = ia_2010_conf.link AND
-              ia_2010_conf.link = ia_2011_conf.link AND
-              ia_2011_conf.link = ia_2012_conf.link AND
-              ia_2012_conf.link = ia_2013_conf.link
-            order by acres desc"""
-
-
-    print query
-    cur.execute(query)
-    conn.commit()
-    # query.replace('ia_', 'mo_')
-    # print query.replace('ia_', 'mo_')
-
-    # query.replace('a', '%temp%').replace('b', 'a').replace('%temp%', 'b')
-    
-
-
-
-
-def rasterToPoly():
+def rasterToPoly(data, gdb):
+  print '#############  create shapefiles  #################################'
   #####  Set environment settings
-  env.workspace = data['core']['gdb']
+  # stage = 'core'
+  env.workspace = gdb
   print env.workspace
+
+  route = data['core']['route']
+  instance = data['global']['instance']
+  fltr = data['core']['filter']
+  rg = data['core']['rg']
+  mmu = data['core']['mmu']
+
+  vector_dir = data['vectors']
+  vector = '{}\\{}_{}_{}_mmu{}.shp'.format(vector_dir, instance, fltr, rg, mmu)
+  print 'vector:', vector
 
   rasters = arcpy.ListRasters("*", "All")
   for raster in rasters:
-    print(raster)
-    outPolygons = "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\r2_2\\sf\\{}.shp".format(raster)
+    print 'raster:', raster
+
     field = "VALUE"
 
     ####  Execute RasterToPolygon
-    arcpy.RasterToPolygon_conversion(raster, outPolygons, "NO_SIMPLIFY", field)
+    arcpy.RasterToPolygon_conversion(raster, vector, "NO_SIMPLIFY", field)
+    
+    #### create dissolved kml
+    createDissolved(vector)
+
+    # get2012Data(vector, data)
+
+    # exportFCtoKML(vector)
+  ziproot = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\zip'
+  zipname = '{}\\{}_{}_{}_mmu{}'.format(ziproot, instance, fltr, rg, mmu)
+  print zipname
+  shutil.make_archive(zipname, 'zip', vector_dir)
+
+    
+
+
+def createDissolved(vector_input):
+    print '#############  create dissolved vector  #################################'
+    layer = "templayer"
+    where_clause = "GRIDCODE = 3"
+    vector_dissolved = vector_input.replace('.shp', '_dissolved.shp')
+
+    #### create layer in order to subset the data
+    arcpy.MakeFeatureLayer_management(vector_input, layer, where_clause)
+    #### Dissolve_management (in_features, out_feature_class, {dissolve_field}, {statistics_fields}, {multi_part}, {unsplit_lines})
+    arcpy.Dissolve_management(layer, vector_dissolved, ["GRIDCODE"], "", "MULTI_PART", "DISSOLVE_LINES")
+    #### Delete layer after use
+    arcpy.Delete_management(layer)
+
+    ###create a kml from dissolved vector
+    # exportFCtoKML(vector_input)
+
+
+def get2012Data(vector_input, data):
+    print '#############  create dissolved vector  #################################'
+    layer = "templayer"
+    where_clause = "GRIDCODE = 2012"
+    vector_dissolved = vector_input.replace('.shp', '_dissolved.shp')
+
+    #### create layer in order to subset the data
+    arcpy.MakeFeatureLayer_management(vector_input, layer, where_clause)
+
+    # SpatialJoin_analysis (target_features, join_features, out_feature_class, {join_operation}, {join_type}, {field_mapping}, {match_option}, {search_radius}, {distance_field_name})
+    
+    arcpy.SpatialJoin_analysis(target_features=layer, join_features=data['ancillary']['vector']['shapefiles']['counties_subset'], out_feature_class='C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\temp\\tryit.skp', match_option='COMPLETELY_WITHIN')
+    #### Delete layer after use
+    arcpy.Delete_management(layer)
+
+    ###create a kml from dissolved vector
+    # exportFCtoKML(vector_input)
 
 
 
-####################### call main functions ##########################################################################
+def exportFCtoKML(vector):
+  print '#############  create kmz  #################################'
+  layer = "templayer"
+  vector_kml = vector.replace('.shp', '.kmz')
+  where_clause = "GRIDCODE = 3"
+  arcpy.MakeFeatureLayer_management(vector, layer, where_clause)
+  # arcpy.MakeFeatureLayer_management(vector, layer)
+  arcpy.LayerToKML_conversion(layer, vector_kml)
+  
+  #### Delete layer after use
+  arcpy.Delete_management(layer)
 
-### functions for confidence datasets
-# main_setUpGDB()
-# main_createFC()
 
 
 
-#### functions to export shapefile 
-# testit()
-rasterToPoly()
+
+
+
+
+####################  regression  ###################################################
+def addGDBTable2postgres(data):
+    # set the engine.....
+    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
+    
+    # tablename = 'traj_'+wc
+    # path to the table you want to import into postgres
+    input = data['post']['ytc']['path']
+
+    # Execute AddField twice for two new fields
+    fields = [f.name for f in arcpy.ListFields(input)]
+   
+    # converts a table to NumPy structured array.
+    arr = arcpy.da.TableToNumPyArray(input,fields)
+    print arr
+    
+    # convert numpy array to pandas dataframe
+    df = pd.DataFrame(data=arr)
+
+    df.columns = map(str.lower, df.columns)
+
+    print 'df-----------------------', df
+    
+    # # # use pandas method to import table into psotgres
+    df.to_sql(data['post']['ytc']['filename'], engine, schema='sa')
+    
+    # #add trajectory field to table
+    addAcresField(data['post']['ytc']['filename'], 'sa', data['global']['res'])
+
+
+
+
+def addAcresField(tablename, schema, res):
+    #this is a sub function for addGDBTable2postgres()
+    
+    cur = conn.cursor()
+    
+    ####DDL: add column to hold arrays
+    query1 = 'ALTER TABLE {}.{} ADD COLUMN acres bigint'.format(schema, tablename, tablename)
+    print query1
+    cur.execute(query1)
+    conn.commit()
+
+ 
+
+    #####DML: insert values into new array column
+    cur.execute('UPDATE {}.{} SET acres = count * {}'.format(schema, tablename, gen.getPixelConversion2Acres(res)))
+    conn.commit() 
+
+    cur.execute('ALTER TABLE sa.acres_ytc ADD COLUMN {} bigint'.format(tablename));
+    conn.commit()
+    
+
+    query2 = 'update sa.acres_ytc set {} = instance.acres from (select value, acres from sa.{}) as instance where acres_ytc.value = instance.value'.format(tablename, tablename)
+    cur.execute(query2);
+    conn.commit()
+
+    query3 = 'DROP TABLE sa.{}'.format(tablename)
+    cur.execute(query3);
+    conn.commit()
+
+
+def createGraph():
+  engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
+  # query = "SELECT * FROM sa.acres_ytc"
+  query = """
+          SELECT 
+            s6_ytc30_2008to2016_mmu5_nbl.value as years, 
+            s6_ytc30_2008to2016_mmu5_nbl.acres as s6, 
+            s14_ytc30_2008to2016_mmu5_nbl.acres as s14
+          FROM 
+            counts.s6_ytc30_2008to2016_mmu5_nbl FULL OUTER JOIN
+            counts.s14_ytc30_2008to2016_mmu5_nbl
+          ON 
+            s6_ytc30_2008to2016_mmu5_nbl.value = s14_ytc30_2008to2016_mmu5_nbl.value;
+          """
+  df = pd.read_sql_query(query, engine)
+
+
+  print df
+
+  df.plot(kind='line', colormap='summer')
+  
+  df.set_index('years').plot.line(rot=0, title='Conversion to Cropland (acres)', figsize=(15,10), fontsize=12)
+  # df.set_index('value').plot.line(rot=0, title='Conversion to Cropland (acres)', figsize=(15,10), fontsize=12)
+  ax = plt.gca()
+  # ax.legend_.remove()
+  ax.get_xaxis().get_major_formatter().set_useOffset(False)
+  # ax.set_color_cycle(['red', 'green'])
+  leg = plt.legend()
+
+  for line in ax.get_lines():
+    line.set_linewidth(1.5)
+
+  for line in leg.get_lines():
+    line.set_linewidth(1.5)
+
+    # line.set_color('blue')
+
+  plt.savefig("C:\\Users\\Bougie\\Desktop\\Gibbs\\pdf\\s6_s14.pdf", bbox_inches='tight')
+
+
+
+
+
+
+
+def addGDBTable2postgres_temp():
+    # set the engine.....
+    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
+    
+    # tablename = 'traj_'+wc
+    # path to the table you want to import into postgres
+    input = "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\r2_4\\post\\ytc_r2_4.gdb\\ytc_r2_4_zonalhist"
+
+    # Execute AddField twice for two new fields
+    fields = [f.name for f in arcpy.ListFields(input)]
+   
+    # converts a table to NumPy structured array.
+    arr = arcpy.da.TableToNumPyArray(input,fields)
+    print arr
+    
+    # convert numpy array to pandas dataframe
+    df = pd.DataFrame(data=arr)
+
+    df.columns = map(str.lower, df.columns)
+
+    #only select the row with year = 2012
+    # df = df.loc[df['label'] == '2,012']
+  
+    ##delete the onbjectid column
+    del df['objectid']
+    df.rename(columns={'label': 'county', '2,012': 'count'}, inplace=True)
+    # print df
+    # reset the index to the label column nad then transpose the dataset
+    # df = df.set_index('county').transpose()
+
+    # df['county'] = df['county'].map(lambda x: x.lstrip('altas_'))
+ 
+    df.to_sql('ytc_r2_4_zonalhist2', engine, schema='sa')
+    
+
+def addGDBTable2postgres_temp2():
+    # set the engine.....
+    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
+    
+    # tablename = 'traj_'+wc
+    # path to the table you want to import into postgres
+    input = "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\temp\\temp.gdb\\try_table_hist2"
+
+    # Execute AddField twice for two new fields
+    fields = [f.name for f in arcpy.ListFields(input)]
+   
+    # converts a table to NumPy structured array.
+    arr = arcpy.da.TableToNumPyArray(input,fields)
+    print arr
+    
+    # convert numpy array to pandas dataframe
+    df = pd.DataFrame(data=arr)
+
+    df.columns = map(str.lower, df.columns)
+
+ 
+    df.to_sql('ytc_r2_4_zonalhist3', engine, schema='sa')
+
+
+
+
+
+def addGDBTable2postgres_now():
+    # set the engine.....
+    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
+    
+    # tablename = 'traj_'+wc
+    # path to the table you want to import into postgres
+    input = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\s16\\post\\ytc_s16.gdb\\s16_traj_years'
+
+    # Execute AddField twice for two new fields
+    fields = [f.name for f in arcpy.ListFields(input)]
+   
+    # converts a table to NumPy structured array.
+    arr = arcpy.da.TableToNumPyArray(input,fields)
+    print arr
+    
+    # convert numpy array to pandas dataframe
+    df = pd.DataFrame(data=arr)
+
+    df.columns = map(str.lower, df.columns)
+
+    print 'df-----------------------', df
+    
+    # # # use pandas method to import table into psotgres
+    df.to_sql('s16_traj_years', engine, schema='counts')
+    
+    # #add trajectory field to table
+    addAcresField_now('s16_traj_years', 'counts', '30')
+
+
+
+
+
+
+
+def addAcresField_now(tablename, schema, res):
+    #this is a sub function for addGDBTable2postgres()
+    
+    cur = conn.cursor()
+    
+    ####DDL: add column to hold arrays
+    query1 = 'ALTER TABLE {}.{} ADD COLUMN acres bigint'.format(schema, tablename, tablename)
+    print query1
+    cur.execute(query1)
+    conn.commit()
+
+ 
+
+    #####DML: insert values into new array column
+    cur.execute('UPDATE {}.{} SET acres = count * {}'.format(schema, tablename, gen.getPixelConversion2Acres(res)))
+    conn.commit() 
+# addGDBTable2postgres_temp2()
+
+# addGDBTable2postgres_temp()
+# addGDBTable2postgres_temp2()
+# createGraph()
+
+# addGDBTable2postgres_now()
+

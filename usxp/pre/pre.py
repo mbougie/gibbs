@@ -50,16 +50,16 @@ def reclassifyRaster():
     # Description: reclass cdl rasters based on the specific arc_reclassify_table 
     gdb_args_in = ['ancillary', 'cdl']
     # Set environment settings
-    arcpy.env.workspace = defineGDBpath(gdb_args_in)
+    arcpy.env.workspace = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\'
 
-    raster = 'cdl30_2009'    
+    raster = 'cdl30_2017'    
     print 'raster: ',raster
 
     outraster = raster.replace("_", "_b_")
     print 'outraster: ', outraster
 
     #define the output
-    output = defineGDBpath(['pre', 'binaries'])+outraster
+    output = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\binaries.gdb\\'+outraster
     print 'output: ', output
 
     return_string=getReclassifyValuesString(gdb_args_in[1], 'b')
@@ -138,15 +138,17 @@ def addGDBTable2postgres():
     # set the engine.....
     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
     
-    # tablename = 'traj_'+wc
+    arcpy.env.workspace = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\pre\\traj\\v4\\v4_traj.gdb\\'
+
+    tablename = 'v4_traj_cdl30_b_2008to2017'
     # path to the table you want to import into postgres
-    input = '\\'.join([ data['pre']['traj']['gdb'],data['pre']['traj']['filename'] ])
+    # input = 
 
     # Execute AddField twice for two new fields
-    fields = [f.name for f in arcpy.ListFields(input)]
+    fields = [f.name for f in arcpy.ListFields(tablename)]
    
     # converts a table to NumPy structured array.
-    arr = arcpy.da.TableToNumPyArray(input,fields)
+    arr = arcpy.da.TableToNumPyArray(tablename,fields)
     print arr
     
     # convert numpy array to pandas dataframe
@@ -155,12 +157,28 @@ def addGDBTable2postgres():
     print df
     
     # use pandas method to import table into psotgres
-    df.to_sql(data['pre']['traj']['filename'], engine, schema='pre')
+    df.to_sql(tablename, engine, schema='pre')
     
     #add trajectory field to table
-    addTrajArrayField(fields)
+    addTrajArrayField(tablename, fields)
 
+def addTrajArrayField(tablename, fields):
+    #this is a sub function for addGDBTable2postgres()
+    cur = conn.cursor()
+    
+    #convert the rasterList into a string
+    columnList = ','.join(fields[3:])
+    print columnList
 
+    #DDL: add column to hold arrays
+    cur.execute('ALTER TABLE pre.{} ADD COLUMN traj_array integer[];'.format(tablename));
+    
+    #DML: insert values into new array column
+    cur.execute('UPDATE pre.{} SET traj_array = ARRAY[{}];'.format(tablename, columnList));
+    
+    conn.commit()
+    print "Records created successfully";
+    conn.close()
 
 
 def createRefinedTrajectory():
@@ -181,7 +199,7 @@ def createRefinedTrajectory():
 
 
 
-
+# reclassifyRaster()
 ####  these functions create the trajectory table  #############
 # createTrajectories()
 # addGDBTable2postgres()

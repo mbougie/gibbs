@@ -154,12 +154,20 @@ def addTrajArrayField(tablename, fields, schema):
 
 
 
-addGDBTable2postgres(['ancillary','data_2008_2012'],'*','counts')
+# addGDBTable2postgres(['ancillary','data_2008_2012'],'*','counts')
 
 
+def importCSVtoPG():
 
+    df = pd.read_excel('C:\\Users\\Bougie\\Downloads\\noncropland_cropland_county.csv')
+    df.columns = [c.lower() for c in df.columns] #postgres doesn't like capitals or spaces
 
+    from sqlalchemy import create_engine
+    engine = create_engine('postgresql://postgres:postgres@localhost:5432/usxp')
 
+    df.to_sql("fsa_2012", engine, schema='sa')
+
+importCSVtoPG()
 
 # create table refinement.traj_ytc56_2008to2012_table_lookup as  
 

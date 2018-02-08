@@ -296,9 +296,11 @@ class ProcessingObject(object):
 
 
 ###########  create instance of class ################################################
-ProcessingObject(getKernelfile(['routes','r2','r2_4']))
-# ProcessingObject(getKernelfile(['series','s14']))
+def run(arg_list):
+    ProcessingObject(getKernelfile(arg_list))
+    # ProcessingObject(getKernelfile(['series','s14']))
 
-
-
+# ['routes','r2','r2_4']
+if __name__ == '__main__':
+    run(arg_list)
 

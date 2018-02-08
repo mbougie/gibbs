@@ -30,25 +30,17 @@ except:
 
 ###################  create classes ######################################################
 
-def getJSONfile():
-    with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\config\\routes\\r2\\r2_4.json') as json_data:
-        template = json.load(json_data)
-        return template
-
-
-####get the kernel json object
-data = getJSONfile()
-print data
 
 
 
-def mainCreate():
+def run(route, instance):
+
     # create the directories and gdbs for this instance
-    instance_directory = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\{}\\{}'.format(data['core']['route'],data['global']['instance'])
+    instance_directory = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\{}\\{}'.format(route,instance)
     gen.createDirectory(instance_directory)
     
     
-    for stage in ['core','post','sf', 'plots']:
+    for stage in ['core','post','vectors','plots']:
         subdir = '{}\\{}'.format(instance_directory, stage)
         #create subdir
         gen.createDirectory(subdir)
@@ -56,11 +48,11 @@ def mainCreate():
         if stage == 'core' or stage == 'post':
             #create geodatabse
             if stage == 'post':
-                arcpy.CreateFileGDB_management(subdir, "{}_{}.gdb".format('ytc',data['global']['instance']))
+                arcpy.CreateFileGDB_management(subdir, "{}_{}.gdb".format('ytc',instance))
             else:
-                arcpy.CreateFileGDB_management(subdir, "{}_{}.gdb".format(stage,data['global']['instance']))
+                arcpy.CreateFileGDB_management(subdir, "{}_{}.gdb".format(stage,instance))
 
 
 
-
-mainCreate()
+if __name__ == '__main__':
+    run(route, instance)
