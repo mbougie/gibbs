@@ -220,7 +220,7 @@ def FindRedundantTrajectories():
 
 
 #######  these functions are to update the lookup tables  ######
-labelByMTR()
+# labelByMTR()
 # FindRedundantTrajectories()
 # removeNonMutuallyExclusive()
 # updateYTC_version3()
