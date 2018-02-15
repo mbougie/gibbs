@@ -16,12 +16,12 @@
     "core": {
         "mmu": "5", 
         "route": "r2", 
-        "filename": "s17_v4_traj_cdl30_b_2008to2017_rfnd_v2_n8h_mtr_8w_mmu5", 
+        "filename": "s18_v4_traj_cdl30_b_2008to2017_rfnd_v2_n8h_mtr_8w_mmu5", 
         "filter": "n8h", 
-        "gdb": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\s17\\core\\core_s17.gdb", 
+        "gdb": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\s18\\core\\core_s18.gdb", 
         "rg": "8w", 
         "lookup": "v4_traj_lookup_2008to2017_v3", 
-        "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\s17\\core\\core_s17.gdb\\s17_v4_traj_cdl30_b_2008to2017_rfnd_v2_n8h_mtr_8w_mmu5"
+        "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\s18\\core\\core_s18.gdb\\s18_v4_traj_cdl30_b_2008to2017_rfnd_v2_n8h_mtr_8w_mmu5"
     }, 
     "global": {
         "datarange": "2008to2017", 
@@ -38,7 +38,7 @@
             2016, 
             2017
         ], 
-        "instance": "s17", 
+        "instance": "s18", 
         "years_conv": [
             2009, 
             2010, 
@@ -54,7 +54,7 @@
             2016
         ]
     }, 
-    "vectors": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\s17\\vectors", 
+    "vectors": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\s18\\vectors", 
     "refine": {
         "mask_nlcd": {
             "years_nlcd": [
@@ -78,6 +78,7 @@
     "ancillary": {
         "vector": {
             "shapefiles": {
+                "states": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\vector\\shapefiles.gdb\\states", 
                 "fishnet": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\vector\\shapefiles.gdb\\fishnet", 
                 "fishnet_ytc": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\vector\\shapefiles.gdb\\fishnet_ytc", 
                 "counties_subset": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\vector\\shapefiles.gdb\\counties_subset", 
@@ -98,11 +99,11 @@
                     "2013": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2012", 
                     "2012": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2011"
                 }, 
-                "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r3\\r3_9\\post\\ytc_r3_9.gdb\\s17_ytc30_2008to2017_mmu5_bfc", 
-                "filename": "s17_ytc30_2008to2017_mmu5_bfc"
+                "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r3\\r3_9\\post\\ytc_r3_9.gdb\\s18_ytc30_2008to2017_mmu5_bfc", 
+                "filename": "s18_ytc30_2008to2017_mmu5_bfc"
             }, 
-            "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\s17\\post\\ytc_s17.gdb\\s17_ytc30_2008to2017_mmu5", 
-            "gdb": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\s17\\post\\ytc_s17.gdb", 
+            "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\s18\\post\\ytc_s18.gdb\\s18_ytc30_2008to2017_mmu5", 
+            "gdb": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\s18\\post\\ytc_s18.gdb", 
             "fc": {
                 "cdlpaths": {
                     "2016": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2016", 
@@ -114,11 +115,43 @@
                     "2013": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2013", 
                     "2012": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2012"
                 }, 
-                "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r3\\r3_9\\post\\ytc_r3_9.gdb\\s17_ytc30_2008to2017_mmu5_fc", 
-                "filename": "s17_ytc30_2008to2017_mmu5_fc"
+                "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r3\\r3_9\\post\\ytc_r3_9.gdb\\s18_ytc30_2008to2017_mmu5_fc", 
+                "filename": "s18_ytc30_2008to2017_mmu5_fc"
             }, 
-            "filename": "s17_ytc30_2008to2017_mmu5"
+            "filename": "s18_ytc30_2008to2017_mmu5"
         }, 
-        "yfc": {}
+        "yfc": {
+            "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\s18\\post\\yfc_s18.gdb\\s18_yfc30_2008to2017_mmu5", 
+            "gdb": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\s18\\post\\yfc_s18.gdb", 
+            "fnc": {
+                "cdlpaths": {
+                    "2016": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2016", 
+                    "2015": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2015", 
+                    "2014": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2014", 
+                    "2009": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2009", 
+                    "2011": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2011", 
+                    "2010": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2010", 
+                    "2013": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2013", 
+                    "2012": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2012"
+                }, 
+                "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r3\\r3_9\\post\\ytc_r3_9.gdb\\s18_ytc30_2008to2017_mmu5_fnc", 
+                "filename": "s18_ytc30_2008to2017_mmu5_fnc"
+            }, 
+            "bfnc": {
+                "cdlpaths": {
+                    "2016": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2015", 
+                    "2015": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2014", 
+                    "2014": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2013", 
+                    "2009": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2008", 
+                    "2011": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2010", 
+                    "2010": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2009", 
+                    "2013": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2012", 
+                    "2012": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2011"
+                }, 
+                "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r3\\r3_9\\post\\ytc_r3_9.gdb\\s18_ytc30_2008to2017_mmu5_bfnc", 
+                "filename": "s18_ytc30_2008to2017_mmu5_bfnc"
+            }, 
+            "filename": "s18_yfc30_2008to2017_mmu5"
+        }
     }
 }

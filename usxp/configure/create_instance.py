@@ -154,7 +154,8 @@ class ProcessingObject(object):
         self.updatePreObject = self.updatePreObject(kernel)
         self.updateRefineObject = self.updateRefineObject(kernel)
         self.updateCoreObject = self.updateCoreObject(kernel)
-        self.updatePostObject = self.updatePostObject(kernel)
+        self.updatePostObject_YTC = self.updatePostObject_YTC(kernel)
+        self.updatePostObject_YFC = self.updatePostObject_YFC(kernel)
         self.updateVectorsObject = self.updateVectorsObject(kernel)
         
         #export modified object to json file
@@ -250,8 +251,8 @@ class ProcessingObject(object):
     #####   post functions  ################################################################################
     
 
-    def updatePostObject(self, kernel):
-        print '###############    updatePostObject()   #############################'
+    def updatePostObject_YTC(self, kernel):
+        print '###############    updatePostObject_YTC()   #############################'
         def getvalues():
             ytc_dict = {}
 
@@ -265,6 +266,24 @@ class ProcessingObject(object):
 
 
         self.data['post']['ytc'] = getvalues()
+    
+    def updatePostObject_YFC(self, kernel):
+        print '###############    updatePostObject_YFC()   #############################'
+        def getvalues():
+            yfc_dict = {}
+
+            yfc_dict['gdb'] = getGDBpath('yfc_{}'.format(self.data['global']['instance']))
+            yfc_dict['filename'] = '{}_yfc{}_{}_mmu{}'.format(self.data['global']['instance'], self.data['global']['res'], self.data['global']['datarange'], str(self.data['core']['mmu']))
+            yfc_dict['path']  = '\\'.join([yfc_dict['gdb'], yfc_dict['filename']]) 
+            yfc_dict['fnc'] = self.createCDLdict('fnc', self.data['global']['years_conv'])
+            yfc_dict['bfnc'] = self.createCDLdict('bfnc', self.data['global']['years_conv'])
+            
+            return yfc_dict
+
+
+        self.data['post']['yfc'] = getvalues()
+
+
 
     def createCDLdict(self, subtype, years):
 
@@ -285,6 +304,8 @@ class ProcessingObject(object):
         dictpath={"cdlpaths":getCDLpathsDict(years),"filename":definedfilename, "path":definedpath}
         print dictpath
         return dictpath
+
+
 
 
 

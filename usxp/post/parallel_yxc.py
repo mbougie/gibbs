@@ -27,11 +27,13 @@ arcpy.env.scratchWorkspace = "in_memory"
 # data = gen.getJSONfile()
 # print data
 
+yxc = 'ytc'
+
 
 
 def createReclassifyList(data):
 	engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
-	query = " SELECT \"Value\", ytc from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array WHERE ytc IS NOT NULL".format(data['pre']['traj']['filename'], data['core']['lookup'])
+	query = " SELECT \"Value\", {} from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array WHERE {} IS NOT NULL".format(yxc, data['pre']['traj']['filename'], data['core']['lookup'], yxc)
 	print 'query:', query
 	df = pd.read_sql_query(query, con=engine)
 	print df
@@ -39,7 +41,7 @@ def createReclassifyList(data):
 	for index, row in df.iterrows():
 	    templist=[]
 	    value=row['Value'] 
-	    mtr=row['ytc']  
+	    mtr=row[yxc]  
 	    templist.append(int(value))
 	    templist.append(int(mtr))
 	    fulllist.append(templist)
@@ -51,7 +53,7 @@ def createReclassifyList(data):
 # def execute_task(in_extentDict):
 def execute_task(args):
 	in_extentDict, data = args
-	yxc = {'ytc':3, 'yfc':4}
+	yxc_mtr = {'ytc':3, 'yfc':4}
 
 
 	fc_count = in_extentDict[0]
@@ -76,9 +78,9 @@ def execute_task(args):
 	##  Execute the three functions  #####################
 	raster_yxc = Reclassify(Raster(path_traj_rfnd), "Value", RemapRange(createReclassifyList(data)), "NODATA")
 
-	raster_mask = Con((path_mtr == yxc['ytc']) & (raster_yxc >= 2008), raster_yxc)
+	raster_mask = Con((path_mtr == yxc_mtr[yxc]) & (raster_yxc >= 2008), raster_yxc)
 
-	raster_mmu = Con((path_mtr == yxc['ytc']) & (IsNull(raster_mask)), yxc['ytc'], Con((path_mtr == yxc['ytc']) & (raster_mask >= 2008), raster_mask))
+	raster_mmu = Con((path_mtr == yxc_mtr[yxc]) & (IsNull(raster_mask)), yxc_mtr[yxc], Con((path_mtr == yxc_mtr[yxc]) & (raster_mask >= 2008), raster_mask))
 
 	raster_nibble = arcpy.sa.Nibble(raster_mmu, raster_mask, "DATA_ONLY")
 
@@ -103,17 +105,17 @@ def mosiacRasters(data):
 	#### need to wrap these paths with Raster() fct or complains about the paths being a string
 	inTraj=Raster(data['pre']['traj']['path'])
 
-	filename = data['post']['ytc']['filename']
+	filename = data['post'][yxc]['filename']
 	print 'filename:', filename
 	
 	######mosiac tiles together into a new raster
-	arcpy.MosaicToNewRaster_management(tilelist, data['post']['ytc']['gdb'], filename, inTraj.spatialReference, "16_BIT_UNSIGNED", 30, "1", "LAST","FIRST")
+	arcpy.MosaicToNewRaster_management(tilelist, data['post'][yxc]['gdb'], filename, inTraj.spatialReference, "16_BIT_UNSIGNED", 30, "1", "LAST","FIRST")
 
 	#Overwrite the existing attribute table file
-	arcpy.BuildRasterAttributeTable_management(data['post']['ytc']['path'], "Overwrite")
+	arcpy.BuildRasterAttributeTable_management(data['post'][yxc]['path'], "Overwrite")
 
 	# Overwrite pyramids
-	gen.buildPyramids(data['post']['ytc']['path'])
+	gen.buildPyramids(data['post'][yxc]['path'])
 
 
 
@@ -123,9 +125,9 @@ def mosiacRasters(data):
 def run(data):
 # if __name__ == '__main__':
 	#####  remove a files in tiles directory
-	tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
-	for tile in tiles:
-		os.remove(tile)
+	# tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
+	# for tile in tiles:
+	# 	os.remove(tile)
 
 	#get extents of individual features and add it to a dictionary
 	extDict = {}
@@ -145,14 +147,14 @@ def run(data):
 	print'extDict.items',  extDict.items()
 
 	#######create a process and pass dictionary of extent to execute task
-	pool = Pool(processes=5)
-	# pool = Pool(processes=cpu_count())
-	# pool.map(execute_task, extDict.items())
-	pool.map(execute_task, [(ed, data) for ed in extDict.items()])
-	pool.close()
-	pool.join
+	# pool = Pool(processes=5)
+	# # pool = Pool(processes=cpu_count())
+	# # pool.map(execute_task, extDict.items())
+	# pool.map(execute_task, [(ed, data) for ed in extDict.items()])
+	# pool.close()
+	# pool.join
 
-	mosiacRasters(data)
+	# mosiacRasters(data)
 
 
 

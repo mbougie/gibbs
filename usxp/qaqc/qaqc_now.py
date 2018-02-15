@@ -191,18 +191,42 @@ def addAcresField(tablename, schema, res):
 
 def createGraph():
   engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
-  # query = "SELECT * FROM sa.acres_ytc"
+  query = "SELECT * FROM sa.acres_ytc"
   query = """
           SELECT 
-            s6_ytc30_2008to2016_mmu5_nbl.value as years, 
-            s6_ytc30_2008to2016_mmu5_nbl.acres as s6, 
-            s14_ytc30_2008to2016_mmu5_nbl.acres as s14
+            a.years,
+            b.acres as s1, 
+            e.acres as s17
+
           FROM 
-            counts.s6_ytc30_2008to2016_mmu5_nbl FULL OUTER JOIN
-            counts.s14_ytc30_2008to2016_mmu5_nbl
+            counts.years_lookup as a 
+          FULL OUTER JOIN
+            counts.s1_ytc56_2008to2012_mmu15_nbl as b 
           ON 
-            s6_ytc30_2008to2016_mmu5_nbl.value = s14_ytc30_2008to2016_mmu5_nbl.value;
+            a.years = b.value
+          FULL OUTER JOIN counts.s17_ytc30_2008to2017_mmu5 as e 
+          ON 
+            a.years = e.value
+          ORDER BY a.years;
           """
+
+  # query = """
+  #         SELECT 
+  #           a.years,
+  #           d.acres as s17_yfc,
+  #           e.acres as s17_ytc
+  #         FROM 
+  #           counts.years_lookup as a 
+  #         FULL OUTER JOIN
+  #           counts.s17_yfc30_2008to2017_mmu5 as d 
+  #         ON 
+  #           a.years = d.value 
+  #         FULL OUTER JOIN counts.s17_ytc30_2008to2017_mmu5 as e 
+  #         ON 
+  #           a.years = e.value
+  #         ORDER BY a.years;
+  #         """
+
   df = pd.read_sql_query(query, engine)
 
 
@@ -210,23 +234,38 @@ def createGraph():
 
   df.plot(kind='line', colormap='summer')
   
-  df.set_index('years').plot.line(rot=0, title='Conversion to Cropland (acres)', figsize=(15,10), fontsize=12)
+  df.set_index('years').plot.line(rot=0, figsize=(15,10))
   # df.set_index('value').plot.line(rot=0, title='Conversion to Cropland (acres)', figsize=(15,10), fontsize=12)
   ax = plt.gca()
   # ax.legend_.remove()
   ax.get_xaxis().get_major_formatter().set_useOffset(False)
   # ax.set_color_cycle(['red', 'green'])
-  leg = plt.legend()
+  leg = plt.legend(prop={'size':20})
+  # ppl.legend(prop={'size':30})
+
+  ticks = ax.get_yticks()/1e6
+  ax.set_yticklabels(ticks)
+  ax.set_ylabel('acres (millions)', size = 25)
+  plt.xticks(size = 20)
+  plt.yticks(size = 20)
+
+  ax.set_xlabel('years', size = 25)
+  ax.set_title('Conversion to Cropland (acres)', size = 25)
+
+
+  
 
   for line in ax.get_lines():
-    line.set_linewidth(1.5)
+    line.set_linewidth(2.5)
 
   for line in leg.get_lines():
-    line.set_linewidth(1.5)
+    line.set_linewidth(2.5)
+
 
     # line.set_color('blue')
 
-  plt.savefig("C:\\Users\\Bougie\\Desktop\\Gibbs\\pdf\\s6_s14.pdf", bbox_inches='tight')
+  # plt.savefig("C:\\Users\\Bougie\\Desktop\\Gibbs\\pdf\\s17yfc_s17ytc.pdf", bbox_inches='tight')
+  plt.savefig("C:\\Users\\Bougie\\Desktop\\Gibbs\\pdf\\s1_s17.pdf", bbox_inches='tight')
 
 
 
@@ -302,7 +341,7 @@ def addGDBTable2postgres_now():
     
     # tablename = 'traj_'+wc
     # path to the table you want to import into postgres
-    input = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\s16\\post\\ytc_s16.gdb\\s16_traj_years'
+    input = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\s17\\post\\yfc_s17.gdb\\s17_yfc30_2008to2017_mmu5'
 
     # Execute AddField twice for two new fields
     fields = [f.name for f in arcpy.ListFields(input)]
@@ -319,10 +358,10 @@ def addGDBTable2postgres_now():
     print 'df-----------------------', df
     
     # # # use pandas method to import table into psotgres
-    df.to_sql('s16_traj_years', engine, schema='counts')
+    df.to_sql('s17_yfc30_2008to2017_mmu5', engine, schema='counts')
     
     # #add trajectory field to table
-    addAcresField_now('s16_traj_years', 'counts', '30')
+    addAcresField_now('s17_yfc30_2008to2017_mmu5', 'counts', '30')
 
 
 
@@ -346,11 +385,15 @@ def addAcresField_now(tablename, schema, res):
     #####DML: insert values into new array column
     cur.execute('UPDATE {}.{} SET acres = count * {}'.format(schema, tablename, gen.getPixelConversion2Acres(res)))
     conn.commit() 
+
+
+
+
+
 # addGDBTable2postgres_temp2()
 
 # addGDBTable2postgres_temp()
 # addGDBTable2postgres_temp2()
-# createGraph()
-
+createGraph()
 # addGDBTable2postgres_now()
 

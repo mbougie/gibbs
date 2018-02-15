@@ -49,7 +49,7 @@ def getJSONfile():
 def createReclassifyList():
 	cur = conn.cursor()
 	
-	query = "SELECT \"Value\", ytc from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array WHERE mtr = 3".format(data['pre']['traj']['filename'], data['core']['lookup'])
+	query = "SELECT \"Value\", mtr from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array WHERE mtr = 3".format(data['pre']['traj']['filename'], data['core']['lookup'])
 	print 'query:', query
 
 	cur.execute(query)
@@ -65,7 +65,7 @@ def createReclassifyList():
 
 ##create global objects to reference through the script
 data = getJSONfile()
-traj_list = createReclassifyList()
+location_list = createReclassifyList()
 print data
 
 
@@ -103,18 +103,16 @@ def execute_task(in_extentDict):
 	
 	arr_traj = arcpy.RasterToNumPyArray(in_raster=data['pre']['traj']['path'], lower_left_corner = arcpy.Point(XMin,YMin), nrows = 13789, ncols = 21973)
 
-	#### find the location of each pixel labeled with specific arbitray value in the rows list  
-	#### note the traj_list is derived from the sql query above
-	for row in traj_list:
-		#trajectory value
-		traj = row[0]
-		#conversion year yxc
-		cy = row[1]
+    #get the nlcd years that were defined to work with
+	years = data['refine']['mask_nlcd']['years_nlcd']
 
-		#Return the indices of the pixels that have values of the ytc arbitray values of the traj.
+	# find the location of each pixel labeled with specific arbitray value in the rows list  
+	for row in location_list:
+
+		#Return the indices of the pixels that have values of the ytc arbitrsy values of the traj.
 		indices = (arr_traj == row[0]).nonzero()
 
-		#stack the indices variable above so easier to work with
+		#stack indices so easier to work with
 		stacked_indices=np.column_stack((indices[0],indices[1]))
         
         #get the x and y location of each pixel that has been selected from above
@@ -123,13 +121,9 @@ def execute_task(in_extentDict):
 			col = pixel_location[1]
             
 			nlcd_list = []
-            
-			if cy < 2012:
-				nlcd_list.append(nlcds[2001][row][col])
-				nlcd_list.append(nlcds[2006][row][col])
-			else:
-				nlcd_list.append(nlcds[2006][row][col])
-				nlcd_list.append(nlcds[2011][row][col])
+			for year in years:
+				#get the nlcd pixel label each pixel that is mtr3
+				nlcd_list.append(nlcds[year][row][col])
 
 			#get the length of nlcd list containing only the value 82
 			count_82 = nlcd_list.count(82)
@@ -140,7 +134,7 @@ def execute_task(in_extentDict):
 
 
 			elif data['refine']['mask_nlcd']['operator'] == 'and':
-				if count_82 == 2:
+				if count_82 == len(years):
 					outData[row,col] = data['refine']['mask_nlcd']['arbitrary']
 
 

@@ -49,6 +49,7 @@ def run(route, instance):
             #create geodatabse
             if stage == 'post':
                 arcpy.CreateFileGDB_management(subdir, "{}_{}.gdb".format('ytc',instance))
+                arcpy.CreateFileGDB_management(subdir, "{}_{}.gdb".format('yfc',instance))
             else:
                 arcpy.CreateFileGDB_management(subdir, "{}_{}.gdb".format(stage,instance))
 

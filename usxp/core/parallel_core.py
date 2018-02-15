@@ -81,8 +81,8 @@ def execute_task(args):
 	arcpy.env.extent = arcpy.Extent(XMin, YMin, XMax, YMax)
 
 	if data['core']['route'] == 'r1':
-		raster_mtr = Reclassify(Raster(data['pre']['traj_rfnd']['path']), "Value", RemapRange(createReclassifyList(data)), "NODATA")
-		raster_filter = MajorityFilter(raster_mtr, filter_combos[filter_key][0], filter_combos[filter_key][1])
+		raster_yxc = Reclassify(Raster(data['pre']['traj_rfnd']['path']), "Value", RemapRange(createReclassifyList(data)), "NODATA")
+		raster_filter = MajorityFilter(raster_yxc, filter_combos[filter_key][0], filter_combos[filter_key][1])
 		raster_rg = RegionGroup(raster_filter, rg_instance[0], rg_instance[1],"NO_LINK")
 		raster_mask = SetNull(raster_rg, 1, cond)
 		raster_nbl = arcpy.sa.Nibble(raster_filter, raster_mask, "DATA_ONLY")
@@ -99,13 +99,10 @@ def execute_task(args):
 
 	elif data['core']['route'] == 'r2':
 		raster_filter = MajorityFilter(Raster(data['pre']['traj_rfnd']['path']), filter_combos[filter_key][0], filter_combos[filter_key][1])
-		raster_mtr = Reclassify(raster_filter, "Value", RemapRange(createReclassifyList(data)), "NODATA")
-		#######Shrink (in_raster, number_cells, zone_values)
-		# raster_shrink = Shrink(raster_mtr, 1, [3,4])
-		# raster_expand = Expand(raster_shrink, 1, [3,4])
-		raster_rg = RegionGroup(raster_mtr, rg_instance[0], rg_instance[1], "NO_LINK")
+		raster_yxc = Reclassify(raster_filter, "Value", RemapRange(createReclassifyList(data)), "NODATA")
+		raster_rg = RegionGroup(raster_yxc, rg_instance[0], rg_instance[1], "NO_LINK")
 		raster_mask = SetNull(raster_rg, 1, cond)
-		raster_nbl = arcpy.sa.Nibble(raster_mtr, raster_mask, "DATA_ONLY")
+		raster_nbl = arcpy.sa.Nibble(raster_yxc, raster_mask, "DATA_ONLY")
 
 		#clear out the extent for next time
 		arcpy.ClearEnvironment("extent")
@@ -117,13 +114,34 @@ def execute_task(args):
 		# raster_shrink.save(outpath)
 		raster_nbl.save(outpath)
 
+	# elif data['core']['route'] == 'r2':
+	# 	raster_filter = MajorityFilter(Raster(data['pre']['traj_rfnd']['path']), filter_combos[filter_key][0], filter_combos[filter_key][1])
+	# 	raster_yxc = Reclassify(raster_filter, "Value", RemapRange(createReclassifyList(data)), "NODATA")
+	# 	raster_rg = RegionGroup(raster_yxc, rg_instance[0], rg_instance[1], "NO_LINK")
+	# 	raster_mask = SetNull(raster_rg, raster_yxc, cond)
+	# 	raster_loop1 = FocalStatistics(raster_mask, NbrRectangle(3, 3, "CELL"), "MAJORITY")
+	# 	raster_loop2 = FocalStatistics(raster_loop1, NbrRectangle(3, 3, "CELL"), "MAJORITY")
+	# 	raster_loop3 = FocalStatistics(raster_loop2, NbrRectangle(3, 3, "CELL"), "MAJORITY")
+	# 	raster_loop4 = FocalStatistics(raster_loop3, NbrRectangle(3, 3, "CELL"), "MAJORITY")
+	# 	raster_loop5 = FocalStatistics(raster_loop4, NbrRectangle(3, 3, "CELL"), "MAJORITY")
+	
+	# 	#clear out the extent for next time
+	# 	arcpy.ClearEnvironment("extent")
+
+	# 	outname = "tile_" + str(fc_count) +'.tif'
+
+	# 	outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/", r"tiles", outname)
+
+	# 	# raster_shrink.save(outpath)
+	# 	raster_loop5.save(outpath)
+
 
 	if data['core']['route'] == 'r3':
 		raster_filter = MajorityFilter(Raster(data['pre']['traj_rfnd']['path']), filter_combos[filter_key][0], filter_combos[filter_key][1])
 		raster_rg = RegionGroup(raster_filter, rg_instance[0], rg_instance[1],"NO_LINK")
 		raster_mask = SetNull(raster_rg, 1, cond)
 		raster_nbl = arcpy.sa.Nibble(raster_filter, raster_mask, "DATA_ONLY")
-		raster_mtr = Reclassify(raster_nbl, "Value", RemapRange(createReclassifyList(data)), "NODATA")
+		raster_yxc = Reclassify(raster_nbl, "Value", RemapRange(createReclassifyList(data)), "NODATA")
 
 		#clear out the extent for next time
 		arcpy.ClearEnvironment("extent")
@@ -132,7 +150,7 @@ def execute_task(args):
 
 		outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/", r"tiles", outname)
 
-		raster_mtr.save(outpath)
+		raster_yxc.save(outpath)
 
 
 
@@ -165,9 +183,9 @@ def mosiacRasters(data):
 def run(data):
 
 	#####  remove a files in tiles directory
-	tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
-	for tile in tiles:
-		os.remove(tile)
+	# tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
+	# for tile in tiles:
+	# 	os.remove(tile)
 
 	#get extents of individual features and add it to a dictionary
 	extDict = {}
@@ -187,12 +205,12 @@ def run(data):
 	print'extDict.items',  extDict.items()
 
 	#######create a process and pass dictionary of extent to execute task
-	pool = Pool(processes=5)
-	# pool = Pool(processes=cpu_count())
-	pool.map(execute_task, [(ed, data) for ed in extDict.items()])
-	# pool.map(execute_task, extDict.items())
-	pool.close()
-	pool.join
+	# pool = Pool(processes=5)
+	# # pool = Pool(processes=cpu_count())
+	# pool.map(execute_task, [(ed, data) for ed in extDict.items()])
+	# # pool.map(execute_task, extDict.items())
+	# pool.close()
+	# pool.join
 
 	mosiacRasters(data)
 

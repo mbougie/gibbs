@@ -64,17 +64,17 @@ if __name__ == '__main__':
 			
 
 			# cc.run(route,instance)
-			ci.run([key,route,instance])
+			# ci.run([key,route,instance])
 
 
 
 
-			# data = gen.getJSONfile()
+			data = gen.getJSONfile()
 
 
 
 
-			# core.run(data)
+			core.run(data)
 			# yxc.run(data)
 			# cdl.run(data)
 

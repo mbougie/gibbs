@@ -20,7 +20,7 @@ import multiprocessing
 
 
 
-
+engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
 arcpy.CheckOutExtension("Spatial")
 
 
@@ -49,7 +49,7 @@ def getJSONfile():
 def createReclassifyList():
 	cur = conn.cursor()
 
-	query = "SELECT \"Value\", ytc from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array WHERE ytc IS NOT NULL".format(data['pre']['traj']['filename'], data['core']['lookup'])
+	query = "SELECT \"Value\", ytc from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array WHERE ytc = 2011".format(data['pre']['traj']['filename'], data['core']['lookup'])
 	print 'query:', query
 
 	cur.execute(query)
@@ -61,23 +61,6 @@ def createReclassifyList():
 	print rows
 	print 'number of records in lookup table', len(rows)
 	return rows
-
-
-def getNonCropList():
-	cur = conn.cursor()
-
-	query = "SELECT value FROM misc.lookup_cdl WHERE b = '0'"
-	print 'query:', query
-
-	cur.execute(query)
-
-	# fetch all rows from table
-	rows = cur.fetchall()
-	print 'noncrop_list:', rows
-	print 'type:', type(rows)
-	return rows + [36,61]
-
-
 	
 
 
@@ -86,15 +69,14 @@ def getNonCropList():
 
 data = getJSONfile()
 # print data
-location_list = createReclassifyList()
-noncrop_list = getNonCropList()
+traj_list = createReclassifyList()
 
 
 
 
 def execute_task(in_extentDict):
 
-	fc_count = in_extentDict[0]
+	stco_atlas = 'cnty_'+str(in_extentDict[0])
 	
 	procExt = in_extentDict[1]
 	# print procExt
@@ -132,19 +114,20 @@ def execute_task(in_extentDict):
 	       }
 	
 	arr_traj = arcpy.RasterToNumPyArray(in_raster=data['pre']['traj']['path'], lower_left_corner = arcpy.Point(XMin,YMin), nrows = 13789, ncols = 21973)
-
+    
 	# find the location of each pixel labeled with specific arbitray value in the rows list  
-	for row in location_list:
+	mainlist = []
+	for traj in traj_list:
 		#year of conversion for either expansion or abandonment
-		ytx = row[1]
-		print 'ytx', ytx
+		ytx = traj[1]
+		# print 'ytx', ytx
 		
 		#year before conversion for either expansion or abandonment
-		ybx = row[1]-1
-		print 'ybx', ybx
+		ybx = traj[1]-1
+		# print 'ybx', ybx
 
-		#Return the indices of the pixels that have values of the ytc arbitrsy values of the traj.
-		indices = (arr_traj == row[0]).nonzero()
+		#Return the indices of the pixels that have values of the ytc arbitrary values of the traj.
+		indices = (arr_traj == traj[0]).nonzero()
 
 		#stack indices so easier to work with
 		stacked_indices=np.column_stack((indices[0],indices[1]))
@@ -159,51 +142,50 @@ def execute_task(in_extentDict):
 			#get the pixel value for ybx
 			pixel_value_ybx =  cdls[ybx][row][col]
 
-			#####  create dev mask componet
-			if pixel_value_ybx in [122,123,124]:
-				outData[row,col] = data['refine']['mask_dev_alfalfa_fallow']['arbitrary']
-
-	        #####  create 36_61 mask componet########################################################################
-			if pixel_value_ytx in [36,61]:
-				#find the years stil left in the time series for this pixel location
-				yearsleft = [i for i in data['global']['years'] if i > ytx]
+			templist = [traj[0],row,col]
+			for year in data['global']['years']:
+				# print 'year', str(year)
+				# print 'cdls[year][row][col]', cdls[year][row][col]
+				templist.append(cdls[year][row][col])
+            
+			mainlist.append(templist)
 	
-                #only focus on the extended series ---dont care about 2012
-				# if len(yearsleft) > 1:
-					#create templist to hold the rest of the cld values for the time series.  initiaite it with the first cdl value
-				templist = [pixel_value_ytx]
-				for year in yearsleft:
-					# print 'year', year
-					# print 'cdls[year][row][col] :', cdls[year][row][col]
-					templist.append(cdls[year][row][col])
-
-					#check if all elements in array are the same
-				# print 'templist', templist
-				# test_elements = [36,61,152,37]
-				# print 'yearsleft', yearsleft
-				# print 'templist', templist
-				# print 'unique', np.unique(templist)
-				# print np.isin(templist, noncrop_list)
-				if len(set(np.isin(templist, noncrop_list))) == 1:
-					print 'all true', np.isin(templist, noncrop_list)
-					print 'templist', templist 
-					outData[row,col] = data['refine']['mask_dev_alfalfa_fallow']['arbitrary']
-
-
-
 
 	arcpy.ClearEnvironment("extent")
 
-	outname = "tile_" + str(fc_count) +'.tif'
 
-	# #create
-	outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/", r"tiles", outname)
+	to_string = map(str, data['global']['years'])
+	year_columns = ["cdl_" + to_string for to_string in to_string]
+	# print 'year_columns', year_columns
 
-	# NumPyArrayToRaster (in_array, {lower_left_corner}, {x_cell_size}, {y_cell_size}, {value_to_nodata})
-	myRaster = arcpy.NumPyArrayToRaster(outData, lower_left_corner=arcpy.Point(XMin, YMin), x_cell_size=30, y_cell_size=30, value_to_nodata=0)
-	
+	# print mainlist
 
-	myRaster.save(outpath)
+	df = pd.DataFrame(mainlist, columns=['traj','rows','cols','cdl_2008', 'cdl_2009', 'cdl_2010', 'cdl_2011', 'cdl_2012', 'cdl_2013', 'cdl_2014', 'cdl_2015', 'cdl_2016', 'cdl_2017'])
+
+	df.to_sql(stco_atlas, engine, schema='test')
+
+	addTrajArrayField(stco_atlas, year_columns)
+
+
+def addTrajArrayField(tablename, fields):
+    #this is a sub function for addGDBTable2postgres()
+    cur = conn.cursor()
+    
+    #convert the rasterList into a string
+    columnList = ','.join(fields)
+    print columnList
+
+    #DDL: add column to hold arrays
+    cur.execute('ALTER TABLE test.{} ADD COLUMN traj_array integer[];'.format(tablename));
+    
+    #DML: insert values into new array column
+    cur.execute('UPDATE test.{} SET traj_array = ARRAY[{}];'.format(tablename, columnList));
+    
+    conn.commit()
+    print "Records created successfully";
+    # conn.close()
+
+
 
 
 
@@ -248,7 +230,8 @@ if __name__ == '__main__':
 	extDict = {}
 	count = 1 
 
-	for row in arcpy.da.SearchCursor(data['ancillary']['vector']['shapefiles']['fishnet_ytc'], ["SHAPE@"]):
+	for row in arcpy.da.SearchCursor(data['ancillary']['vector']['shapefiles']['counties_subset'], ["SHAPE@"]):
+		
 		extent_curr = row[0].extent
 		ls = []
 		ls.append(extent_curr.XMin)
@@ -262,7 +245,7 @@ if __name__ == '__main__':
 	print'extDict.items',  extDict.items()
 
 	#######create a process and pass dictionary of extent to execute task
-	pool = Pool(processes=5)
+	pool = Pool(processes=3)
 	pool.map(execute_task, extDict.items())
 	pool.close()
 	pool.join

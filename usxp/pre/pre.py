@@ -203,7 +203,7 @@ def createRefinedTrajectory():
 ####  these functions create the trajectory table  #############
 # createTrajectories()
 # addGDBTable2postgres()
-# createRefinedTrajectory()
+createRefinedTrajectory()
 
 
 #######  these functions are to update the lookup tables  ######

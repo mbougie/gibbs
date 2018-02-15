@@ -61,23 +61,6 @@ def createReclassifyList():
 	print rows
 	print 'number of records in lookup table', len(rows)
 	return rows
-
-
-def getNonCropList():
-	cur = conn.cursor()
-
-	query = "SELECT value FROM misc.lookup_cdl WHERE b = '0'"
-	print 'query:', query
-
-	cur.execute(query)
-
-	# fetch all rows from table
-	rows = cur.fetchall()
-	print 'noncrop_list:', rows
-	print 'type:', type(rows)
-	return rows + [36,61]
-
-
 	
 
 
@@ -87,7 +70,6 @@ def getNonCropList():
 data = getJSONfile()
 # print data
 location_list = createReclassifyList()
-noncrop_list = getNonCropList()
 
 
 
@@ -161,33 +143,33 @@ def execute_task(in_extentDict):
 
 			#####  create dev mask componet
 			if pixel_value_ybx in [122,123,124]:
+				# print 'ybx:', pixel_value_ybx
 				outData[row,col] = data['refine']['mask_dev_alfalfa_fallow']['arbitrary']
 
-	        #####  create 36_61 mask componet########################################################################
+	        #####  create 36_61 mask componet
 			if pixel_value_ytx in [36,61]:
-				#find the years stil left in the time series for this pixel location
+				#find the years still left in the time series for this pixel location
 				yearsleft = [i for i in data['global']['years'] if i > ytx]
 	
-                #only focus on the extended series ---dont care about 2012
-				# if len(yearsleft) > 1:
-					#create templist to hold the rest of the cld values for the time series.  initiaite it with the first cdl value
-				templist = [pixel_value_ytx]
-				for year in yearsleft:
-					# print 'year', year
-					# print 'cdls[year][row][col] :', cdls[year][row][col]
-					templist.append(cdls[year][row][col])
-
+                #only focus on the extended series ---dont care about teminal year
+				if len(yearsleft) > 1:
+					#create templist to hold the rest of the cld values for the time series.  Initialize it with the first cdl value
+					templist = [pixel_value_ytx]
+					for year in yearsleft:
+						templist.append(cdls[year][row][col])
+                    
+					z = [176,152]
 					#check if all elements in array are the same
-				# print 'templist', templist
-				# test_elements = [36,61,152,37]
-				# print 'yearsleft', yearsleft
-				# print 'templist', templist
-				# print 'unique', np.unique(templist)
-				# print np.isin(templist, noncrop_list)
-				if len(set(np.isin(templist, noncrop_list))) == 1:
-					print 'all true', np.isin(templist, noncrop_list)
-					print 'templist', templist 
-					outData[row,col] = data['refine']['mask_dev_alfalfa_fallow']['arbitrary']
+					if len(set(templist)) == 1:
+						outData[row,col] = data['refine']['mask_dev_alfalfa_fallow']['arbitrary']
+					
+					elif [x for x in templist if x in z]:
+
+						# [x for x in item if x not in z]
+						print 'templist', templist
+						if len(set(templist)) == 2 or len(set(templist)) == 3:
+							print 'templist len == 2', templist 
+						outData[row,col] = data['refine']['mask_dev_alfalfa_fallow']['arbitrary']
 
 
 
@@ -248,7 +230,7 @@ if __name__ == '__main__':
 	extDict = {}
 	count = 1 
 
-	for row in arcpy.da.SearchCursor(data['ancillary']['vector']['shapefiles']['fishnet_ytc'], ["SHAPE@"]):
+	for row in arcpy.da.SearchCursor(data['ancillary']['vector']['shapefiles']['fishnet_mtr'], ["SHAPE@"]):
 		extent_curr = row[0].extent
 		ls = []
 		ls.append(extent_curr.XMin)
@@ -262,12 +244,12 @@ if __name__ == '__main__':
 	print'extDict.items',  extDict.items()
 
 	#######create a process and pass dictionary of extent to execute task
-	pool = Pool(processes=5)
+	pool = Pool(processes=1)
 	pool.map(execute_task, extDict.items())
 	pool.close()
 	pool.join
 
-	# mosiacRasters()
+	mosiacRasters()
 
 
 # run()
