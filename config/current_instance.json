@@ -99,7 +99,7 @@
                     "2013": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2012", 
                     "2012": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2011"
                 }, 
-                "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r3\\r3_9\\post\\ytc_r3_9.gdb\\s18_ytc30_2008to2017_mmu5_bfc", 
+                "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\s18\\post\\ytc_s18.gdb\\s18_ytc30_2008to2017_mmu5_bfc", 
                 "filename": "s18_ytc30_2008to2017_mmu5_bfc"
             }, 
             "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\s18\\post\\ytc_s18.gdb\\s18_ytc30_2008to2017_mmu5", 
@@ -115,7 +115,7 @@
                     "2013": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2013", 
                     "2012": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2012"
                 }, 
-                "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r3\\r3_9\\post\\ytc_r3_9.gdb\\s18_ytc30_2008to2017_mmu5_fc", 
+                "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\s18\\post\\ytc_s18.gdb\\s18_ytc30_2008to2017_mmu5_fc", 
                 "filename": "s18_ytc30_2008to2017_mmu5_fc"
             }, 
             "filename": "s18_ytc30_2008to2017_mmu5"
@@ -134,8 +134,8 @@
                     "2013": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2013", 
                     "2012": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2012"
                 }, 
-                "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r3\\r3_9\\post\\ytc_r3_9.gdb\\s18_ytc30_2008to2017_mmu5_fnc", 
-                "filename": "s18_ytc30_2008to2017_mmu5_fnc"
+                "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\s18\\post\\yfc_s18.gdb\\s18_yfc30_2008to2017_mmu5_fnc", 
+                "filename": "s18_yfc30_2008to2017_mmu5_fnc"
             }, 
             "bfnc": {
                 "cdlpaths": {
@@ -148,8 +148,8 @@
                     "2013": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2012", 
                     "2012": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2011"
                 }, 
-                "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r3\\r3_9\\post\\ytc_r3_9.gdb\\s18_ytc30_2008to2017_mmu5_bfnc", 
-                "filename": "s18_ytc30_2008to2017_mmu5_bfnc"
+                "path": "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\s18\\post\\yfc_s18.gdb\\s18_yfc30_2008to2017_mmu5_bfnc", 
+                "filename": "s18_yfc30_2008to2017_mmu5_bfnc"
             }, 
             "filename": "s18_yfc30_2008to2017_mmu5"
         }

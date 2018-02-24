@@ -259,8 +259,8 @@ class ProcessingObject(object):
             ytc_dict['gdb'] = getGDBpath('ytc_{}'.format(self.data['global']['instance']))
             ytc_dict['filename'] = '{}_ytc{}_{}_mmu{}'.format(self.data['global']['instance'], self.data['global']['res'], self.data['global']['datarange'], str(self.data['core']['mmu']))
             ytc_dict['path']  = '\\'.join([ytc_dict['gdb'], ytc_dict['filename']]) 
-            ytc_dict['fc'] = self.createCDLdict('fc', self.data['global']['years_conv'])
-            ytc_dict['bfc'] = self.createCDLdict('bfc', self.data['global']['years_conv'])
+            ytc_dict['fc'] = self.createCDLdict('ytc', 'fc', self.data['global']['years_conv'])
+            ytc_dict['bfc'] = self.createCDLdict('ytc', 'bfc', self.data['global']['years_conv'])
             
             return ytc_dict
 
@@ -275,8 +275,8 @@ class ProcessingObject(object):
             yfc_dict['gdb'] = getGDBpath('yfc_{}'.format(self.data['global']['instance']))
             yfc_dict['filename'] = '{}_yfc{}_{}_mmu{}'.format(self.data['global']['instance'], self.data['global']['res'], self.data['global']['datarange'], str(self.data['core']['mmu']))
             yfc_dict['path']  = '\\'.join([yfc_dict['gdb'], yfc_dict['filename']]) 
-            yfc_dict['fnc'] = self.createCDLdict('fnc', self.data['global']['years_conv'])
-            yfc_dict['bfnc'] = self.createCDLdict('bfnc', self.data['global']['years_conv'])
+            yfc_dict['fnc'] = self.createCDLdict('yfc', 'fnc', self.data['global']['years_conv'])
+            yfc_dict['bfnc'] = self.createCDLdict('yfc', 'bfnc', self.data['global']['years_conv'])
             
             return yfc_dict
 
@@ -285,7 +285,7 @@ class ProcessingObject(object):
 
 
 
-    def createCDLdict(self, subtype, years):
+    def createCDLdict(self, type, subtype, years):
 
         def getCDLpathsDict(years):
             #this is an aux function for attachCDL() function to get correct cdl for the attachCDL() function
@@ -299,8 +299,8 @@ class ProcessingObject(object):
                     dict[str(year)]=cdl_file
             return dict
 
-        definedfilename = '{}_ytc{}_{}_mmu{}_{}'.format(self.data['global']['instance'], self.data['global']['res'], self.data['global']['datarange'], str(self.data['core']['mmu']), subtype)
-        definedpath = '{}\\{}'.format(getGDBpath('ytc'), definedfilename)
+        definedfilename = '{}_{}{}_{}_mmu{}_{}'.format(self.data['global']['instance'], type, self.data['global']['res'], self.data['global']['datarange'], str(self.data['core']['mmu']), subtype)
+        definedpath = '{}\\{}'.format(getGDBpath('{}_{}'.format(type, self.data['global']['instance'])), definedfilename)
         dictpath={"cdlpaths":getCDLpathsDict(years),"filename":definedfilename, "path":definedpath}
         print dictpath
         return dictpath

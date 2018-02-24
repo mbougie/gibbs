@@ -68,13 +68,13 @@ def defineGDBpath(args_list):
 
 def importCSVtoPG():
 
-    df = pd.read_excel('C:/Users/Bougie/Desktop/mutlu/trakya/hist_aea.xlsx')
-    df.columns = [c.lower() for c in df.columns] #postgres doesn't like capitals or spaces
-
+    df = pd.read_excel('C:\Users\Bougie\Downloads\s17_YTC_by_state.xlsx')
+    # df.columns = [c.lower() for c in df.columns] #postgres doesn't like capitals or spaces
+    df.columns = ['year_'+str(c) for c in df.columns]
     from sqlalchemy import create_engine
-    engine = create_engine('postgresql://postgres:postgres@localhost:5432/trakya')
+    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
 
-    df.to_sql("iowa", engine, schema='attribute')
+    df.to_sql("s17_ytc", engine, schema='counts_states')
 
 
 
@@ -794,3 +794,24 @@ def getJSONfile():
 
 def zipFolder():
     shutil.make_archive(output_filename, 'zip', dir_name)
+
+
+
+
+def getTablesInSchema(schema):
+    cur = conn.cursor()
+    query="SELECT table_name FROM information_schema.tables WHERE table_schema = '{}'".format(schema)
+    print query
+
+    cur.execute(query)
+    rows = cur.fetchall()
+    print rows
+    return rows
+
+
+
+
+
+
+
+# importCSVtoPG()

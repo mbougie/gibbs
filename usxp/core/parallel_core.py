@@ -183,9 +183,9 @@ def mosiacRasters(data):
 def run(data):
 
 	#####  remove a files in tiles directory
-	# tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
-	# for tile in tiles:
-	# 	os.remove(tile)
+	tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
+	for tile in tiles:
+		os.remove(tile)
 
 	#get extents of individual features and add it to a dictionary
 	extDict = {}
@@ -205,12 +205,12 @@ def run(data):
 	print'extDict.items',  extDict.items()
 
 	#######create a process and pass dictionary of extent to execute task
-	# pool = Pool(processes=5)
-	# # pool = Pool(processes=cpu_count())
-	# pool.map(execute_task, [(ed, data) for ed in extDict.items()])
-	# # pool.map(execute_task, extDict.items())
-	# pool.close()
-	# pool.join
+	pool = Pool(processes=5)
+	# pool = Pool(processes=cpu_count())
+	pool.map(execute_task, [(ed, data) for ed in extDict.items()])
+	# pool.map(execute_task, extDict.items())
+	pool.close()
+	pool.join
 
 	mosiacRasters(data)
 

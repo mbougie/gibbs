@@ -22,7 +22,7 @@ arcpy.CheckOutExtension("Spatial")
 arcpy.env.overwriteOutput = True
 arcpy.env.scratchWorkspace = "in_memory" 
 
-subtype = 'bfc'
+subtype = 'fc'
 
 
 ##get the current instance
@@ -138,7 +138,7 @@ def mosiacRasters(data):
 
 def run(data):
 # if __name__ == '__main__':
-	#####  remove a files in tiles directory
+	####  remove a files in tiles directory
 	tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
 	for tile in tiles:
 		os.remove(tile)

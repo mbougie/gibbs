@@ -49,6 +49,29 @@ def createReclassifyList(data):
 	return fulllist
 
 
+def fill(data, invalid=None):
+    """
+    Replace the value of invalid 'data' cells (indicated by 'invalid') 
+    by the value of the nearest valid data cell
+
+    Input:
+        data:    numpy array of any dimension
+        invalid: a binary array of same shape as 'data'. True cells set where data
+                 value should be replaced.
+                 If None (default), use: invalid  = np.isnan(data)
+
+    Output: 
+        Return a filled array. 
+    """
+    #import numpy as np
+    #import scipy.ndimage as nd
+
+    if invalid is None: invalid = np.isnan(data)
+
+    ind = nd.distance_transform_edt(invalid, return_distances=False, return_indices=True)
+    return data[tuple(ind)]
+
+
 
 # def execute_task(in_extentDict):
 def execute_task(args):
@@ -69,6 +92,7 @@ def execute_task(args):
 	print 'path_traj_rfnd:', path_traj_rfnd
 
 	path_mtr = Raster(data['core']['path'])
+	print path_mtr
 
 	#set environments
 	arcpy.env.snapRaster = path_mtr
@@ -77,12 +101,17 @@ def execute_task(args):
 
 	##  Execute the three functions  #####################
 	raster_yxc = Reclassify(Raster(path_traj_rfnd), "Value", RemapRange(createReclassifyList(data)), "NODATA")
-
+    
 	raster_mask = Con((path_mtr == yxc_mtr[yxc]) & (raster_yxc >= 2008), raster_yxc)
+	# raster_mask = Con(path_mtr!=yxc_mtr[yxc], 0, Con((path_mtr == yxc_mtr[yxc]) & (raster_yxc >= 2008), raster_yxc))
 
-	raster_mmu = Con((path_mtr == yxc_mtr[yxc]) & (IsNull(raster_mask)), yxc_mtr[yxc], Con((path_mtr == yxc_mtr[yxc]) & (raster_mask >= 2008), raster_mask))
+	# raster_mmu = Con((path_mtr == yxc_mtr[yxc]) & (IsNull(raster_mask)), yxc_mtr[yxc], Con((path_mtr == yxc_mtr[yxc]) & (raster_mask >= 2008), raster_mask))
+	# raster_mmu = Con((path_mtr == yxc_mtr[yxc]) & (raster_mask!=0), raster_mask, SetNull(raster_mask,raster_mask))
 
-	raster_nibble = arcpy.sa.Nibble(raster_mmu, raster_mask, "DATA_ONLY")
+	filled_1 = Con(IsNull(raster_mask),FocalStatistics(raster_mask,NbrRectangle(3, 3, "CELL"),'MAJORITY'), raster_mask)
+	filled_2 = Con(IsNull(filled_1),FocalStatistics(filled_1,NbrRectangle(10, 10, "CELL"),'MAJORITY'), filled_1)
+	final = SetNull(path_mtr, filled_2, "VALUE <> 3")
+	# raster_nibble = arcpy.sa.Nibble(raster_mmu, raster_mask, "DATA_ONLY")
 
 	#clear out the extent for next time
 	arcpy.ClearEnvironment("extent")
@@ -92,7 +121,7 @@ def execute_task(args):
 
 	outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/", r"tiles", outname)
 
-	raster_nibble.save(outpath)
+	final.save(outpath)
 
 
 
@@ -125,9 +154,9 @@ def mosiacRasters(data):
 def run(data):
 # if __name__ == '__main__':
 	#####  remove a files in tiles directory
-	# tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
-	# for tile in tiles:
-	# 	os.remove(tile)
+	tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
+	for tile in tiles:
+		os.remove(tile)
 
 	#get extents of individual features and add it to a dictionary
 	extDict = {}
@@ -147,14 +176,14 @@ def run(data):
 	print'extDict.items',  extDict.items()
 
 	#######create a process and pass dictionary of extent to execute task
-	# pool = Pool(processes=5)
-	# # pool = Pool(processes=cpu_count())
-	# # pool.map(execute_task, extDict.items())
-	# pool.map(execute_task, [(ed, data) for ed in extDict.items()])
-	# pool.close()
-	# pool.join
+	pool = Pool(processes=5)
+	# pool = Pool(processes=cpu_count())
+	# pool.map(execute_task, extDict.items())
+	pool.map(execute_task, [(ed, data) for ed in extDict.items()])
+	pool.close()
+	pool.join
 
-	# mosiacRasters(data)
+	mosiacRasters(data)
 
 
 

@@ -49,29 +49,7 @@ def getJSONfile():
 def createReclassifyList():
 	cur = conn.cursor()
 
-	query = "SELECT \"Value\", ytc from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array WHERE ytc = 2011".format(data['pre']['traj']['filename'], data['core']['lookup'])
-	# query = """ SELECT 
-	# 			  traj_try.traj_rfnd, 
-	# 			  traj_try.state, 
-	# 			  traj_try."Value" as traj_rfnd_state, 
-	# 			  v4_traj_lookup_2008to2017_v3.ytc
-	# 			FROM 
-	# 			  refinement_new.traj_try, 
-	# 			  pre.v4_traj_cdl30_b_2008to2017, 
-	# 			  pre.v4_traj_lookup_2008to2017_v3
-	# 			WHERE 
-	# 			  v4_traj_cdl30_b_2008to2017."Value" = traj_try.traj_rfnd AND
-	# 			  v4_traj_lookup_2008to2017_v3.traj_array = v4_traj_cdl30_b_2008to2017.traj_array AND ytc IS NOT NULL
-	#         """
-
-
-
-
-
-
-
-
-
+	query = "SELECT \"Value\", ytc from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array WHERE ytc IS NOT NULL".format(data['pre']['traj']['filename'], data['core']['lookup'])
 	print 'query:', query
 
 	cur.execute(query)
@@ -98,7 +76,7 @@ traj_list = createReclassifyList()
 
 def execute_task(in_extentDict):
 
-	stco_atlas = "tile_"+str(in_extentDict[0])
+	stco_atlas = in_extentDict[0]
 	
 	procExt = in_extentDict[1]
 	# print procExt
@@ -136,26 +114,39 @@ def execute_task(in_extentDict):
 	       }
 	
 	arr_traj = arcpy.RasterToNumPyArray(in_raster=data['pre']['traj']['path'], lower_left_corner = arcpy.Point(XMin,YMin), nrows = 13789, ncols = 21973)
-    
+	mask36_61 = arcpy.RasterToNumPyArray(in_raster=data['refine']['mask_dev_alfalfa_fallow']['path'], lower_left_corner = arcpy.Point(XMin,YMin), nrows = 13789, ncols = 21973)
 	# find the location of each pixel labeled with specific arbitray value in the rows list  
 	mainlist = []
-	for traj in traj_list:
-		#Return the indices of the pixels that have values of the ytc arbitrary values of the traj.
-		indices = (arr_traj == traj[0]).nonzero()
 
-		#stack indices so easier to work with
-		stacked_indices=np.column_stack((indices[0],indices[1]))
+	# for traj in traj_list:
+	# 	#year of conversion for either expansion or abandonment
+	# 	ytx = traj[1]
+	# 	print 'ytx', ytx
+		
+	# 	#year before conversion for either expansion or abandonment
+	# 	ybx = traj[1]-1
+	# 	print 'ybx', ybx
+
+		#Return the indices of the pixels that have values of the ytc arbitrary values of the traj.
+	indices = np.nonzero(mask36_61 == 1)
+
+	#stack indices so easier to work with
+	stacked_indices=np.column_stack((indices[0],indices[1]))
         
         #get the x and y location of each pixel that has been selected from above
-		for pixel_location in stacked_indices:
-			row = pixel_location[0] 
-			col = pixel_location[1]
-
-			templist = [traj[0],row,col]
-			for year in data['global']['years']:
-				templist.append(cdls[year][row][col])
+	for pixel_location in stacked_indices:
+		row = pixel_location[0] 
+		col = pixel_location[1]
             
-			mainlist.append(templist)
+	
+		templist = []
+		# print data['global']['years']
+		for year in data['global']['years']:
+			# print 'year', str(year)
+			# print 'cdls[year][row][col]', cdls[year][row][col]
+			templist.append(cdls[year][row][col])
+
+		mainlist.append(templist)
 	
 
 	arcpy.ClearEnvironment("extent")
@@ -163,31 +154,37 @@ def execute_task(in_extentDict):
 
 	to_string = map(str, data['global']['years'])
 	year_columns = ["cdl_" + to_string for to_string in to_string]
+	# print year_columns
 
-	df = pd.DataFrame(mainlist, columns=['traj','rows','cols'] + year_columns)
+	# print mainlist
 
-	df.to_sql(stco_atlas, engine, schema='refinement_new_tiles')
+	df = pd.DataFrame(mainlist, columns = year_columns)
 
-	addTrajArrayField(stco_atlas, year_columns)
+	df.to_sql(stco_atlas, engine, schema='mask36_61_qaqc')
+
+# addTrajArrayField(stco_atlas, year_columns)
 
 
-def addTrajArrayField(tablename, fields):
-    #this is a sub function for addGDBTable2postgres()
-    cur = conn.cursor()
+
+
+
+# def addTrajArrayField(tablename, fields):
+#     #this is a sub function for addGDBTable2postgres()
+#     cur = conn.cursor()
     
-    #convert the rasterList into a string
-    columnList = ','.join(fields)
-    print columnList
+#     #convert the rasterList into a string
+#     columnList = ','.join(fields)
+#     print columnList
 
-    #DDL: add column to hold arrays
-    cur.execute('ALTER TABLE refinement_new_tiles.{} ADD COLUMN traj_array integer[];'.format(tablename));
+#     #DDL: add column to hold arrays
+#     cur.execute('ALTER TABLE test.{} ADD COLUMN traj_array integer[];'.format(tablename));
     
-    #DML: insert values into new array column
-    cur.execute('UPDATE refinement_new_tiles.{} SET traj_array = ARRAY[{}];'.format(tablename, columnList));
+#     #DML: insert values into new array column
+#     cur.execute('UPDATE test.{} SET traj_array = ARRAY[{}];'.format(tablename, columnList));
     
-    conn.commit()
-    print "Records created successfully";
-    # conn.close()
+#     conn.commit()
+#     print "Records created successfully";
+#     # conn.close()
 
 
 
@@ -232,17 +229,20 @@ if __name__ == '__main__':
 
 	#get extents of individual features and add it to a dictionary
 	extDict = {}
-	count = 1 
+	# count = 1 
 
-	for row in arcpy.da.SearchCursor(data['ancillary']['vector']['shapefiles']['fishnet_ytc'], ["SHAPE@"]):
-		extent_curr = row[0].extent
+	# for row in arcpy.da.SearchCursor(data['ancillary']['vector']['shapefiles']['states'], ["st_abbrev","SHAPE@"], where_clause="st_abbrev='SD' or st_abbrev='ND' or st_abbrev='OR' or st_abbrev='WA'"):
+	for row in arcpy.da.SearchCursor(data['ancillary']['vector']['shapefiles']['states'], ["st_abbrev","SHAPE@"]):
+		atlas_stco = row[0].lower()
+		print 
+		extent_curr = row[1].extent
 		ls = []
 		ls.append(extent_curr.XMin)
 		ls.append(extent_curr.YMin)
 		ls.append(extent_curr.XMax)
 		ls.append(extent_curr.YMax)
-		extDict[count] = ls
-		count+=1
+		extDict[atlas_stco] = ls
+		# count+=1
     
 	print 'extDict', extDict
 	print'extDict.items',  extDict.items()

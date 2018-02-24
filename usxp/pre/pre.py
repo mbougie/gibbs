@@ -134,15 +134,11 @@ def createTrajectories():
 
 
 
-def addGDBTable2postgres():
+def addGDBTable2postgres(rasterpath, schema, tablename):
     # set the engine.....
     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
     
-    arcpy.env.workspace = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\pre\\traj\\v4\\v4_traj.gdb\\'
-
-    tablename = 'v4_traj_cdl30_b_2008to2017'
-    # path to the table you want to import into postgres
-    # input = 
+    arcpy.env.workspace = rasterpath
 
     # Execute AddField twice for two new fields
     fields = [f.name for f in arcpy.ListFields(tablename)]
@@ -157,12 +153,12 @@ def addGDBTable2postgres():
     print df
     
     # use pandas method to import table into psotgres
-    df.to_sql(tablename, engine, schema='pre')
+    df.to_sql(tablename, engine, schema=schema)
     
     #add trajectory field to table
-    addTrajArrayField(tablename, fields)
+    addTrajArrayField(schema, tablename, fields)
 
-def addTrajArrayField(tablename, fields):
+def addTrajArrayField(schema, tablename, fields):
     #this is a sub function for addGDBTable2postgres()
     cur = conn.cursor()
     
@@ -171,10 +167,10 @@ def addTrajArrayField(tablename, fields):
     print columnList
 
     #DDL: add column to hold arrays
-    cur.execute('ALTER TABLE pre.{} ADD COLUMN traj_array integer[];'.format(tablename));
+    cur.execute('ALTER TABLE {}.{} ADD COLUMN traj_array integer[];'.format(schema, tablename));
     
     #DML: insert values into new array column
-    cur.execute('UPDATE pre.{} SET traj_array = ARRAY[{}];'.format(tablename, columnList));
+    cur.execute('UPDATE {}.{} SET traj_array = ARRAY[{}];'.format(schema, tablename, columnList));
     
     conn.commit()
     print "Records created successfully";
@@ -202,8 +198,8 @@ def createRefinedTrajectory():
 # reclassifyRaster()
 ####  these functions create the trajectory table  #############
 # createTrajectories()
-# addGDBTable2postgres()
-createRefinedTrajectory()
+addGDBTable2postgres('C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\refine\\traj_traj.gdb\\', 'refinement_new', 'traj_try')
+# createRefinedTrajectory()
 
 
 #######  these functions are to update the lookup tables  ######

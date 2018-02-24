@@ -74,9 +74,9 @@ if __name__ == '__main__':
 
 
 
-			core.run(data)
+			# core.run(data)
 			# yxc.run(data)
-			# cdl.run(data)
+			cdl.run(data)
 
 
 
