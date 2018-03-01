@@ -49,47 +49,8 @@ def getJSONfile():
 def createReclassifyList():
 	cur = conn.cursor()
 
-	query = "SELECT \"Value\", ytc from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array WHERE ytc = 2011".format(data['pre']['traj']['filename'], data['core']['lookup'])
-	# query = """ SELECT 
-	# 			  traj_try.traj_rfnd, 
-	# 			  traj_try.state, 
-	# 			  traj_try."Value" as traj_rfnd_state, 
-	# 			  v4_traj_lookup_2008to2017_v3.ytc
-	# 			FROM 
-	# 			  refinement_new.traj_try, 
-	# 			  pre.v4_traj_cdl30_b_2008to2017, 
-	# 			  pre.v4_traj_lookup_2008to2017_v3
-	# 			WHERE 
-	# 			  v4_traj_cdl30_b_2008to2017."Value" = traj_try.traj_rfnd AND
-	# 			  v4_traj_lookup_2008to2017_v3.traj_array = v4_traj_cdl30_b_2008to2017.traj_array AND ytc IS NOT NULL
-	#         """
-
-
-
-
-# create table refinement_new_tiles_union.s19_2011_full as 
-# SELECT 
-# traj_state.traj_rfnd, 
-# traj_state.state, 
-# traj_state."Value" as traj_rfnd_state, 
-# v4_traj_lookup_2008to2017_v3.ytc as year,
-# s19_2011.traj_array
-# FROM 
-# refinement_new.traj_state, 
-# pre.v4_traj_cdl30_b_2008to2017, 
-# pre.v4_traj_lookup_2008to2017_v3,
-# refinement_new_tiles_union.s19_2011
-# WHERE 
-# v4_traj_cdl30_b_2008to2017."Value" = traj_state.traj_rfnd AND
-# v4_traj_lookup_2008to2017_v3.traj_array = v4_traj_cdl30_b_2008to2017.traj_array AND
-# traj_state.traj_rfnd = s19_2011.traj AND ytc IS NOT NULL
-
-
-
-
-
-
-
+	query = "SELECT \"Value\", ytc from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array WHERE\"Value\"=670 OR \"Value\"=24".format(data['pre']['traj']['filename'], data['core']['lookup'])
+	
 	print 'query:', query
 
 	cur.execute(query)
@@ -155,11 +116,10 @@ def execute_task(in_extentDict):
 	
 	arr_traj = arcpy.RasterToNumPyArray(in_raster=data['pre']['traj_rfnd']['path'], lower_left_corner = arcpy.Point(XMin,YMin), nrows = rws, ncols = cls)
     
-	traj_state = arcpy.RasterToNumPyArray(in_raster='C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\conf.gdb\\traj_state', lower_left_corner = arcpy.Point(XMin,YMin), nrows = rws, ncols = cls)
+	# traj_state = arcpy.RasterToNumPyArray(in_raster='C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\conf.gdb\\traj_state', lower_left_corner = arcpy.Point(XMin,YMin), nrows = rws, ncols = cls)
 	
 
 	# find the location of each pixel labeled with specific arbitray value in the rows list  
-	mainlist = []
 	for traj in traj_list:
 		#Return the indices of the pixels that have values of the ytc arbitrary values of the traj.
 		indices = (arr_traj == traj[0]).nonzero()
@@ -172,50 +132,21 @@ def execute_task(in_extentDict):
 			row = pixel_location[0] 
 			col = pixel_location[1]
 
-			#####define elements
-			trajectory=traj[0]
-			year=traj[1]
-			state=str(traj_state[row][col])
-			tile=str(in_extentDict[0])
-
-			templist = [trajectory,year,state,tile,row,col]
-			for year in data['global']['years']:
-				templist.append(cdls[year][row][col])
+			outData[row,col] = traj[0]
             
-			mainlist.append(templist)
 	
-
 	arcpy.ClearEnvironment("extent")
-    
-	if len(mainlist) > 0:
 
-		to_string = map(str, data['global']['years'])
-		year_columns = ["cdl_" + to_string for to_string in to_string]
+	outname = "tile_" + stco_atlas +'.tif'
 
-		df = pd.DataFrame(mainlist, columns=['traj','year','state','tile','rows','cols'] + year_columns)
+	# #create
+	outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/", r"tiles", outname)
 
-		df.to_sql(stco_atlas, engine, schema='refinement_tiles_2011')
-
-		addTrajArrayField('refinement_tiles_2011', stco_atlas, year_columns)
+	# NumPyArrayToRaster (in_array, {lower_left_corner}, {x_cell_size}, {y_cell_size}, {value_to_nodata})
+	myRaster = arcpy.NumPyArrayToRaster(outData, lower_left_corner=arcpy.Point(XMin, YMin), x_cell_size=30, y_cell_size=30, value_to_nodata=0)
 
 
-def addTrajArrayField(schema, tablename, fields):
-    #this is a sub function for addGDBTable2postgres()
-    cur = conn.cursor()
-    
-    #convert the rasterList into a string
-    columnList = ','.join(fields)
-    print columnList
-
-    #DDL: add column to hold arrays
-    cur.execute('ALTER TABLE {}.{} ADD COLUMN traj_array integer[];'.format(schema, tablename));
-    
-    #DML: insert values into new array column
-    cur.execute('UPDATE {}.{} SET traj_array = ARRAY[{}];'.format(schema, tablename, columnList));
-    
-    conn.commit()
-    print "Records created successfully";
-    # conn.close()
+	myRaster.save(outpath)
 
 
 
@@ -234,14 +165,14 @@ def mosiacRasters():
 
 
 	######mosiac tiles together into a new raster
-	arcpy.MosaicToNewRaster_management(tilelist, data['refine']['gdb'], data['refine']['mask_dev_alfalfa_fallow']['filename'], inTraj.spatialReference, "16_BIT_UNSIGNED", 30, "1", "LAST","FIRST")
+	arcpy.MosaicToNewRaster_management(tilelist, 'C:/Users/Bougie/Desktop/Gibbs/data/usxp/temp.gdb', 's19_670_24_inspect', inTraj.spatialReference, "16_BIT_UNSIGNED", 30, "1", "LAST","FIRST")
 
 
 	#Overwrite the existing attribute table file
-	arcpy.BuildRasterAttributeTable_management(data['refine']['mask_dev_alfalfa_fallow']['path'], "Overwrite")
+	arcpy.BuildRasterAttributeTable_management('C:/Users/Bougie/Desktop/Gibbs/data/usxp/temp.gdb/s19_670_24_inspect', "Overwrite")
 
 	# Overwrite pyramids
-	gen.buildPyramids(data['refine']['mask_dev_alfalfa_fallow']['path'])
+	gen.buildPyramids('C:/Users/Bougie/Desktop/Gibbs/data/usxp/temp.gdb/s19_670_24_inspect')
 
 
 
@@ -254,49 +185,38 @@ def mosiacRasters():
 # def run():  
 if __name__ == '__main__':
     #######clear the tiles from directory
-	tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
-	for tile in tiles:
-		os.remove(tile)
+	# tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
+	# for tile in tiles:
+	# 	os.remove(tile)
 
 	#get extents of individual features and add it to a dictionary
 	extDict = {}
 	count = 1 
 
-	# for row in arcpy.da.SearchCursor(data['ancillary']['vector']['shapefiles']['fishnet_refine'], ["SHAPE@"]):
-	# 	extent_curr = row[0].extent
+	# for row in arcpy.da.SearchCursor(data['ancillary']['vector']['shapefiles']['fishnet_refine'], ["OID@","SHAPE@"]):
+	# 	oid = row[0]
+	# 	print 'oid:',oid
+	# 	extent_curr = row[1].extent
 	# 	ls = []
 	# 	ls.append(extent_curr.XMin)
 	# 	ls.append(extent_curr.YMin)
 	# 	ls.append(extent_curr.XMax)
 	# 	ls.append(extent_curr.YMax)
-	# 	extDict[count] = ls
-	# 	count+=1
-
-	for row in arcpy.da.SearchCursor(data['ancillary']['vector']['shapefiles']['fishnet_refine'], ["OID@","SHAPE@"]):
-		oid = row[0]
-		print 'oid:',oid
-		extent_curr = row[1].extent
-		ls = []
-		ls.append(extent_curr.XMin)
-		ls.append(extent_curr.YMin)
-		ls.append(extent_curr.XMax)
-		ls.append(extent_curr.YMax)
-		extDict[oid] = ls
+	# 	extDict[oid] = ls
 
     
 	print 'extDict', extDict
 	print'extDict.items',  extDict.items()
 
 	#######create a process and pass dictionary of extent to execute task
-	pool = Pool(processes=6)
-	pool.map(execute_task, extDict.items())
-	pool.close()
-	pool.join
+	# pool = Pool(processes=9)
+	# pool.map(execute_task, extDict.items())
+	# pool.close()
+	# pool.join
 
-	# mosiacRasters()
+	mosiacRasters()
 
 
-# run()
 
 
 

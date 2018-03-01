@@ -354,7 +354,7 @@ def addGDBTable2postgres_now():
     
     # tablename = 'traj_'+wc
     # path to the table you want to import into postgres
-    input = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\s19\\post\\ytc_s19.gdb\\s19_ytc30_2008to2017_mmu5_focal'
+    input = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\pre\\traj_rfnd\\v3\\v3_traj_rfnd.gdb\\v4_traj_cdl30_b_2008to2017_rfnd_v3'
 
     # Execute AddField twice for two new fields
     fields = [f.name for f in arcpy.ListFields(input)]
@@ -371,10 +371,10 @@ def addGDBTable2postgres_now():
     print 'df-----------------------', df
     
     # # # use pandas method to import table into psotgres
-    df.to_sql('s19_ytc30_2008to2017_mmu5_focal', engine, schema='counts')
+    df.to_sql('v4_traj_cdl30_b_2008to2017_rfnd_v3', engine, schema='pre')
     
     # #add trajectory field to table
-    addAcresField_now('s19_ytc30_2008to2017_mmu5_focal', 'counts', '30')
+    addAcresField_now('pre', 'v4_traj_cdl30_b_2008to2017_rfnd_v3', '30')
 
 
 
@@ -382,7 +382,7 @@ def addGDBTable2postgres_now():
 
 
 
-def addAcresField_now(tablename, schema, res):
+def addAcresField_now(schema, tablename, res):
     #this is a sub function for addGDBTable2postgres()
     
     cur = conn.cursor()
@@ -412,5 +412,5 @@ def addAcresField_now(tablename, schema, res):
 # addGDBTable2postgres_temp()
 # addGDBTable2postgres_temp2()
 # createGraph()
-# addGDBTable2postgres_now()
+addGDBTable2postgres_now()
 

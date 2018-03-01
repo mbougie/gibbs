@@ -118,7 +118,7 @@ def main_func():
     df2.to_csv('C:\\Users\\Bougie\\Desktop\\temp\\test_r\\reformated.csv', sep=',')
 
 
-def CreateUnionQuery(schema):
+def CreateUnionQuery(schema, outtable):
     cur = conn.cursor()
 
     tables = gen.getTablesInSchema(schema)
@@ -129,10 +129,11 @@ def CreateUnionQuery(schema):
 
     print unionlist
     unionstring=' UNION '.join(unionlist)
-    query = 'CREATE TABLE test_union.test_it as '+unionstring
+    prefix_query = 'CREATE TABLE refinement_union.{} as '.format(outtable)
+    query = prefix_query+unionstring
     print query
-    # cur.execute(query)
-    # conn.commit()
+    cur.execute(query)
+    conn.commit()
 
 
 
@@ -207,7 +208,7 @@ def mosiacRasters():
 
 #####  call the function  ##################################
 # main_func()
-# CreateUnionQuery('test')
+CreateUnionQuery('refinement_tiles_2011', 's19_2011')
 # main_current()
 # mosiacRasters()
 

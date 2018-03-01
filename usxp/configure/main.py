@@ -64,7 +64,7 @@ if __name__ == '__main__':
 			
 
 			# cc.run(route,instance)
-			# ci.run([key,route,instance])
+			ci.run([key,route,instance])
 
 
 
@@ -76,7 +76,7 @@ if __name__ == '__main__':
 
 			# core.run(data)
 			# yxc.run(data)
-			cdl.run(data)
+			# cdl.run(data)
 
 
 
