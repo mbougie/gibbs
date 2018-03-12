@@ -230,7 +230,7 @@ def create_NonCrop_byYear_cumulative():
             # arcpy.FeatureClassToFeatureClass_conversion(layer, "D:\\projects\\intact_land\\years\\{}.gdb".format(str(year)), 'clu_{}_counties_c'.format(str(year)))
 
              ##------------create cummulaitve noncrop dataset per year
-            arcpy.Erase_analysis(in_features=layer, erase_features="D:\\projects\\intact_land\\years\\{}.gdb\\clu_{}_crop_c".format(str(year),str(year)), out_feature_class="D:\\projects\\intact_land\\years\\{}.gdb\\clu_{}_noncrop_c".format(str(year),str(year)))
+            #arcpy.Erase_analysis(in_features=layer, erase_features="D:\\projects\\intact_land\\years\\{}.gdb\\clu_{}_crop_c".format(str(year),str(year)), out_feature_class="D:\\projects\\intact_land\\years\\{}.gdb\\clu_{}_noncrop_c".format(str(year),str(year)))
 
 
         
@@ -283,7 +283,7 @@ def unionTables():
 
 ######--- noncrop -----
 # create_NonCrop_byYear()
-# create_NonCrop_byYear_cumulative()
+create_NonCrop_byYear_cumulative()
 
 
 
@@ -292,7 +292,7 @@ def unionTables():
 
 ### describe data  ###################
 # gdbToPG()
-unionTables()
+#unionTables()
 
 
 
