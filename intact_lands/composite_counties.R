@@ -27,11 +27,11 @@ data(county.fips)
 
 ## attach fips code to counties dataset
 cnty2 <- cnty %>%
-mutate(polyname = paste(region,subregion,sep=",")) %>%
-left_join(county.fips, by="polyname")
+  mutate(polyname = paste(region,subregion,sep=",")) %>%
+  left_join(county.fips, by="polyname")
 
 ## query the data from postgreSQL 
-yo <- dbGetQuery(con, "SELECT * FROM public.testunion2;")
+yo <- dbGetQuery(con, "SELECT atlas_stco,count(atlas_stco)FROM public.testunion2 GROUP BY atlas_stco;")
 
 ## merge cnty2 with yo
 d = merge(cnty2, yo, sort = TRUE, by.x='fips', by.y='atlas_stco')
@@ -41,17 +41,16 @@ cnty_fnl<-d[order(d$order),]
 
 
 ggplot() +
-geom_polygon(data=cnty_fnl, aes(y=lat, x=long, group=group), fill = 'grey70', colour = 'grey50', size = 0.25) + facet_wrap(~year)+
-geom_polygon(data=state_ss, aes(y=lat, x=long, group=group), fill = 'grey70', alpha=0, colour = 'white', size = 0.25)+
-coord_map(project="polyconic") +
-theme(plot.title = element_text(colour = "steelblue",  face = "bold.italic", family = "Helvetica", hjust = 0.5), 
-      axis.text.x = element_blank(),
-      axis.title.x=element_blank(),
-      axis.text.y = element_blank(),
-      axis.title.y=element_blank(),
-      axis.ticks = element_blank(),
-      panel.grid.major = element_blank(),
-      legend.position="none") 
+  geom_polygon(data=cnty_fnl, aes(y=lat, x=long, group=group, fill = count), colour = 'grey50', size = 0.25) + 
+  geom_polygon(data=state_ss, aes(y=lat, x=long, group=group), fill = 'grey70', alpha=0, colour = 'white', size = 0.25)+
+  coord_map(project="polyconic") +
+  theme(plot.title = element_text(colour = "steelblue",  face = "bold.italic", family = "Helvetica", hjust = 0.5),
+        axis.text.x = element_blank(),
+        axis.title.x=element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.y=element_blank(),
+        axis.ticks = element_blank(),
+        panel.grid.major = element_blank())
 
 
 
