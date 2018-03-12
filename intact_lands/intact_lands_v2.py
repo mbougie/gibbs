@@ -12,75 +12,15 @@ from arcpy.sa import *
 import glob
 import psycopg2
 
-import general as g
+# import general as g
 
 
-
-# conv_coef=0.000247105
-# '''CONSTANTS'''
-# 0.774922476
 
 coef={'acres':1,'msq':0.000247105,'30m':0.222395,'56m':0.774922476}
 
-# class acres2(object):
-#     print pixel_count
-#     def __init__(self, pixel_count, resolution):
-#         self.resolution= resolution
-
-
-#     def conv(self, pixel_count, resolution):
-#         if resolution == 56:
-#             acres = pixel_count*0.774922476
-#             print acres
-#             return acres
-#         elif resolution == 30:
-#             return (pixel_count*0.222395)
-
-
-
-
-
-
-
-
-
-
-# str( !VAT_cdl_2010.Class_Name! ) +' ('+ str(!VAT_bfc.acres!) + ')'
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-'''######## DEFINE THESE EACH TIME ##########'''
-#NOTE: need to declare if want to process ytc or yfc
-yxc = 'yfc'
-
-#the associated mtr value qwith the yxc
-yxc_mtr = {'ytc':'3', 'yfc':'4'}
-
-#Note: need to change this each time on different machine
-case=['Bougie','Gibbs']
 
 #import extension
 arcpy.CheckOutExtension("Spatial")
-
-
 
 
 try:
@@ -96,15 +36,10 @@ arcpy.CheckOutExtension("Spatial")
 
 ###################  declare functions  #######################################################
 def defineGDBpath(arg_list):
-    gdb_path = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/arcgis/geodatabases/'+arg_list[0]+'/'+arg_list[1]+'.gdb/'
+    gdb_path = 'C:/Users/Bougie/Desktop/Gibbs/arcgis/geodatabases/'+arg_list[0]+'/'+arg_list[1]+'.gdb/'
     print 'gdb path: ', gdb_path 
     return gdb_path 
 
-
-##  datasets from core process ##########################################################
-mmu_gdb=defineGDBpath(['core','mmu'])
-mmu='traj_rfnd_n8h_mtr_8w_msk23_nbl'
-mmu_Raster=Raster(mmu_gdb + mmu)
 
 
 #============  metadata functions  =========================================
@@ -114,7 +49,7 @@ def createMetaTable():
     print query1
     executeQuery(query1)
 
-    query2="DELETE FROM metadata.clu_t3"
+    query2="DELETE FROM metadata.clu"
     print query2
     executeQuery(query2)
 
@@ -139,7 +74,7 @@ def createMetaTable():
                     print fnf
 
                     cur = conn.cursor()
-                    query="INSERT INTO metadata.clu_t3 VALUES ('" + state + "' , '" + str(fnf[2])  + "' , '" + str(fnf[4]) + "' , '" + str(fnf[5])+ "' , " + str(count)+ " , '" + str(file)+ "')"
+                    query="INSERT INTO metadata.clu VALUES ('" + state + "' , '" + str(fnf[2])  + "' , '" + str(fnf[4]) + "' , '" + str(fnf[5])+ "' , " + str(count)+ " , '" + str(file)+ "')"
                     print query
                     cur.execute(query)
                     conn.commit()
@@ -422,21 +357,104 @@ def mergeAllyearsAllstates():
 
 
 
+def createMergedByYear():
+    yearlist = range(2003,2016)
+    
+    ##create an array to hold all files from all state gdbs for a given year
 
+    for year in yearlist:
+        filelist_temp = []
+        print 'should be empty:', filelist_temp
+        
+        print year
+
+        arcpy.env.workspace = "D:\\projects\\intact_land\\states"
+
+        # List all file geodatabases in the current workspace
+        workspaces = arcpy.ListWorkspaces("*", "FileGDB")
+        
+        #get each state geodtabase
+        for workspace in workspaces:
+            print workspace
+            arcpy.env.workspace = workspace
+            
+            ##list features for a given year in each state geodatabase
+            featureclasses = arcpy.ListFeatureClasses("*_acea_{}*".format(str(year)))
+            for fc in featureclasses:
+                print 'fc', fc
+                filelist_temp.append("{}//{}".format(workspace,fc))
+        
+        print "number of files for {}: {}".format(str(year), len(filelist_temp))
+        
+        #create geodatabase for each year
+        arcpy.CreateFileGDB_management("D:\\projects\\intact_land\\years\\", "{}.gdb".format(str(year)))
+        
+        #mosiac the files contained in the filelist_temp per year
+        arcpy.Merge_management(filelist_temp, "D:\\projects\\intact_land\\years\\{}.gdb\\merged_{}".format(str(year), str(year)))
 
 
 
 
 ######################  call functions  ###############################################################
+createMergedByYear()
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#===========================================================================
 #============  metadata functions  =========================================
+#===========================================================================
+
 #__________create the metatable for all states
 # createMetaTable()
 
 #_________  fill out  ____________________________________
 # popCounts_years()
 
+
+
+#===========================================================================
 #============  processing functions  =======================================
+#===========================================================================
 
 #__________reproject the max date sf for a given year and state and store as fc in geodatabase
 # mainProjectSF()
@@ -459,7 +477,7 @@ def mergeAllyearsAllstates():
 
 
 #_________  fill out  ____________________________________
-mergeAllyearsAllstates()
+# mergeAllyearsAllstates()
 
 
 
