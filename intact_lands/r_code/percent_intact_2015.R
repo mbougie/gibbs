@@ -31,7 +31,7 @@ cnty2 <- cnty %>%
   left_join(county.fips, by="polyname")
 
 ## query the data from postgreSQL 
-yo <- dbGetQuery(con, "SELECT atlas_stco,count(atlas_stco)FROM public.testunion2 GROUP BY atlas_stco;")
+yo <- dbGetQuery(con, "SELECT clu_2015_noncrop_c.atlas_stco, clu_2015_noncrop_c.percent_intact FROM clu_2015.clu_2015_noncrop_c;;")
 
 ## merge cnty2 with yo
 d = merge(cnty2, yo, sort = TRUE, by.x='fips', by.y='atlas_stco')
@@ -41,7 +41,7 @@ cnty_fnl<-d[order(d$order),]
 
 
 ggplot() +
-  geom_polygon(data=cnty_fnl, aes(y=lat, x=long, group=group, fill = count), colour = 'grey50', size = 0.25) + 
+  geom_polygon(data=cnty_fnl, aes(y=lat, x=long, group=group, fill = percent_intact), colour = 'grey50', size = 0.25) + 
   geom_polygon(data=state_ss, aes(y=lat, x=long, group=group), fill = 'grey70', alpha=0, colour = 'white', size = 0.25)+
   coord_map(project="polyconic") +
   theme(plot.title = element_text(colour = "steelblue",  face = "bold.italic", family = "Helvetica", hjust = 0.5),
@@ -51,10 +51,5 @@ ggplot() +
         axis.title.y=element_blank(),
         axis.ticks = element_blank(),
         panel.grid.major = element_blank())
-
-
-
-
-
 
 

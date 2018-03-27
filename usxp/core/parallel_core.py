@@ -114,27 +114,6 @@ def execute_task(args):
 		# raster_shrink.save(outpath)
 		raster_nbl.save(outpath)
 
-	# elif data['core']['route'] == 'r2':
-	# 	raster_filter = MajorityFilter(Raster(data['pre']['traj_rfnd']['path']), filter_combos[filter_key][0], filter_combos[filter_key][1])
-	# 	raster_yxc = Reclassify(raster_filter, "Value", RemapRange(createReclassifyList(data)), "NODATA")
-	# 	raster_rg = RegionGroup(raster_yxc, rg_instance[0], rg_instance[1], "NO_LINK")
-	# 	raster_mask = SetNull(raster_rg, raster_yxc, cond)
-	# 	raster_loop1 = FocalStatistics(raster_mask, NbrRectangle(3, 3, "CELL"), "MAJORITY")
-	# 	raster_loop2 = FocalStatistics(raster_loop1, NbrRectangle(3, 3, "CELL"), "MAJORITY")
-	# 	raster_loop3 = FocalStatistics(raster_loop2, NbrRectangle(3, 3, "CELL"), "MAJORITY")
-	# 	raster_loop4 = FocalStatistics(raster_loop3, NbrRectangle(3, 3, "CELL"), "MAJORITY")
-	# 	raster_loop5 = FocalStatistics(raster_loop4, NbrRectangle(3, 3, "CELL"), "MAJORITY")
-	
-	# 	#clear out the extent for next time
-	# 	arcpy.ClearEnvironment("extent")
-
-	# 	outname = "tile_" + str(fc_count) +'.tif'
-
-	# 	outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/", r"tiles", outname)
-
-	# 	# raster_shrink.save(outpath)
-	# 	raster_loop5.save(outpath)
-
 
 	if data['core']['route'] == 'r3':
 		raster_filter = MajorityFilter(Raster(data['pre']['traj_rfnd']['path']), filter_combos[filter_key][0], filter_combos[filter_key][1])

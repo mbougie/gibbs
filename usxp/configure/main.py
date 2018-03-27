@@ -17,6 +17,8 @@ sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\core\\')
 sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\post\\')
 sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\qaqc\\')
 
+sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\temp\\')
+
 
 
 import create_containers as cc
@@ -25,6 +27,7 @@ import parallel_core as core
 import parallel_yxc as yxc
 import parallel_cdl as cdl
 import qaqc_now as qaqc
+import temp_rg as temp
 
 
 
@@ -64,12 +67,13 @@ if __name__ == '__main__':
 			
 
 			# cc.run(route,instance)
-			ci.run([key,route,instance])
+			# ci.run([key,route,instance])
 
 
 
 
 			data = gen.getJSONfile()
+			temp.run(data)
 
 
 

@@ -412,5 +412,5 @@ def addAcresField_now(schema, tablename, res):
 # addGDBTable2postgres_temp()
 # addGDBTable2postgres_temp2()
 # createGraph()
-addGDBTable2postgres_now()
+# addGDBTable2postgres_now()
 

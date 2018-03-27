@@ -64,11 +64,11 @@ def reclassifyRaster():
 
     return_string=getReclassifyValuesString(gdb_args_in[1], 'b')
 
-    # Execute Reclassify
-    arcpy.gp.Reclassify_sa(raster, "Value", return_string, output, "NODATA")
+    # # Execute Reclassify
+    # arcpy.gp.Reclassify_sa(raster, "Value", return_string, output, "NODATA")
 
-    #create pyraminds
-    gen.buildPyramids(output)
+    # #create pyraminds
+    # gen.buildPyramids(output)
 
 
 
@@ -91,6 +91,7 @@ def getReclassifyValuesString(ds, reclass_degree):
         ww = [row[0] + ' ' + row[1]]
         reclassifylist.append(ww)
     
+    print reclassifylist
     #flatten the nested array and then convert it to a string with a ";" separator to match arcgis format 
     columnList = ';'.join(sum(reclassifylist, []))
     print columnList
@@ -195,10 +196,10 @@ def createRefinedTrajectory():
 
 
 
-# reclassifyRaster()
+reclassifyRaster()
 ####  these functions create the trajectory table  #############
 # createTrajectories()
-addGDBTable2postgres('C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\refine\\traj_traj.gdb\\', 'refinement_new', 'traj_try')
+# addGDBTable2postgres('C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\refine\\traj_traj.gdb\\', 'refinement_new', 'traj_try')
 # createRefinedTrajectory()
 
 
