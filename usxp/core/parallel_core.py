@@ -101,8 +101,12 @@ def execute_task(args):
 		raster_filter = MajorityFilter(Raster(data['pre']['traj_rfnd']['path']), filter_combos[filter_key][0], filter_combos[filter_key][1])
 		raster_yxc = Reclassify(raster_filter, "Value", RemapRange(createReclassifyList(data)), "NODATA")
 		raster_rg = RegionGroup(raster_yxc, rg_instance[0], rg_instance[1], "NO_LINK")
-		raster_mask = SetNull(raster_rg, 1, cond)
-		raster_nbl = arcpy.sa.Nibble(raster_yxc, raster_mask, "DATA_ONLY")
+		raster_mask = SetNull(raster_rg, raster_yxc, cond)
+		filled_1 = Con(IsNull(raster_mask),FocalStatistics(raster_mask,NbrRectangle(3, 3, "CELL"),'MAJORITY'), raster_mask)
+		filled_2 = Con(IsNull(filled_1),FocalStatistics(filled_1,NbrRectangle(10, 10, "CELL"),'MAJORITY'), filled_1)
+		# final = SetNull(path_mtr, filled_2, "VALUE <> 3")
+		# raster_mask = SetNull(raster_rg, 1, cond)
+		# raster_nbl = arcpy.sa.Nibble(raster_yxc, raster_mask, "DATA_ONLY")
 
 		#clear out the extent for next time
 		arcpy.ClearEnvironment("extent")
@@ -112,7 +116,7 @@ def execute_task(args):
 		outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/", r"tiles", outname)
 
 		# raster_shrink.save(outpath)
-		raster_nbl.save(outpath)
+		filled_2.save(outpath)
 
 
 	if data['core']['route'] == 'r3':

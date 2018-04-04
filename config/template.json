@@ -20,7 +20,8 @@
 	
     "refine":{
         "mask_dev_alfalfa_fallow":{},
-        "mask_nlcd":{}
+        "mask_nlcd":{},
+        "mask_2007":{}
      },
 
 

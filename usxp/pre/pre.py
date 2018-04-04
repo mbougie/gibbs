@@ -44,6 +44,37 @@ print data
 
 
 
+def mosiacRasters():
+    arcpy.env.workspace = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\'
+
+    cdl_raster=Raster("cdl30_2015")
+  
+
+    elevSTDResult = arcpy.GetRasterProperties_management(cdl_raster, "TOP")
+    YMax = elevSTDResult.getOutput(0)
+    elevSTDResult = arcpy.GetRasterProperties_management(cdl_raster, "BOTTOM")
+    YMin = elevSTDResult.getOutput(0)
+    elevSTDResult = arcpy.GetRasterProperties_management(cdl_raster, "LEFT")
+    XMin = elevSTDResult.getOutput(0)
+    elevSTDResult = arcpy.GetRasterProperties_management(cdl_raster, "RIGHT")
+    XMax = elevSTDResult.getOutput(0)
+
+    arcpy.env.extent = arcpy.Extent(XMin, YMin, XMax, YMax)
+
+    #### need to wrap these paths with Raster() fct or complains about the paths being a string
+    
+    rasterlist = ['resampled_cdl30_2007_p1','D:\\projects\\ksu\\v2\\attributes\\rasters\\cdl30_2007.img']
+
+    ######mosiac tiles together into a new raster
+    arcpy.MosaicToNewRaster_management(rasterlist, data['refine']['gdb'], data['refine']['mask_2007']['filename'], cdl_raster.spatialReference, "16_BIT_UNSIGNED", 30, "1", "LAST","FIRST")
+
+
+    #Overwrite the existing attribute table file
+    arcpy.BuildRasterAttributeTable_management(data['refine']['mask_2007']['path'], "Overwrite")
+
+    # Overwrite pyramids
+    gen.buildPyramids(data['refine']['mask_2007']['path'])
+
 
     
 def reclassifyRaster():
@@ -52,7 +83,7 @@ def reclassifyRaster():
     # Set environment settings
     arcpy.env.workspace = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\'
 
-    raster = 'cdl30_2017'    
+    raster = 'cdl30_2007_resampled'    
     print 'raster: ',raster
 
     outraster = raster.replace("_", "_b_")
@@ -64,11 +95,11 @@ def reclassifyRaster():
 
     return_string=getReclassifyValuesString(gdb_args_in[1], 'b')
 
-    # # Execute Reclassify
-    # arcpy.gp.Reclassify_sa(raster, "Value", return_string, output, "NODATA")
+    #Execute Reclassify
+    arcpy.gp.Reclassify_sa(raster, "Value", return_string, output, "NODATA")
 
-    # #create pyraminds
-    # gen.buildPyramids(output)
+    #create pyraminds
+    gen.buildPyramids(output)
 
 
 
@@ -159,6 +190,9 @@ def addGDBTable2postgres(rasterpath, schema, tablename):
     #add trajectory field to table
     addTrajArrayField(schema, tablename, fields)
 
+
+
+
 def addTrajArrayField(schema, tablename, fields):
     #this is a sub function for addGDBTable2postgres()
     cur = conn.cursor()
@@ -181,8 +215,10 @@ def addTrajArrayField(schema, tablename, fields):
 def createRefinedTrajectory():
 
     ##### loop through each of the cdl rasters and make sure nlcd is last 
-    filelist = [data['pre']['traj']['path'], data['refine']['mask_dev_alfalfa_fallow']['path'], data['refine']['mask_nlcd']['path']]
-
+    filelist = [data['pre']['traj']['path'], data['refine']['mask_dev_alfalfa_fallow']['path'], data['refine']['mask_2007']['path'], data['refine']['mask_nlcd']['path']]
+    
+    print 'filelist:', filelist
+    
     ##### mosaicRasters():
     arcpy.MosaicToNewRaster_management(filelist, data['pre']['traj_rfnd']['gdb'], data['pre']['traj_rfnd']['filename'], Raster(data['pre']['traj']['path']).spatialReference, '16_BIT_UNSIGNED', data['global']['res'], "1", "LAST","FIRST")
 
@@ -195,12 +231,15 @@ def createRefinedTrajectory():
 
 
 
+# reclassifyRaster()
+# mosiacRasters()
 
-reclassifyRaster()
+
+
 ####  these functions create the trajectory table  #############
 # createTrajectories()
 # addGDBTable2postgres('C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\refine\\traj_traj.gdb\\', 'refinement_new', 'traj_try')
-# createRefinedTrajectory()
+createRefinedTrajectory()
 
 
 #######  these functions are to update the lookup tables  ######

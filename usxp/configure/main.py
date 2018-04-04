@@ -15,9 +15,8 @@ import general as gen
 # sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\pre\\')
 sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\core\\')
 sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\post\\')
-sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\qaqc\\')
-
-sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\temp\\')
+# sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\qaqc\\')
+# sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\temp\\')
 
 
 
@@ -26,8 +25,9 @@ import create_instance as ci
 import parallel_core as core
 import parallel_yxc as yxc
 import parallel_cdl as cdl
-import qaqc_now as qaqc
-import temp_rg as temp
+import add2pg
+# import qaqc_now as qaqc
+# import temp_rg as temp
 
 
 
@@ -73,13 +73,18 @@ if __name__ == '__main__':
 
 
 			data = gen.getJSONfile()
-			temp.run(data)
+			# temp.run(data)
 
 
 
 
 			# core.run(data)
-			# yxc.run(data)
+
+			# yxc.run(data, 'ytc')
+			# add2pg.run(data, 'ytc')
+			yxc.run(data, 'yfc')
+			add2pg.run(data, 'yfc')
+			
 			# cdl.run(data)
 
 

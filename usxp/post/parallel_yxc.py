@@ -23,15 +23,7 @@ arcpy.env.overwriteOutput = True
 arcpy.env.scratchWorkspace = "in_memory" 
 
 
-# ##get the current instance
-# data = gen.getJSONfile()
-# print data
-
-yxc = 'ytc'
-
-
-
-def createReclassifyList(data):
+def createReclassifyList(data, yxc):
 	engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
 	query = " SELECT \"Value\", {} from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array WHERE {} IS NOT NULL".format(yxc, data['pre']['traj']['filename'], data['core']['lookup'], yxc)
 	print 'query:', query
@@ -49,33 +41,10 @@ def createReclassifyList(data):
 	return fulllist
 
 
-def fill(data, invalid=None):
-    """
-    Replace the value of invalid 'data' cells (indicated by 'invalid') 
-    by the value of the nearest valid data cell
-
-    Input:
-        data:    numpy array of any dimension
-        invalid: a binary array of same shape as 'data'. True cells set where data
-                 value should be replaced.
-                 If None (default), use: invalid  = np.isnan(data)
-
-    Output: 
-        Return a filled array. 
-    """
-    #import numpy as np
-    #import scipy.ndimage as nd
-
-    if invalid is None: invalid = np.isnan(data)
-
-    ind = nd.distance_transform_edt(invalid, return_distances=False, return_indices=True)
-    return data[tuple(ind)]
 
 
-
-# def execute_task(in_extentDict):
 def execute_task(args):
-	in_extentDict, data = args
+	in_extentDict, data, yxc = args
 	yxc_mtr = {'ytc':3, 'yfc':4}
 
 
@@ -100,7 +69,7 @@ def execute_task(args):
 	arcpy.env.extent = arcpy.Extent(XMin, YMin, XMax, YMax)
 
 	##  Execute the three functions  #####################
-	raster_yxc = Reclassify(Raster(path_traj_rfnd), "Value", RemapRange(createReclassifyList(data)), "NODATA")
+	raster_yxc = Reclassify(Raster(path_traj_rfnd), "Value", RemapRange(createReclassifyList(data, yxc)), "NODATA")
     
 	raster_mask = Con((path_mtr == yxc_mtr[yxc]) & (raster_yxc >= 2008), raster_yxc)
 	# raster_mask = Con(path_mtr!=yxc_mtr[yxc], 0, Con((path_mtr == yxc_mtr[yxc]) & (raster_yxc >= 2008), raster_yxc))
@@ -110,7 +79,7 @@ def execute_task(args):
 
 	filled_1 = Con(IsNull(raster_mask),FocalStatistics(raster_mask,NbrRectangle(3, 3, "CELL"),'MAJORITY'), raster_mask)
 	filled_2 = Con(IsNull(filled_1),FocalStatistics(filled_1,NbrRectangle(10, 10, "CELL"),'MAJORITY'), filled_1)
-	final = SetNull(path_mtr, filled_2, "VALUE <> 3")
+	final = SetNull(path_mtr, filled_2, "VALUE <> {}".format(str(yxc_mtr[yxc])))
 	# raster_nibble = arcpy.sa.Nibble(raster_mmu, raster_mask, "DATA_ONLY")
 
 	#clear out the extent for next time
@@ -126,7 +95,7 @@ def execute_task(args):
 
 
 
-def mosiacRasters(data):
+def mosiacRasters(data, yxc):
 	######Description: mosiac tiles together into a new raster
 	tilelist = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*.tif")
 	print 'tilelist:', tilelist 
@@ -151,8 +120,8 @@ def mosiacRasters(data):
 
 
 
-def run(data):
-# if __name__ == '__main__':
+def run(data, yxc):
+
 	#####  remove a files in tiles directory
 	tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
 	for tile in tiles:
@@ -179,13 +148,13 @@ def run(data):
 	pool = Pool(processes=5)
 	# pool = Pool(processes=cpu_count())
 	# pool.map(execute_task, extDict.items())
-	pool.map(execute_task, [(ed, data) for ed in extDict.items()])
+	pool.map(execute_task, [(ed, data, yxc) for ed in extDict.items()])
 	pool.close()
 	pool.join
 
-	mosiacRasters(data)
+	mosiacRasters(data, yxc)
 
 
 
 if __name__ == '__main__':
-	run(data)
+	run(data, yxc)

@@ -200,10 +200,15 @@ class ProcessingObject(object):
         print '###############    updateRefineObject()   #############################'
         self.data['refine']['version'] = kernel['refine']['version']
         self.data['refine']['gdb'] = getGDBpath('{}_masks'.format(self.data['refine']['version']))
+        self.data['refine']['arbitrary_crop'] = getArbitraryCropValue(self.data['pre']['traj']['filename'], self.data['global']['years'], 'crop')
+        self.data['refine']['arbitrary_noncrop'] = getArbitraryCropValue(self.data['pre']['traj']['filename'], self.data['global']['years'], 'noncrop')
+
+
         
         self.data['refine']['mask_nlcd']['years_nlcd'] = kernel['refine']['years_nlcd']
         self.data['refine']['mask_nlcd']['operator'] = kernel['refine']['operator']
-        self.data['refine']['mask_nlcd']['arbitrary'] = getArbitraryCropValue(self.data['pre']['traj']['filename'], self.data['global']['years'], 'crop')
+        # self.data['refine']['mask_nlcd']['arbitrary_expand'] = getArbitraryCropValue(self.data['pre']['traj']['filename'], self.data['global']['years'], 'crop')
+        # self.data['refine']['mask_nlcd']['arbitrary_abandon'] = 1
         self.data['refine']['mask_nlcd']['filename'] = '{}_mask_nlcd_{}_{}'.format(self.data['refine']['version'], 'and'.join(str(e) for e in self.data['refine']['mask_nlcd']['years_nlcd']), self.data['global']['datarange'])
         self.data['refine']['mask_nlcd']['path'] = '\\'.join([self.data['refine']['gdb'], self.data['refine']['mask_nlcd']['filename']])
         
@@ -213,7 +218,16 @@ class ProcessingObject(object):
         
         self.data['refine']['mask_dev_alfalfa_fallow']['filename'] = '{}_mask_dev_alfalfa_fallow_{}'.format(self.data['refine']['version'], self.data['global']['datarange'])
         self.data['refine']['mask_dev_alfalfa_fallow']['path'] = '\\'.join([self.data['refine']['gdb'], self.data['refine']['mask_dev_alfalfa_fallow']['filename']])
-        self.data['refine']['mask_dev_alfalfa_fallow']['arbitrary'] = getArbitraryCropValue(self.data['pre']['traj']['filename'], self.data['global']['years'], 'noncrop')
+
+        
+
+
+        self.data['refine']['mask_2007']['filename'] = '{}_mask_2007_{}'.format(self.data['refine']['version'], self.data['global']['datarange'])
+        self.data['refine']['mask_2007']['path'] = '\\'.join([self.data['refine']['gdb'], self.data['refine']['mask_2007']['filename']])
+
+
+
+        # self.data['refine']['mask_dev_alfalfa_fallow']['arbitrary'] = getArbitraryCropValue(self.data['pre']['traj']['filename'], self.data['global']['years'], 'noncrop')
         
 
 
@@ -329,10 +343,8 @@ class ProcessingObject(object):
 
 ###########  create instance of class ################################################
 def run(arg_list):
-    ProcessingObject(getKernelfile(arg_list))
-    # ProcessingObject(getKernelfile(['series','s14']))
 
-# ['routes','r2','r2_4']
+    ProcessingObject(getKernelfile(arg_list))
 if __name__ == '__main__':
     run(arg_list)
 
