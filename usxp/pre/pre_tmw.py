@@ -39,8 +39,8 @@ def getGDBpath(wc):
 
 
 
-data = gen.getJSONfile()
-print data
+# data = gen.getJSONfile()
+# print data
 
 
 
@@ -132,51 +132,89 @@ def getReclassifyValuesString(ds, reclass_degree):
 
 
 
-def getCDLlist():
+# def getCDLlist():
+#     cdl_list = []
+#     for year in data['globals']['years']:
+#         print 'year:', year
+#         cdl_dataset = 'cdl{0}_b_{1}'.format(str(data['globals']['res']),str(year))
+#         cdl_list.append(cdl_dataset)
+#     print'cdl_list: ', cdl_list
+#     return cdl_list
+
+
+
+
+
+
+
+
+# def createRefinedTrajectory():
+
+#     ##### loop through each of the cdl rasters and make sure nlcd is last 
+#     filelist = [data['pre']['traj']['path'], data['refine']['mask_dev_alfalfa_fallow']['path'], data['refine']['mask_2007']['path'], data['refine']['mask_nlcd']['path']]
+    
+#     print 'filelist:', filelist
+    
+#     ##### mosaicRasters():
+#     arcpy.MosaicToNewRaster_management(filelist, data['pre']['traj_rfnd']['gdb'], data['pre']['traj_rfnd']['filename'], Raster(data['pre']['traj']['path']).spatialReference, '16_BIT_UNSIGNED', data['global']['res'], "1", "LAST","FIRST")
+
+#     #Overwrite the existing attribute table file
+#     arcpy.BuildRasterAttributeTable_management(data['pre']['traj_rfnd']['path'], "Overwrite")
+
+#     # Overwrite pyramids
+#     gen.buildPyramids(data['pre']['traj_rfnd']['path'])
+
+
+
+
+
+
+def getCDLlist(years):
     cdl_list = []
-    for year in data['globals']['years']:
+    for year in years:
         print 'year:', year
-        cdl_dataset = 'cdl{0}_b_{1}'.format(str(data['globals']['res']),str(year))
+        cdl_dataset = 'cdl{0}_b_{1}'.format('30',str(year))
         cdl_list.append(cdl_dataset)
     print'cdl_list: ', cdl_list
     return cdl_list
 
 
 
-
-
-def createTrajectories():
+def createTrajectories(data):
     # Description: "Combines multiple rasters so that a unique output value is assigned to each unique combination of input values" -arcGIS def
     #the rasters where combined in chronoloigal order with the recalssifed nlcd raster being in the inital spot.
 
     # Set environment settings
     arcpy.env.workspace = getGDBpath('binaries')
 
-    output = '\\'.join([ data['pre']['traj']['gdb'],data['pre']['traj']['filename'] ])
+    output = '\\'.join([data['pre']['traj']['gdb'],data['pre']['traj']['filename']])
     print 'output', output
     
-    # ###Execute Combine
-    outCombine = Combine(getCDLlist())
+    # ###Execute Combine------Note this needs to be for each year of conversion ---doing this one at a time
+    outCombine = Combine(getCDLlist(data['global']['years']))
   
-    ###Save the output 
+    # ###Save the output 
     outCombine.save(output)
 
-    ###create pyraminds
+    # ###create pyraminds
     gen.buildPyramids(output)
 
 
 
-def addGDBTable2postgres(rasterpath, schema, tablename):
+
+
+
+def addGDBTable2postgres(data, schema):
     # set the engine.....
     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
     
-    arcpy.env.workspace = rasterpath
+    # arcpy.env.workspace = data['pre']['traj']['path']
 
     # Execute AddField twice for two new fields
-    fields = [f.name for f in arcpy.ListFields(tablename)]
+    fields = [f.name for f in arcpy.ListFields(data['pre']['traj']['path'])]
    
     # converts a table to NumPy structured array.
-    arr = arcpy.da.TableToNumPyArray(tablename,fields)
+    arr = arcpy.da.TableToNumPyArray(data['pre']['traj']['path'],fields)
     print arr
     
     # convert numpy array to pandas dataframe
@@ -185,10 +223,10 @@ def addGDBTable2postgres(rasterpath, schema, tablename):
     print df
     
     # use pandas method to import table into psotgres
-    df.to_sql(tablename, engine, schema=schema)
+    df.to_sql(data['pre']['traj']['filename'], engine, schema=schema)
     
     #add trajectory field to table
-    addTrajArrayField(schema, tablename, fields)
+    addTrajArrayField(schema, data['pre']['traj']['filename'], fields)
 
 
 
@@ -209,39 +247,21 @@ def addTrajArrayField(schema, tablename, fields):
     
     conn.commit()
     print "Records created successfully";
-    conn.close()
-
-
-def createRefinedTrajectory():
-
-    ##### loop through each of the cdl rasters and make sure nlcd is last 
-    filelist = [data['pre']['traj']['path'], data['refine']['mask_dev_alfalfa_fallow']['path'], data['refine']['mask_2007']['path'], data['refine']['mask_nlcd']['path']]
-    
-    print 'filelist:', filelist
-    
-    ##### mosaicRasters():
-    arcpy.MosaicToNewRaster_management(filelist, data['pre']['traj_rfnd']['gdb'], data['pre']['traj_rfnd']['filename'], Raster(data['pre']['traj']['path']).spatialReference, '16_BIT_UNSIGNED', data['global']['res'], "1", "LAST","FIRST")
-
-    #Overwrite the existing attribute table file
-    arcpy.BuildRasterAttributeTable_management(data['pre']['traj_rfnd']['path'], "Overwrite")
-
-    # Overwrite pyramids
-    gen.buildPyramids(data['pre']['traj_rfnd']['path'])
+    # conn.close()
 
 
 
 
-# reclassifyRaster()
-# mosiacRasters()
 
 
 
-####  these functions create the trajectory table  #############
-# createTrajectories()
-# addGDBTable2postgres('C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\refine\\traj_traj.gdb\\', 'refinement_new', 'traj_try')
-# createRefinedTrajectory()
+def run(data):
+    print '------running pre_imw-------'
+    createTrajectories(data)
+    addGDBTable2postgres(data, 'pre_imw')
 
 
-#######  these functions are to update the lookup tables  ######
-# labelTrajectories()
-# FindRedundantTrajectories()
+
+
+if __name__ == '__main__':
+    run(data)

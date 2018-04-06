@@ -22,9 +22,6 @@ arcpy.CheckOutExtension("Spatial")
 arcpy.env.overwriteOutput = True
 arcpy.env.scratchWorkspace = "in_memory" 
 
-##get the current instance
-# data = gen.getJSONfile()
-# print data
 
 
 def createReclassifyList(data):
@@ -46,13 +43,7 @@ def createReclassifyList(data):
 
  
 
-# reclassArray = createReclassifyList() 
-# print 'reclassArray:', reclassArray
 
-
-
-
-# def execute_task(in_extentDict):
 
 def execute_task(args):
 	in_extentDict, data = args
@@ -163,35 +154,34 @@ def mosiacRasters(data):
 
 
 
+
+
 def run(data):
 
-	#####  remove a files in tiles directory
 	tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
 	for tile in tiles:
 		os.remove(tile)
 
 	#get extents of individual features and add it to a dictionary
 	extDict = {}
-	count = 1 
 
-	for row in arcpy.da.SearchCursor(data['ancillary']['vector']['shapefiles']['fishnet_mtr'], ["SHAPE@"]):
-		extent_curr = row[0].extent
+	for row in arcpy.da.SearchCursor(data['ancillary']['vector']['shapefiles']['fishnet_mtr'], ["oid","SHAPE@"]):
+		atlas_stco = row[0]
+		print atlas_stco
+		extent_curr = row[1].extent
 		ls = []
 		ls.append(extent_curr.XMin)
 		ls.append(extent_curr.YMin)
 		ls.append(extent_curr.XMax)
 		ls.append(extent_curr.YMax)
-		extDict[count] = ls
-		count+=1
-    
+		extDict[atlas_stco] = ls
+
 	print 'extDict', extDict
 	print'extDict.items',  extDict.items()
 
 	#######create a process and pass dictionary of extent to execute task
 	pool = Pool(processes=5)
-	# pool = Pool(processes=cpu_count())
 	pool.map(execute_task, [(ed, data) for ed in extDict.items()])
-	# pool.map(execute_task, extDict.items())
 	pool.close()
 	pool.join
 

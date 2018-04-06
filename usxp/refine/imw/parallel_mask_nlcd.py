@@ -34,22 +34,12 @@ arcpy.env.overwriteOutput = True
 arcpy.env.scratchWorkspace = "in_memory" 
 
 
-###make this a general function
-def getJSONfile():
-    with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\config\\current_instance.json') as json_data:
-        template = json.load(json_data)
-        # print(template)
-        # print type(template)
-        return template
-
-
-
 
 ###NOTE STILL HAVE TO DEAL WITH YFC IN QUERY BELOW  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-def createReclassifyList():
+def createReclassifyList(data):
 	cur = conn.cursor()
 	
-	query = "SELECT \"Value\", ytc from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array WHERE mtr = 3".format(data['pre']['traj']['filename'], data['core']['lookup'])
+	query = "SELECT \"Value\", mtr from pre_imw.{} as a JOIN pre_imw.{} as b ON a.traj_array = b.traj_array WHERE mtr=3 or mtr=4".format(data['pre']['traj']['filename'], data['pre']['traj']['lookup'])
 	print 'query:', query
 
 	cur.execute(query)
@@ -63,13 +53,9 @@ def createReclassifyList():
 	return rows
 	
 
-##create global objects to reference through the script
-data = getJSONfile()
-traj_list = createReclassifyList()
-print data
 
-
-def execute_task(in_extentDict):
+def execute_task(args):
+	in_extentDict, data = args
 
 	fc_count = in_extentDict[0]
 	print 'fc_count-------------------------------------', fc_count
@@ -105,11 +91,11 @@ def execute_task(in_extentDict):
 
 	#### find the location of each pixel labeled with specific arbitray value in the rows list  
 	#### note the traj_list is derived from the sql query above
-	for row in traj_list:
+	for row in createReclassifyList(data):
 		#trajectory value
 		traj = row[0]
-		#conversion year yxc
-		cy = row[1]
+		#conversion year ytc
+		mtr = row[1]
 
 		#Return the indices of the pixels that have values of the ytc arbitray values of the traj.
 		indices = (arr_traj == row[0]).nonzero()
@@ -124,7 +110,7 @@ def execute_task(in_extentDict):
             
 			nlcd_list = []
             
-			if cy < 2012:
+			if data['global']['years_conv'] < 2012:
 				nlcd_list.append(nlcds[2001][row][col])
 				nlcd_list.append(nlcds[2006][row][col])
 			else:
@@ -133,15 +119,13 @@ def execute_task(in_extentDict):
 
 			#get the length of nlcd list containing only the value 82
 			count_82 = nlcd_list.count(82)
-			
+
 			if data['refine']['mask_nlcd']['operator'] == 'or':
-				if count_82 > 0:
-					outData[row,col] = data['refine']['mask_nlcd']['arbitrary']
-
-
-			elif data['refine']['mask_nlcd']['operator'] == 'and':
-				if count_82 == 2:
-					outData[row,col] = data['refine']['mask_nlcd']['arbitrary']
+				if count_82 > 0 and mtr != None:
+					outData[row,col] = data['refine']['arbitrary_crop']
+			
+				elif count_82 == 0 and mtr != None:
+					outData[row,col] = data['refine']['arbitrary_noncrop']
 
 
 
@@ -162,7 +146,7 @@ def execute_task(in_extentDict):
 
 
 
-def mosiacRasters():
+def mosiacRasters(data):
 	######Description: mosiac tiles together into a new raster
 	tilelist = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*.tif")
 	print 'tilelist:', tilelist 
@@ -170,7 +154,6 @@ def mosiacRasters():
 	#### need to wrap these paths with Raster() fct or complains about the paths being a string
 	inTraj=Raster(data['pre']['traj']['path'])
 	print 'inTraj:', inTraj
-
 
 	######mosiac tiles together into a new raster
 	arcpy.MosaicToNewRaster_management(tilelist, data['refine']['gdb'], data['refine']['mask_nlcd']['filename'], inTraj.spatialReference, "16_BIT_UNSIGNED", 30, "1", "LAST","FIRST")
@@ -186,13 +169,7 @@ def mosiacRasters():
 
 
     
-
-
-
-
-
-# def run():  
-if __name__ == '__main__':
+def run(data):
 
 	tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
 	for tile in tiles:
@@ -200,17 +177,17 @@ if __name__ == '__main__':
 
 	#get extents of individual features and add it to a dictionary
 	extDict = {}
-	count = 1 
 
-	for row in arcpy.da.SearchCursor(data['ancillary']['vector']['shapefiles']['fishnet_mtr'], ["SHAPE@"]):
-		extent_curr = row[0].extent
+	for row in arcpy.da.SearchCursor(data['ancillary']['vector']['shapefiles']['fishnet_mtr'], ["oid","SHAPE@"]):
+		atlas_stco = row[0]
+		print atlas_stco
+		extent_curr = row[1].extent
 		ls = []
 		ls.append(extent_curr.XMin)
 		ls.append(extent_curr.YMin)
 		ls.append(extent_curr.XMax)
 		ls.append(extent_curr.YMax)
-		extDict[count] = ls
-		count+=1
+		extDict[atlas_stco] = ls
     
 	print 'extDict', extDict
 	print'extDict.items',  extDict.items()
@@ -218,14 +195,17 @@ if __name__ == '__main__':
 	#######create a process and pass dictionary of extent to execute task
 	pool = Pool(processes=5)
 	# pool = Pool(processes=cpu_count())
-	pool.map(execute_task, extDict.items())
-	# pool.map(execute_task, [(ed, nibble) for ed in extDict.items()])
+	# pool.map(execute_task, extDict.items())
+	pool.map(execute_task, [(ed, data) for ed in extDict.items()])
 	pool.close()
 	pool.join
 
-	mosiacRasters()
+	mosiacRasters(data)
 
 
-# run()
+if __name__ == '__main__':
+	run(data)
+
+
     
    
