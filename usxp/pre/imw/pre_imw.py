@@ -39,11 +39,6 @@ def getGDBpath(wc):
 
 
 
-# data = gen.getJSONfile()
-# print data
-
-
-
 def mosiacRasters():
     arcpy.env.workspace = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\'
 
@@ -132,42 +127,6 @@ def getReclassifyValuesString(ds, reclass_degree):
 
 
 
-# def getCDLlist():
-#     cdl_list = []
-#     for year in data['globals']['years']:
-#         print 'year:', year
-#         cdl_dataset = 'cdl{0}_b_{1}'.format(str(data['globals']['res']),str(year))
-#         cdl_list.append(cdl_dataset)
-#     print'cdl_list: ', cdl_list
-#     return cdl_list
-
-
-
-
-
-
-
-
-# def createRefinedTrajectory():
-
-#     ##### loop through each of the cdl rasters and make sure nlcd is last 
-#     filelist = [data['pre']['traj']['path'], data['refine']['mask_dev_alfalfa_fallow']['path'], data['refine']['mask_2007']['path'], data['refine']['mask_nlcd']['path']]
-    
-#     print 'filelist:', filelist
-    
-#     ##### mosaicRasters():
-#     arcpy.MosaicToNewRaster_management(filelist, data['pre']['traj_rfnd']['gdb'], data['pre']['traj_rfnd']['filename'], Raster(data['pre']['traj']['path']).spatialReference, '16_BIT_UNSIGNED', data['global']['res'], "1", "LAST","FIRST")
-
-#     #Overwrite the existing attribute table file
-#     arcpy.BuildRasterAttributeTable_management(data['pre']['traj_rfnd']['path'], "Overwrite")
-
-#     # Overwrite pyramids
-#     gen.buildPyramids(data['pre']['traj_rfnd']['path'])
-
-
-
-
-
 
 def getCDLlist(years):
     cdl_list = []
@@ -252,13 +211,48 @@ def addTrajArrayField(schema, tablename, fields):
 
 
 
+def createRefinedTrajectory(data):
+
+    ##### loop through each of the cdl rasters and make sure nlcd is last 
+
+    ## declare filelist (it will be instantiated diffrently depending on the year)
+    filelist = []
+
+    if data['global']['years_conv'] == 2009:
+        'this is cy 2009 so using the mask_2007 to create the traj_rfnd'
+        filelist = [data['pre']['traj']['path'], data['refine']['mask_dev_alfalfa_fallow']['path'], data['refine']['mask_2007']['path'], data['refine']['mask_nlcd']['path']]
+    
+    else:
+        'this is NOT cy 2009 so NOT using the mask_2007 to create the traj_rfnd'
+        filelist = [data['pre']['traj']['path'], data['refine']['mask_dev_alfalfa_fallow']['path'], data['refine']['mask_nlcd']['path']]
+
+
+    print 'filelist:', filelist
+    
+    ##### mosaicRasters():
+    arcpy.MosaicToNewRaster_management(filelist, data['pre']['traj_rfnd']['gdb'], data['pre']['traj_rfnd']['filename'], Raster(data['pre']['traj']['path']).spatialReference, '16_BIT_UNSIGNED', data['global']['res'], "1", "LAST","FIRST")
+
+    #Overwrite the existing attribute table file
+    arcpy.BuildRasterAttributeTable_management(data['pre']['traj_rfnd']['path'], "Overwrite")
+
+    # Overwrite pyramids
+    gen.buildPyramids(data['pre']['traj_rfnd']['path'])
+
+
+
 
 
 
 def run(data):
-    print '------running pre_imw-------'
-    createTrajectories(data)
-    addGDBTable2postgres(data, 'pre_imw')
+    if data['global']['version']=='initial':
+        print '------running pre_imw(initial)--------'
+        createTrajectories(data)
+        addGDBTable2postgres(data, 'pre_imw')
+        
+    elif data['global']['version']=='final':
+        print '------running pre_imw(final)--------'
+        createRefinedTrajectory(data)
+
 
 
 

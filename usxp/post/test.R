@@ -15,12 +15,13 @@ con <- dbConnect(drv, dbname = "usxp",
 
 # murders_separate <- read.csv(file="test_yo.csv")
 ## query the data from postgreSQL 
-murders_separate <- dbGetQuery(con, "SELECT * FROM counts.merged_series WHERE series='s20' ")
+murders_separate <- dbGetQuery(con, "SELECT value as years,acres,series FROM counts.merged_series where series = 's21_seperate' ")
 
 
-ggplot(murders_separate, aes(x=value, y=acres, group=yxc, color=yxc)) +
+ggplot(murders_separate, aes(x=years, y=acres, group=series, color=series)) +
   geom_line()+
   scale_x_continuous(breaks=c(2009,2010,2011,2012,2013,2014,2015,2016))
+
 
 
 

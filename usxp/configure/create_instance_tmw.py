@@ -146,42 +146,43 @@ class ProcessingObject(object):
         self.data = getTemplatefile()
 
         ##need to split into versions because later methods refernce actual datasets ( i.e. getArbitraryCropValue() )
-        if version == 'base':
-            self.updateKernel = self.updateKernel(kernel, tmw)
+        if version == 'initial':
+            self.updateKernel = self.updateKernel(kernel, tmw, version)
             self.updatePreObject = self.updatePreObject(kernel)
             self.exportObject = self.exportObject()
-            print 'initial version so quiting now with small current_instance'
-            return
+            # print 'initial version so quiting now with small current_instance'
+            # return
 
-        elif version == 'refine':
-            self.updateKernel = self.updateKernel(kernel, tmw)
+        elif version == 'final':
+            self.updateKernel = self.updateKernel(kernel, tmw, version)
             self.updatePreObject = self.updatePreObject(kernel)
             self.updateRefineObject = self.updateRefineObject(kernel)
+            self.updateCoreObject = self.updateCoreObject(kernel)
             self.exportObject = self.exportObject()
 
 
-        elif version == 'instance':  
-            print 'instance'
-            ### once the trajectory datasets are created they can now be referenced by these methods!
-
+        # elif version == 'instance':  
+        #     print 'instance'
+        #     ### once the trajectory datasets are created they can now be referenced by these methods!
             
-            # self.updateCoreObject = self.updateCoreObject(kernel)
-            # self.updatePostObject_YTC = self.updatePostObject_YTC(kernel)
-            # self.updatePostObject_YFC = self.updatePostObject_YFC(kernel)
-            # self.updateVectorsObject = self.updateVectorsObject(kernel)
+        #     # self.updateCoreObject = self.updateCoreObject(kernel)
+        #     # self.updatePostObject_YTC = self.updatePostObject_YTC(kernel)
+        #     # self.updatePostObject_YFC = self.updatePostObject_YFC(kernel)
+        #     # self.updateVectorsObject = self.updateVectorsObject(kernel)
             
-            # #export modified object to json file
-            # self.exportObject = self.exportObject()
+        #     # #export modified object to json file
+        #     # self.exportObject = self.exportObject()
     
 
 
 
 
 
-    def updateKernel(self, kernel, tmw):
+    def updateKernel(self, kernel, tmw, version):
         #add the kernel object to the data object
         self.data['global']=kernel['global']
         self.data['global']['instance'] = kernel['global']['instance']
+        self.data['global']['version'] = version
 
         for cy, years in tmw.iteritems():
             self.data['global']['years'] = years
@@ -244,14 +245,13 @@ class ProcessingObject(object):
 
     def updateCoreObject(self, kernel):
         print '###############    updateCoreObject()   #############################'
-        
+        ## transfer over the arguments from the kernel to the current data instance
         self.data['core']['gdb'] = getGDBpath('core_{}'.format(self.data['global']['instance']))
-        print "self.data['core']['gdb']-----------------------", self.data['core']['gdb']
         self.data['core']['filter'] = kernel['core']['filter']
         self.data['core']['route'] = kernel['core']['route']
         self.data['core']['rg'] = kernel['core']['rg']
         self.data['core']['mmu'] = kernel['core']['mmu']
-        self.data['core']['lookup'] = '{}_traj_lookup_{}_{}'.format(self.data['pre']['traj']['version'], self.data['global']['datarange'], kernel['core']['lookup_version'])
+       
 
         if self.data['core']['route'] == 'r1':
             self.data['core']['filename'] = '{}_{}_mtr_{}_{}_mmu{}'.format(self.data['global']['instance'], self.data['pre']['traj_rfnd']['filename'], self.data['core']['filter'], self.data['core']['rg'], self.data['core']['mmu'])

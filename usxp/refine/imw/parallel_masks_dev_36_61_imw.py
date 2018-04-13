@@ -36,20 +36,11 @@ arcpy.env.scratchWorkspace = "in_memory"
 
 
 
-###make this a general function
-def getJSONfile():
-    with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\config\\current_instance.json') as json_data:
-        template = json.load(json_data)
-        # print(template)
-        # print type(template)
-        return template
 
-
-
-def createReclassifyList():
+def createReclassifyList(data):
 	cur = conn.cursor()
 
-	query = "SELECT \"Value\", ytc from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array WHERE ytc IS NOT NULL".format(data['pre']['traj']['filename'], data['core']['lookup'])
+	query = "SELECT \"Value\", mtr from pre_imw.{} as a JOIN pre_imw.{} as b ON a.traj_array = b.traj_array WHERE mtr = 3".format(data['pre']['traj']['filename'], data['pre']['traj']['lookup'])
 	print 'query:', query
 
 	cur.execute(query)
@@ -67,7 +58,6 @@ def getNonCropList():
 	cur = conn.cursor()
 
 	query = "SELECT value FROM misc.lookup_cdl WHERE b = '0'"
-	print 'query:', query
 
 	cur.execute(query)
 
@@ -75,27 +65,15 @@ def getNonCropList():
 	rows = cur.fetchall()
 	#use list comprehension to convert list of tuples to list
 	noncrop_list = [i[0] for i in rows]
-	print 'noncrop_list:', noncrop_list
+
 	##add 36 and 61 to noncrop list!!!
 	return noncrop_list + [36,61]
-
-
-	
-
-
-
-# ##create global objects to reference through the script
-
-# data = getJSONfile()
-# # print data
-# location_list = createReclassifyList()
-# noncrop_list = getNonCropList()
 
 
 
 
 def execute_task(args):
-	in_extentDict, data = args
+	in_extentDict, data, nc_list = args
 
 	fc_count = in_extentDict[0]
 	
@@ -137,16 +115,16 @@ def execute_task(args):
 	arr_traj = arcpy.RasterToNumPyArray(in_raster=data['pre']['traj']['path'], lower_left_corner = arcpy.Point(XMin,YMin), nrows = 13789, ncols = 21973)
 
 	# find the location of each pixel labeled with specific arbitray value in the rows list  
-	for row in location_list:
+	for row in createReclassifyList(data):
 		#year of conversion for either expansion or abandonment
-		ytx = row[1]
-		print 'ytx', ytx
+		fc = data['global']['years_conv']
+		print 'fc', fc
 		
 		#year before conversion for either expansion or abandonment
-		ybx = row[1]-1
-		print 'ybx', ybx
+		bfc = data['global']['years_conv']-1
+		print 'bfc', bfc
 
-		#Return the indices of the pixels that have values of the ytc arbitrsy values of the traj.
+		#Return the indices of the pixels that have values of the fc arbitrsy values of the traj.
 		indices = (arr_traj == row[0]).nonzero()
 
 		#stack indices so easier to work with
@@ -157,30 +135,27 @@ def execute_task(args):
 			row = pixel_location[0] 
 			col = pixel_location[1]
             
-            #get the pixel value for ytx
-			pixel_value_ytx =  cdls[ytx][row][col]
-			#get the pixel value for ybx
-			pixel_value_ybx =  cdls[ybx][row][col]
+            #get the pixel value for fc
+			pixel_value_fc =  cdls[fc][row][col]
+			#get the pixel value for bfc
+			pixel_value_bfc =  cdls[bfc][row][col]
 
 			#####  create dev mask  ##################################################################################
-			if pixel_value_ybx in [122,123,124]:
-				outData[row,col] = data['refine']['mask_dev_alfalfa_fallow']['arbitrary']
+			if pixel_value_bfc in [122,123,124]:
+				outData[row,col] = data['refine']['arbitrary_noncrop']
 
 	        #####  create 36_61 mask  ################################################################################
-			if pixel_value_ytx in [36,61]:
-				#find the years stil left in the time series for this pixel location
-				yearsleft = [i for i in data['global']['years'] if i > ytx]
+			if pixel_value_fc in [36,61]:
+				#find the years still left in the time series for this pixel location
+				yearsleft = [i for i in data['global']['years'] if i > fc]
 				#create templist to hold the rest of the cld values for the time series.  initiaite it with the first cdl value
-				templist = [pixel_value_ytx]
+				templist = [pixel_value_fc]
 				for year in yearsleft:
 					templist.append(cdls[year][row][col])
-				# print 'noncrop_list:', noncrop_list
-				# print 'templist--outside:', templist
-				# print 'checking:', np.isin(templist, noncrop_list)
-				if len(set(np.isin(templist, noncrop_list))) == 1:
-					# print 'all true', np.isin(templist, noncrop_list)
-					# print 'templist--inside', templist 
-					outData[row,col] = data['refine']['mask_dev_alfalfa_fallow']['arbitrary']
+
+				#if the templist values are esentailly all "noncrop" then realbel as noncrop
+				if len(set(np.isin(templist, nc_list))) == 1:
+					outData[row,col] = data['refine']['arbitrary_noncrop']
 
 
 
@@ -236,6 +211,8 @@ def run(data):
 	for tile in tiles:
 		os.remove(tile)
 
+	nc_list = getNonCropList()
+
 	#get extents of individual features and add it to a dictionary
 	extDict = {}
 
@@ -254,8 +231,8 @@ def run(data):
 	print'extDict.items',  extDict.items()
 
 	#######create a process and pass dictionary of extent to execute task
-	pool = Pool(processes=5)
-	pool.map(execute_task, [(ed, data) for ed in extDict.items()])
+	pool = Pool(processes=3)
+	pool.map(execute_task, [(ed, data, nc_list) for ed in extDict.items()])
 	pool.close()
 	pool.join
 

@@ -94,10 +94,10 @@ def createMergedTable():
   
   table_list = []
   for row in rows:
-    query_temp="SELECT * FROM counts.{}".format(row[0])
+    query_temp="SELECT value,count,acres,series,yxc FROM counts.{}".format(row[0])
     table_list.append(query_temp)
 
-  query_final = "DROP TABLE counts.merged_series; CREATE TABLE counts.merged_series AS {}".format(' UNION '.join(table_list))
+  query_final = "DROP TABLE IF EXISTS counts.merged_series; CREATE TABLE counts.merged_series AS {}".format(' UNION '.join(table_list))
   print query_final
   cur.execute(query_final)
   conn.commit()
@@ -109,8 +109,20 @@ def createMergedTable():
 
 
 
-def run(data,yxc):
-  addGDBTable2postgres(data,yxc)
+# def run(data,yxc):
+#   # addGDBTable2postgres(data,yxc)
+#   createMergedTable()
+
+
+
+
+
+# if __name__ == '__main__':
+#   run(data,yxc)
+
+
+def run():
+  # addGDBTable2postgres(data,yxc)
   createMergedTable()
 
 
@@ -118,7 +130,7 @@ def run(data,yxc):
 
 
 if __name__ == '__main__':
-  run(data,yxc)
+  run()
 
 
 

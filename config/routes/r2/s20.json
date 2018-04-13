@@ -8,5 +8,5 @@
 	"pre":{"version":{"traj":"v4"}},
 	"refine":{"version":"v3", "operator":"or", "years_nlcd":[2001,2006,2011]},
 	"core":{"route":"r2", "filter":"n8h", "rg":"8w", "mmu":"5", "lookup_version":"v3"},
-	"note":"this is running with mask_2007 and nlcd_mask with yfc component"
+	"note":"this is running with mask_2007 and nlcd_mask with yfc component -----UPDATE: nlcd masks (yfc and ytc masks) have to be independent for a given pixel so code is wrong with this series)"
 }

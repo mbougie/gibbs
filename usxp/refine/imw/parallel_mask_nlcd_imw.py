@@ -58,7 +58,6 @@ def execute_task(args):
 	in_extentDict, data = args
 
 	fc_count = in_extentDict[0]
-	print 'fc_count-------------------------------------', fc_count
 
 	procExt = in_extentDict[1]
 	# print procExt
@@ -94,7 +93,7 @@ def execute_task(args):
 	for row in createReclassifyList(data):
 		#trajectory value
 		traj = row[0]
-		#conversion year ytc
+		#get mtr value
 		mtr = row[1]
 
 		#Return the indices of the pixels that have values of the ytc arbitray values of the traj.
@@ -121,10 +120,10 @@ def execute_task(args):
 			count_82 = nlcd_list.count(82)
 
 			if data['refine']['mask_nlcd']['operator'] == 'or':
-				if count_82 > 0 and mtr != None:
+				if count_82 > 0 and mtr == 3:
 					outData[row,col] = data['refine']['arbitrary_crop']
 			
-				elif count_82 == 0 and mtr != None:
+				elif count_82 == 0 and mtr == 4:
 					outData[row,col] = data['refine']['arbitrary_noncrop']
 
 
@@ -193,7 +192,7 @@ def run(data):
 	print'extDict.items',  extDict.items()
 
 	#######create a process and pass dictionary of extent to execute task
-	pool = Pool(processes=5)
+	pool = Pool(processes=3)
 	# pool = Pool(processes=cpu_count())
 	# pool.map(execute_task, extDict.items())
 	pool.map(execute_task, [(ed, data) for ed in extDict.items()])
