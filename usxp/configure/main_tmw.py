@@ -262,12 +262,7 @@ if __name__ == '__main__':
 	# 		dmlPGtable(data, yxc)
     
 
-	## create the mosaiced dataset
-	post.run()
 
-
-	## add the table to merged_table
-	# add2pg.run()
 
 
 

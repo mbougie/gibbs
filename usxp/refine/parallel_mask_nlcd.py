@@ -106,14 +106,10 @@ def execute_task(in_extentDict):
 	#### find the location of each pixel labeled with specific arbitray value in the rows list  
 	#### note the traj_list is derived from the sql query above
 	for row in traj_list:
-		#trajectory value
+		
 		traj = row[0]
-		#conversion year ytc
 		ytc = row[1]
-		# print 'ytc', ytc
-
 		yfc = row[2]
-		# print 'yfc', yfc
 
 		#Return the indices of the pixels that have values of the ytc arbitray values of the traj.
 		indices = (arr_traj == row[0]).nonzero()
@@ -140,10 +136,10 @@ def execute_task(in_extentDict):
 
 			if data['refine']['mask_nlcd']['operator'] == 'or':
 				if count_82 > 0 and ytc != None:
-					outData[row,col] = data['refine']['mask_nlcd']['arbitrary_expand']
+					outData[row,col] = data['refine']['arbitrary_crop']
 			
 				elif count_82 == 0 and yfc != None:
-					outData[row,col] = data['refine']['mask_nlcd']['arbitrary_abandon']
+					outData[row,col] = data['refine']['arbitrary_noncrop']
 
 
 
@@ -204,17 +200,17 @@ if __name__ == '__main__':
 
 	#get extents of individual features and add it to a dictionary
 	extDict = {}
-	count = 1 
 
-	for row in arcpy.da.SearchCursor(data['ancillary']['vector']['shapefiles']['fishnet_mtr'], ["SHAPE@"]):
-		extent_curr = row[0].extent
+	for row in arcpy.da.SearchCursor(data['ancillary']['vector']['shapefiles']['fishnet_mtr'], ["oid","SHAPE@"]):
+		atlas_stco = row[0]
+		print atlas_stco
+		extent_curr = row[1].extent
 		ls = []
 		ls.append(extent_curr.XMin)
 		ls.append(extent_curr.YMin)
 		ls.append(extent_curr.XMax)
 		ls.append(extent_curr.YMax)
-		extDict[count] = ls
-		count+=1
+		extDict[atlas_stco] = ls
     
 	print 'extDict', extDict
 	print'extDict.items',  extDict.items()
@@ -228,6 +224,8 @@ if __name__ == '__main__':
 	pool.join
 
 	mosiacRasters()
+
+
 
 
     

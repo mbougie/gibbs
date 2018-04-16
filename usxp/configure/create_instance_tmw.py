@@ -158,6 +158,8 @@ class ProcessingObject(object):
             self.updatePreObject = self.updatePreObject(kernel)
             self.updateRefineObject = self.updateRefineObject(kernel)
             self.updateCoreObject = self.updateCoreObject(kernel)
+            self.updatePostObject_YTC = self.updatePostObject_YTC(kernel)
+            self.updatePostObject_YFC = self.updatePostObject_YFC(kernel)
             self.exportObject = self.exportObject()
 
 

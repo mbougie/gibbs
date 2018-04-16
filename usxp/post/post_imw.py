@@ -28,9 +28,11 @@ arcpy.env.scratchWorkspace = "in_memory"
 
 def execute_task(args):
 	arcpy.env.workspace = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\s21\\core\\core_s21.gdb'
-	cond = 'Value <> 3'
 
-	in_extentDict= args
+	in_extentDict=args
+
+	
+	cond = 'Value <> 4'
 
 	fc_count = in_extentDict[0]
 	# print fc_count
@@ -95,7 +97,7 @@ def execute_task(args):
 
 
 
-def mosiacRasters():
+def mosiacRasters(data, yxc):
 	######Description: mosiac tiles together into a new raster
 	tilelist = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*.tif")
 	print 'tilelist:', tilelist 
@@ -120,12 +122,12 @@ def mosiacRasters():
 
 
 
-def run():
+def run(data, yxc):
 
 	#####  remove a files in tiles directory
-	tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
-	for tile in tiles:
-		os.remove(tile)
+	# tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
+	# for tile in tiles:
+	# 	os.remove(tile)
 
 	#get extents of individual features and add it to a dictionary
 	extDict = {}
@@ -145,16 +147,16 @@ def run():
 	print'extDict.items',  extDict.items()
 
 	#######create a process and pass dictionary of extent to execute task
-	pool = Pool(processes=5)
-	# pool = Pool(processes=cpu_count())
-	pool.map(execute_task, extDict.items())
-	# pool.map(execute_task, [(ed, data) for ed in extDict.items()])
-	pool.close()
-	pool.join
+	# pool = Pool(processes=5)
+	# # pool = Pool(processes=cpu_count())
+	# pool.map(execute_task, extDict.items())
+	# # pool.map(execute_task, [(ed, data, yxc) for ed in extDict.items()])
+	# pool.close()
+	# pool.join
 
-	# mosiacRasters(data, yxc)
+	mosiacRasters(data, yxc)
 
 
 
 if __name__ == '__main__':
-	run()
+	run(data, yxc)

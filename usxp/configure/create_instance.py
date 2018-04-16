@@ -61,10 +61,10 @@ def getObjectValues(row):
 
 def getGDBpath(wc):
     for root, dirnames, filenames in os.walk("C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\"):
-        for dirnames in fnmatch.filter(dirnames, '*{}*.gdb'.format(wc)):
+        for dirnames in fnmatch.filter(dirnames, '*{}*'.format(wc)):
             # print dirnames
             gdbmatches = os.path.join(root, dirnames)
-    # print gdbmatches
+    print gdbmatches
     # return json.dumps(gdbmatches)
     return gdbmatches
 
@@ -152,7 +152,7 @@ class ProcessingObject(object):
         #call the methods in order to modifiy the tempalte json
         self.updateKernel = self.updateKernel(kernel, instance)
         self.updatePreObject = self.updatePreObject(kernel)
-        self.updateRefineObject = self.updateRefineObject(kernel)
+        # self.updateRefineObject = self.updateRefineObject(kernel)
         self.updateCoreObject = self.updateCoreObject(kernel)
         self.updatePostObject_YTC = self.updatePostObject_YTC(kernel)
         self.updatePostObject_YFC = self.updatePostObject_YFC(kernel)
@@ -182,7 +182,8 @@ class ProcessingObject(object):
 
         ###update traj
         self.data['pre']['traj']['version'] = kernel['pre']['version']['traj']
-        self.data['pre']['traj']['gdb'] = getGDBpath('{}_traj'.format(self.data['pre']['traj']['version']))
+        self.data['pre']['traj']['gdb'] = getGDBpath('{}_traj.gdb'.format(self.data['pre']['traj']['version']))
+        print "self.data['pre']['traj']['gdb']", self.data['pre']['traj']['gdb']
         self.data['pre']['traj']['filename'] = '_'.join([self.data['pre']['traj']['version'], 'traj', 'cdl'+self.data['global']['res'], 'b', self.data['global']['datarange']])
         self.data['pre']['traj']['path']  = '\\'.join([self.data['pre']['traj']['gdb'], self.data['pre']['traj']['filename']]) 
 

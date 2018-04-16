@@ -57,10 +57,10 @@ def addGDBTable2postgres(data,yxc):
     print 'df-----------------------', df
     
     # # # use pandas method to import table into psotgres
-    df.to_sql(data['post'][yxc]['filename'], engine, schema='counts')
+    df.to_sql(data['post'][yxc]['filename'], engine, schema='series_counts')
     
     # #add trajectory field to table
-    addAcresField('counts', data['post'][yxc]['filename'], yxc, '30')
+    addAcresField('series_counts', data['post'][yxc]['filename'], yxc, '30')
 
 
 
@@ -87,17 +87,17 @@ def addAcresField(schema, tablename, yxc, res):
 
 def createMergedTable():
   cur = conn.cursor()
-  query="SELECT table_name FROM information_schema.tables WHERE table_schema = 'counts' AND SUBSTR(table_name, 1, 1) = 's';"
+  query="SELECT table_name FROM information_schema.tables WHERE table_schema = 'series_counts' AND SUBSTR(table_name, 1, 1) = 's';"
   cur.execute(query)
   rows = cur.fetchall()
   print rows
   
   table_list = []
   for row in rows:
-    query_temp="SELECT value,count,acres,series,yxc FROM counts.{}".format(row[0])
+    query_temp="SELECT value as years,count,acres,series,yxc,series_order FROM series_counts.{}".format(row[0])
     table_list.append(query_temp)
 
-  query_final = "DROP TABLE IF EXISTS counts.merged_series; CREATE TABLE counts.merged_series AS {}".format(' UNION '.join(table_list))
+  query_final = "DROP TABLE IF EXISTS series_counts.merged_series; CREATE TABLE series_counts.merged_series AS {}".format(' UNION '.join(table_list))
   print query_final
   cur.execute(query_final)
   conn.commit()
@@ -109,19 +109,9 @@ def createMergedTable():
 
 
 
-# def run(data,yxc):
-#   # addGDBTable2postgres(data,yxc)
-#   createMergedTable()
 
 
-
-
-
-# if __name__ == '__main__':
-#   run(data,yxc)
-
-
-def run():
+def run(data,yxc):
   # addGDBTable2postgres(data,yxc)
   createMergedTable()
 
@@ -130,7 +120,7 @@ def run():
 
 
 if __name__ == '__main__':
-  run()
+  run(data,yxc)
 
 
 

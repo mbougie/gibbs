@@ -93,7 +93,7 @@ def labelByMTRqueries():
     
 
     
-    ###run 2009 queries after ALL the other queries (except mtr5) is complete-----------------------------------------------------------------
+    ###run 2009 queries AFTER all the other queries (except mtr5) is complete-----------------------------------------------------------------
     query_mtr3 = 'update pre.{} set mtr = 3, ytc = 2009 where traj_array in (SELECT traj_array FROM pre.{} a INNER JOIN pre.{} b using(traj_array) Where cdl30_b_2008= 0 AND cdl30_b_2009 = 1 AND cdl30_b_2010 = 1 AND ytc IS NULL AND yfc IS NULL)'.format(lookuptable, table, lookuptable)
     print query_mtr3
     cur.execute(query_mtr3)
