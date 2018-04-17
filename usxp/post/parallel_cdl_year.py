@@ -46,7 +46,7 @@ def createReclassifyList(data):
   
 # def execute_task(in_extentDict):
 def execute_task(args):
-	in_extentDict, data, subtype = args
+	in_extentDict, data, year, cdlpath = args
 	yxc = {'ytc':3, 'yfc':4}
 
 
@@ -74,32 +74,19 @@ def execute_task(args):
 
 	raster_mask = Con((path_mtr == yxc['ytc']) & (raster_yxc >= 2008), raster_yxc)
 
-    ###reference the dictionary in current instance
-	for year, cdlpath in data['post']['ytc'][subtype]['cdlpaths'].iteritems():
+	# allow raster to be overwritten
+	arcpy.env.overwriteOutput = True
+	print "overwrite on? ", arcpy.env.overwriteOutput
 
-		print year, cdlpath
+	#establish the condition
+	cond = "Value = " + year
+	print 'cond: ', cond
 
-		# allow raster to be overwritten
-		arcpy.env.overwriteOutput = True
-		print "overwrite on? ", arcpy.env.overwriteOutput
-
-		#establish the condition
-		cond = "Value = " + year
-		print 'cond: ', cond
-
-		raster_mask = Con(raster_mask, cdlpath, raster_mask, cond)
-
-
-	print fc_count
-
-	# raster_mmu = Con((path_mtr == yxc['ytc']) & (IsNull(raster_mask)), 255, raster_mask)
-
-	# raster_nibble = arcpy.sa.Nibble(raster_mmu, raster_mask, "DATA_ONLY")
-
+	raster_mask = Con(raster_mask, cdlpath, raster_mask, cond)
 
 	filled_1 = Con(IsNull(raster_mask),FocalStatistics(raster_mask,NbrRectangle(3, 3, "CELL"),'MAJORITY'), raster_mask)
 	filled_2 = Con(IsNull(filled_1),FocalStatistics(filled_1,NbrRectangle(10, 10, "CELL"),'MAJORITY'), filled_1)
-	# final = SetNull(path_mtr, filled_2, "VALUE <> {}".format(str(yxc_mtr[yxc])))
+	final = SetNull(filled_2, filled_2, "VALUE > 254")
 
 
 	outname = "tile_" + str(fc_count) +'.tif'
@@ -108,12 +95,12 @@ def execute_task(args):
 
 	arcpy.ClearEnvironment("extent")
 
-	filled_2.save(outpath)
+	final.save(outpath)
         
 
 
 
-def mosiacRasters(data, subtype):
+def mosiacRasters(data, subtype, year):
 	######Description: mosiac tiles together into a new raster
 	tilelist = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*.tif")
 	print 'tilelist:', tilelist 
@@ -121,57 +108,63 @@ def mosiacRasters(data, subtype):
 	#### need to wrap these paths with Raster() fct or complains about the paths being a string
 	inTraj=Raster(data['pre']['traj']['path'])
 
-	filename = data['post']['ytc'][subtype]['filename']
+	gdb = data['post']['ytc']['gdb']
+
+	filename = '{}_{}'.format(data['post']['ytc'][subtype]['filename'],year)
 	print 'filename:', filename
-	
+
 	######mosiac tiles together into a new raster
-	arcpy.MosaicToNewRaster_management(tilelist, data['post']['ytc']['gdb'], filename, inTraj.spatialReference, "16_BIT_UNSIGNED", 30, "1", "LAST","FIRST")
+	arcpy.MosaicToNewRaster_management(tilelist, gdb, filename, inTraj.spatialReference, "16_BIT_UNSIGNED", 30, "1", "LAST","FIRST")
 
 	#Overwrite the existing attribute table file
-	arcpy.BuildRasterAttributeTable_management(data['post']['ytc'][subtype]['path'], "Overwrite")
+	arcpy.BuildRasterAttributeTable_management('{}//{}'.format(gdb,filename), "Overwrite")
 
 	# Overwrite pyramids
-	gen.buildPyramids(data['post']['ytc'][subtype]['path'])
+	gen.buildPyramids('{}//{}'.format(gdb,filename))
 
 
 
 
 
 def run(data, subtype):
-# if __name__ == '__main__':
-	####  remove a files in tiles directory
+	for year, cdlpath in data['post']['ytc'][subtype]['cdlpaths'].iteritems():
 
-	tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
-	for tile in tiles:
-		os.remove(tile)
+		print year, cdlpath
+		####  remove a files in tiles directory
 
-	#get extents of individual features and add it to a dictionary
-	extDict = {}
+		tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
+		for tile in tiles:
+			os.remove(tile)
 
-	for row in arcpy.da.SearchCursor(data['ancillary']['vector']['shapefiles']['fishnet_ytc '], ["oid","SHAPE@"]):
-		atlas_stco = row[0]
-		print atlas_stco
-		extent_curr = row[1].extent
-		ls = []
-		ls.append(extent_curr.XMin)
-		ls.append(extent_curr.YMin)
-		ls.append(extent_curr.XMax)
-		ls.append(extent_curr.YMax)
-		extDict[atlas_stco] = ls
 
-	print 'extDict', extDict
-	print'extDict.items',  extDict.items()
-    
 
-	#######create a process and pass dictionary of extent to execute task
-	pool = Pool(processes=5)
-	# pool = Pool(processes=cpu_count())
-	# pool.map(execute_task, extDict.items())
-	pool.map(execute_task, [(ed, data, subtype) for ed in extDict.items()])
-	pool.close()
-	pool.join
+		#get extents of individual features and add it to a dictionary
+		extDict = {}
 
-	mosiacRasters(data, subtype)
+		for row in arcpy.da.SearchCursor("C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\vector\\shapefiles.gdb\\fishnet_ytc", ["oid","SHAPE@"]):
+			atlas_stco = row[0]
+			print atlas_stco
+			extent_curr = row[1].extent
+			ls = []
+			ls.append(extent_curr.XMin)
+			ls.append(extent_curr.YMin)
+			ls.append(extent_curr.XMax)
+			ls.append(extent_curr.YMax)
+			extDict[atlas_stco] = ls
+
+		print 'extDict', extDict
+		print'extDict.items',  extDict.items()
+	    
+
+		# #######create a process and pass dictionary of extent to execute task
+		pool = Pool(processes=5)
+		# pool = Pool(processes=cpu_count())
+		# pool.map(execute_task, extDict.items())
+		pool.map(execute_task, [(ed, data, year, cdlpath) for ed in extDict.items()])
+		pool.close()
+		pool.join
+
+		mosiacRasters(data, subtype, year)
 
 
 

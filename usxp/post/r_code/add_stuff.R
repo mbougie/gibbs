@@ -102,9 +102,10 @@ df$label <- with(df, reorder(label, series_order))
 
 ggplot(df, aes(x=years, y=acres, group=series_order, color=label, ordered = TRUE)) +
   geom_line(size=0.80) +
+  scale_linetype_manual(values=c("dashed"))+
   scale_y_continuous(labels=formatAC) +
   scale_x_continuous(breaks=c(2009,2010,2011,2012,2013,2014,2015,2016)) +
   labs(y="Acreage in Millions",x="Years")+
-  ggtitle('Select Series (cropland expansion)') + theme(plot.title = element_text(hjust = 0.5)) +
+  ggtitle('Select Series (cropland abandonment)') + theme(plot.title = element_text(hjust = 0.5)) +
   theme(aspect.ratio=0.5, legend.title=element_blank(), legend.position = c(0.06, -0.26)) +  ##this creates 1 to 1 aspect ratio so when export to pdf not stretched
   scale_colour_manual(values = c("#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00", "#ff7f00"))

@@ -25,20 +25,10 @@ import create_instance as ci
 import parallel_core as core
 import parallel_yxc as yxc
 import parallel_cdl as cdl
+import parallel_cdl_year as cdl_year
 import add2pg
 # import qaqc_now as qaqc
 # import temp_rg as temp
-
-
-import post_imw
-
-
-
-
-
-
-
-
 
 
 
@@ -84,7 +74,7 @@ if __name__ == '__main__':
 			# post_imw.run(data, 'yfc')
             
             ## add the table to merged_table
-			add2pg.run(data, 'yfc')
+			# add2pg.run(data, 'yfc')
             
             ####------this is imw only---------------end-------------------------
 			# core.run(data)
@@ -94,7 +84,7 @@ if __name__ == '__main__':
 			# yxc.run(data, 'yfc')
 			# add2pg.run(data, 'yfc')
 			
-			# cdl.run(data)
+			cdl_year.run(data, 'fc')
 
 
 
@@ -108,6 +98,8 @@ if __name__ == '__main__':
 			# qaqc.rasterToPoly(data, data['core']['gdb'])
 			
 		
+
+
 
 
 
