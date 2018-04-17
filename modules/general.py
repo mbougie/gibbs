@@ -4,10 +4,11 @@ from sqlalchemy import create_engine
 import arcpy
 from arcpy import env
 from arcpy.sa import *
-import os
+import os, errno
 import glob
-
-
+import math
+import json
+import shutil
 
 
 
@@ -44,33 +45,36 @@ def establishConn(db):
     except:
         print "I am unable to connect to the database"
 
+
 #establish root path for this the main project (i.e. usxp)
 rootpath = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/data/usxp/'
+# rootpath = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/data/usxp/'
+# ### establish gdb path  ####
+# def defineGDBpath(arg_list):
+#     gdb_path = rootpath + arg_list[0]+'/'+arg_list[1]+'.gdb/'
+#     print 'gdb path: ', gdb_path 
+#     return gdb_path
 
-### establish gdb path  ####
-def defineGDBpath(arg_list):
-    gdb_path = rootpath + arg_list[0]+'/'+arg_list[1]+'.gdb/'
-    print 'gdb path: ', gdb_path 
+
+def defineGDBpath(args_list):
+    gdb_path = '{}{}/{}/{}.gdb/'.format(rootpath,args_list[0],args_list[1],args_list[2])
+    # print 'gdb path: ', gdb_path 
     return gdb_path
 
 
 
-
-
+            
 
 
 def importCSVtoPG():
 
-    df = pd.read_excel('C:\\Users\\Bougie\\Downloads\\noncropland_cropland_county\\.csv')
-    df.columns = [c.lower() for c in df.columns] #postgres doesn't like capitals or spaces
-
+    df = pd.read_excel('C:\Users\Bougie\Downloads\s17_YTC_by_state.xlsx')
+    # df.columns = [c.lower() for c in df.columns] #postgres doesn't like capitals or spaces
+    df.columns = ['year_'+str(c) for c in df.columns]
     from sqlalchemy import create_engine
-    engine = create_engine('postgresql://postgres:postgres@localhost:5432/usxp')
+    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
 
-    df.to_sql("fsa_2012", engine, schema='sa')
-
-
-
+    df.to_sql("s17_ytc", engine, schema='counts_states')
 
 
 
@@ -98,6 +102,39 @@ def commitPG(query):
     conn.commit()
 
 
+
+def getPixelConversion2Acres(resolution):
+
+    if resolution == '56':
+        coef = '0.774922476'
+        return coef
+    elif resolution == '30':
+        coef = '0.222395'
+        return coef
+
+
+def getPixelCount(resolution, acres):
+    # '''
+    #  -------------------- CONDITION  ------------------------------------------
+    #  CONVERSION: 900square miles = 0.222395 acres
+
+    #  acres   count
+    #  5       23
+    #  10      45
+    #  15      68
+
+    #  example: masks=['23','45','68']
+
+    #  --------------------------------------------------------------------------
+    #  '''
+    if resolution == '56':
+        pixels = math.ceil(acres/0.774922476)
+        print pixels
+        return pixels
+    elif resolution == '30':
+        pixels = math.ceil(acres/0.222395)
+        print pixels
+        return pixels
 
 
 def getAcres(pixel_count, resolution):
@@ -139,6 +176,38 @@ def addGDBTable2postgres(gdb_args,wc,pg_shema):
         
         # use pandas method to import table into psotgres
         df.to_sql(table, engine, schema=pg_shema)
+
+
+
+
+
+def tableTotable():
+    # Import system modules
+    import arcpy
+    from arcpy import env
+     
+    # Set environment settings
+    env.workspace = "C:/data"
+     
+    # Set local variables
+    inTable = "vegtable.dbf"
+    outLocation = "C:/output/output.gdb"
+    outTable = "estuarine"
+
+    # Set the expression, with help from the AddFieldDelimiters function to select the appropriate field delimiters for the data type
+    expression = arcpy.AddFieldDelimiters(env.workspace, "VEG_TYPE") + " = 'Estuarine'"
+     
+    # Execute TableToTable
+    arcpy.TableToTable_conversion(inTable, outLocation, outTable, expression)
+
+
+
+
+
+
+
+
+
 
 
 
@@ -391,33 +460,57 @@ def setValueToNull(gdb_path, wc):
 
 
 
-def reprojectRaster(gdb_path, wc):
+# def reprojectRaster(gdb_path, wc):
+#     #description: tabulate the values of the raster by county 
+
+#     # Set environment settings
+#     arcpy.env.workspace = defineGDBpath(gdb_path)
+    
+#     # Set local variables
+#     for raster in arcpy.ListDatasets(wc, "Raster"): 
+#         print 'raster: ', raster
+
+#         raster_out = raster+'_initial2'
+
+
+#         spatial_ref = arcpy.Describe(defineGDBpath(['ancillary','cdl'])+'cdl_2010').spatialReference
+#         # spatial_ref = arcpy.Describe(raster).spatialReference
+#         sr = arcpy.SpatialReference("Hawaii Albers Equal Area Conic")
+
+#         print spatial_ref.Name
+#         print spatial_ref.PCSCode
+#         print spatial_ref.alias
+
+#         arcpy.ProjectRaster_management(raster, raster_out, sr)
+
+
+
+def reprojectRaster(raster_path, raster_name, raster_extension):
     #description: tabulate the values of the raster by county 
 
     # Set environment settings
-    arcpy.env.workspace = defineGDBpath(gdb_path)
+    # arcpy.env.workspace = defineGDBpath(gdb_path)
     
     # Set local variables
-    for raster in arcpy.ListDatasets(wc, "Raster"): 
-        print 'raster: ', raster
+    # for raster in arcpy.ListDatasets(wc, "Raster"): 
+    print 'raster: ', raster
 
-        raster_out = raster+'_initial2'
-
-
-        spatial_ref = arcpy.Describe(defineGDBpath(['ancillary','cdl'])+'cdl_2010').spatialReference
-        # spatial_ref = arcpy.Describe(raster).spatialReference
-        sr = arcpy.SpatialReference("Hawaii Albers Equal Area Conic")
-
-        print spatial_ref.Name
-        print spatial_ref.PCSCode
-        print spatial_ref.alias
-
-        # arcpy.ProjectRaster_management(raster, raster_out, sr)
+    raster_out = raster_path+'hello'+raster_extension
 
 
+    spatial_ref = arcpy.Describe(defineGDBpath(['ancillary','cdl'])+'cdl_2010').spatialReference
+    # spatial_ref = arcpy.Describe(raster).spatialReference
+    sr = arcpy.SpatialReference("Hawaii Albers Equal Area Conic")
+
+    print spatial_ref.Name
+    print spatial_ref.PCSCode
+    print spatial_ref.alias
+
+    arcpy.ProjectRaster_management(raster, raster_out, sr)
 
 
 
+    
 
 
 # setValueToNull(['ancillary','xp_initial'],'*')
@@ -570,11 +663,11 @@ def fieldCalculator2(gdb_path, wc):
     # print fc
 
     # # Define field name and expression
-    # field = 'acres'
-    field = 'percent'
-
-    # expression = '!Count!*0.222395'
-    expression = sum('!Count!')
+    field = 'acres'
+    # field = 'percent'
+    coef = getPixelConversion2Acres(resolution)
+    expression = '!Count!*' + coef
+    # expression = sum('!Count!')
 
     # # Create a new field with a new name
     # arcpy.AddField_management(fc,field,"TEXT")
@@ -620,7 +713,7 @@ def buildPyramids(inras):
 
     pyramid_level = "-1"
     skipfirst = "NONE"
-    resample_technique = "NEAREST"
+    resample_technique = "BILINEAR"
     compression_type = "JPEG"
     compression_quality = "100"
     skipexist = "OVERWRITE"
@@ -647,9 +740,78 @@ def deleteFiles():
 
 
 
+
+def getStatesField(field):
+    fc = defineGDBpath(['ancillary', 'vector', 'shapefiles'])+'states'
+    
+    cursor = arcpy.SearchCursor(fc)
+    states = []
+    for row in cursor:
+        state = row.getValue(field)
+        states.append(state)
+    return states
+
+
+
+def getWorkSpaces(rootdir):
+    # arcpy.env.workspace = defineGDBpath(gdb_path)
+    arcpy.env.workspace = rootpath+rootdir
+
+    # List all file geodatabases in the current workspace
+    workspaces = arcpy.ListWorkspaces("*", "FileGDB")
+     
+    return workspaces
+
+
+
+
+def commitQuery(query):
+    #small wrapper function to commit a query
+    cur = conn.cursor()
+
+    cur.execute(query)
+
+    conn.commit()
+    print "Records created successfully";
+    # conn.close()
+
+
 def createDirectory(directory):
     try:
         os.makedirs(directory)
     except OSError as e:
         if e.errno != errno.EEXIST:
             raise
+
+
+
+def getJSONfile():
+    with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\config\\current_instance.json') as json_data:
+        template = json.load(json_data)
+        return template
+
+
+
+def zipFolder():
+    shutil.make_archive(output_filename, 'zip', dir_name)
+
+
+
+
+def getTablesInSchema(schema):
+    cur = conn.cursor()
+    query="SELECT table_name FROM information_schema.tables WHERE table_schema = '{}'".format(schema)
+    print query
+
+    cur.execute(query)
+    rows = cur.fetchall()
+    print rows
+    return rows
+
+
+
+
+
+
+
+# importCSVtoPG()

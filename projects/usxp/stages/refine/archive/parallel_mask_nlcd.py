@@ -132,13 +132,15 @@ def execute_task(in_extentDict):
 				nlcd_list.append(nlcds[2011][row][col])
 
 			#get the length of nlcd list containing only the value 82
-			count_82 = nlcd_list.count(82)
+			count_81 = nlcd_list.count(82)
+			count_82 = nlcd_list.count(81)
+			count_81_82 = count_81 + count_82
 
 			if data['refine']['mask_nlcd']['operator'] == 'or':
 				if count_82 > 0 and ytc != None:
 					outData[row,col] = data['refine']['arbitrary_crop']
 			
-				elif count_82 == 0 and yfc != None:
+				elif count_81_82 == 0 and yfc != None:
 					outData[row,col] = data['refine']['arbitrary_noncrop']
 
 

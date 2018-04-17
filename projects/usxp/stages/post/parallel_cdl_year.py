@@ -46,12 +46,11 @@ def createReclassifyList(data):
   
 # def execute_task(in_extentDict):
 def execute_task(args):
-	in_extentDict, data, year, cdlpath = args
-	yxc = {'ytc':3, 'yfc':4}
+	in_extentDict, data, year, cdl_path = args
+	yxc = 'ytc'
 
-
-	fc_count = in_extentDict[0]
-	# print fc_count
+	oid = in_extentDict[0]
+	# print oid
 	procExt = in_extentDict[1]
 	# print procExt
 	XMin = procExt[0]
@@ -59,43 +58,22 @@ def execute_task(args):
 	XMax = procExt[2]
 	YMax = procExt[3]
 
-	path_traj_rfnd = data['pre']['traj_rfnd']['path']
-	print 'path_traj_rfnd:', path_traj_rfnd
-
-	path_mtr = Raster(data['core']['path'])
+	yxc_path = Raster(data['post'][yxc]['path'])
 
 	#set environments
-	arcpy.env.snapRaster = path_mtr
-	arcpy.env.cellsize = path_mtr
+	arcpy.env.snapRaster = yxc_path
+	arcpy.env.cellsize = yxc_path
 	arcpy.env.extent = arcpy.Extent(XMin, YMin, XMax, YMax)
 
-	##  Execute the three functions  #####################
-	raster_yxc = Reclassify(Raster(path_traj_rfnd), "Value", RemapRange(createReclassifyList(data)), "NODATA")
+	output = SetNull(yxc_path, cdl_path, "VALUE <> {}".format(str(year)))
 
-	raster_mask = Con((path_mtr == yxc['ytc']) & (raster_yxc >= 2008), raster_yxc)
-
-	# allow raster to be overwritten
-	arcpy.env.overwriteOutput = True
-	print "overwrite on? ", arcpy.env.overwriteOutput
-
-	#establish the condition
-	cond = "Value = " + year
-	print 'cond: ', cond
-
-	raster_mask = Con(raster_mask, cdlpath, raster_mask, cond)
-
-	filled_1 = Con(IsNull(raster_mask),FocalStatistics(raster_mask,NbrRectangle(3, 3, "CELL"),'MAJORITY'), raster_mask)
-	filled_2 = Con(IsNull(filled_1),FocalStatistics(filled_1,NbrRectangle(10, 10, "CELL"),'MAJORITY'), filled_1)
-	final = SetNull(filled_2, filled_2, "VALUE > 254")
-
-
-	outname = "tile_" + str(fc_count) +'.tif'
+	outname = "tile_" + str(oid) +'.tif'
 
 	outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/", r"tiles", outname)
 
 	arcpy.ClearEnvironment("extent")
 
-	final.save(outpath)
+	output.save(outpath)
         
 
 
@@ -128,36 +106,33 @@ def mosiacRasters(data, subtype, year):
 
 def run(data, subtype):
 	for year, cdlpath in data['post']['ytc'][subtype]['cdlpaths'].iteritems():
-
 		print year, cdlpath
-		####  remove a files in tiles directory
 
+		###  remove a files in tiles directory
 		tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
 		for tile in tiles:
 			os.remove(tile)
-
-
 
 		#get extents of individual features and add it to a dictionary
 		extDict = {}
 
 		for row in arcpy.da.SearchCursor("C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\vector\\shapefiles.gdb\\fishnet_ytc", ["oid","SHAPE@"]):
-			atlas_stco = row[0]
-			print atlas_stco
+			oid = row[0]
+			print oid
 			extent_curr = row[1].extent
 			ls = []
 			ls.append(extent_curr.XMin)
 			ls.append(extent_curr.YMin)
 			ls.append(extent_curr.XMax)
 			ls.append(extent_curr.YMax)
-			extDict[atlas_stco] = ls
+			extDict[oid] = ls
 
 		print 'extDict', extDict
 		print'extDict.items',  extDict.items()
 	    
 
 		# #######create a process and pass dictionary of extent to execute task
-		pool = Pool(processes=5)
+		pool = Pool(processes=7)
 		# pool = Pool(processes=cpu_count())
 		# pool.map(execute_task, extDict.items())
 		pool.map(execute_task, [(ed, data, year, cdlpath) for ed in extDict.items()])
