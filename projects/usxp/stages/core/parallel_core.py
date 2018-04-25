@@ -26,7 +26,7 @@ arcpy.env.scratchWorkspace = "in_memory"
 
 def createReclassifyList(data):
     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
-    query = " SELECT \"Value\", mtr from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array".format(data['pre']['traj']['filename'], data['pre']['lookup'])
+    query = " SELECT \"Value\", mtr from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array".format(data['pre']['traj']['filename'], data['pre']['traj']['lookup_name'])
     # print 'query:', query
     df = pd.read_sql_query(query, con=engine)
     print df

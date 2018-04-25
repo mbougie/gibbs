@@ -61,10 +61,10 @@ def getObjectValues(row):
 
 def getGDBpath(wc):
     for root, dirnames, filenames in os.walk("C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\"):
-        for dirnames in fnmatch.filter(dirnames, '*{}*'.format(wc)):
+        for dirnames in fnmatch.filter(dirnames, '*{}*.gdb'.format(wc)):
             # print dirnames
             gdbmatches = os.path.join(root, dirnames)
-    print gdbmatches
+    # print gdbmatches
     # return json.dumps(gdbmatches)
     return gdbmatches
 
@@ -81,7 +81,6 @@ def insertGDBpaths(subpath, gdb):
     
     gen.commitQuery(query)
     
-
 
 
 def getTemplatefile(directory):
@@ -113,7 +112,6 @@ def getKernelfile(args_list):
 
 
 
-
 def getArbitraryCropValue(table, years, croptype):
     #def this is a sub function for createMask_nlcdtraj()
     #this is to return the arbitrary value assocaited with full crop over entire years span
@@ -138,58 +136,56 @@ def getArbitraryCropValue(table, years, croptype):
 
 class ProcessingObject(object):
 
-    def __init__(self, args, version):
-        kernel = args[0]
-        print 'kernel', kernel
-        directory = args[1]
-        instance = args[2]
-        print instance
-
-        ##get the template json
-        self.data = getTemplatefile(directory)
-        print self.data
-
+    def __init__(self, kernel, tmw, version):
+        print("____________________start new object______________________________________________")
+        #### instantiaote the template object so it can be modified ####
+        self.data = getTemplatefile()
 
         ##need to split into versions because later methods refernce actual datasets ( i.e. getArbitraryCropValue() )
         if version == 'initial':
-            self.updateKernel = self.updateKernel(kernel, instance, version)
+            self.updateKernel = self.updateKernel(kernel, tmw, version)
             self.updatePreObject = self.updatePreObject(kernel)
-            self.exportObject = self.exportObject(directory)
+            self.exportObject = self.exportObject()
             # print 'initial version so quiting now with small current_instance'
             # return
 
         elif version == 'final':
-            self.updateKernel = self.updateKernel(kernel, instance, version)
+            self.updateKernel = self.updateKernel(kernel, tmw, version)
             self.updatePreObject = self.updatePreObject(kernel)
             self.updateRefineObject = self.updateRefineObject(kernel)
             self.updateCoreObject = self.updateCoreObject(kernel)
             self.updatePostObject_YTC = self.updatePostObject_YTC(kernel)
             self.updatePostObject_YFC = self.updatePostObject_YFC(kernel)
-            self.exportObject = self.exportObject(directory)
+            self.exportObject = self.exportObject()
 
-            # #call the methods in order to modifiy the tempalte json
-            # self.updateKernel = self.updateKernel(kernel, instance)
-            # self.updatePreObject = self.updatePreObject(kernel)
-            # # self.updateRefineObject = self.updateRefineObject(kernel)
-            # self.updateCoreObject = self.updateCoreObject(kernel)
-            # self.updatePostObject_YTC = self.updatePostObject_YTC(kernel)
-            # self.updatePostObject_YFC = self.updatePostObject_YFC(kernel)
-            # self.updateVectorsObject = self.updateVectorsObject(kernel)
+
+        # elif version == 'instance':  
+        #     print 'instance'
+        #     ### once the trajectory datasets are created they can now be referenced by these methods!
             
-            # #export modified object to json file
-            # self.exportObject = self.exportObject(directory)
+        #     # self.updateCoreObject = self.updateCoreObject(kernel)
+        #     # self.updatePostObject_YTC = self.updatePostObject_YTC(kernel)
+        #     # self.updatePostObject_YFC = self.updatePostObject_YFC(kernel)
+        #     # self.updateVectorsObject = self.updateVectorsObject(kernel)
+            
+        #     # #export modified object to json file
+        #     # self.exportObject = self.exportObject()
     
 
 
-    def updateKernel(self, kernel, instance, version):
-        print '###############    updateKernel()   #############################'
-        self.data['global']=kernel['global']
 
+
+
+    def updateKernel(self, kernel, tmw, version):
+        #add the kernel object to the data object
+        self.data['global']=kernel['global']
         self.data['global']['instance'] = kernel['global']['instance']
-        self.data['global']['years'] = range(kernel['global']['years'][0], kernel['global']['years'][1]+1)
-        self.data['global']['years_conv'] = range(kernel['global']['conv_years'][0], kernel['global']['conv_years'][1]+1)
-        self.data['global']['datarange'] = '{}to{}'.format(str(self.data['global']['years'][0]), str(self.data['global']['years'][-1]))
         self.data['global']['version'] = version
+
+        for cy, years in tmw.iteritems():
+            self.data['global']['years'] = years
+            self.data['global']['years_conv'] = cy
+            self.data['global']['datarange'] = '{}to{}'.format(str(years[0]), str(years[-1]))
 
 
  
@@ -198,21 +194,23 @@ class ProcessingObject(object):
 
     def updatePreObject(self, kernel):
         print '###############    updatePreObject()   #############################'
-        
+
         ###update traj
         self.data['pre']['traj']['version'] = kernel['pre']['version']['traj']
-        self.data['pre']['traj']['gdb'] = getGDBpath('{}_traj.gdb'.format(self.data['pre']['traj']['version']))
-        print "self.data['pre']['traj']['gdb']", self.data['pre']['traj']['gdb']
+        self.data['pre']['traj']['gdb'] = getGDBpath('{}_traj'.format(self.data['pre']['traj']['version']))
         self.data['pre']['traj']['filename'] = '_'.join([self.data['pre']['traj']['version'], 'traj', 'cdl'+self.data['global']['res'], 'b', self.data['global']['datarange']])
-        self.data['pre']['traj']['path']  = '\\'.join([self.data['pre']['traj']['gdb'], self.data['pre']['traj']['filename']]) 
-        self.data['pre']['traj']['lookup_version'] = kernel['pre']['version']['lookup']
-        self.data['pre']['traj']['lookup_name'] = '{}_traj_lookup_{}_{}'.format(self.data['pre']['traj']['version'], self.data['global']['datarange'], kernel['pre']['version']['lookup'])
+        self.data['pre']['traj']['path']  = '\\'.join([self.data['pre']['traj']['gdb'], self.data['pre']['traj']['filename']])
+        if self.data['global']['years_conv'] == 2009: 
+            self.data['pre']['traj']['lookup'] = '{}_lookup_2009'.format(self.data['pre']['traj']['version'])
+        else:
+            self.data['pre']['traj']['lookup'] = '{}_lookup'.format(self.data['pre']['traj']['version'])
 
-        # ### update traj rfnd
+        ### update traj rfnd
         self.data['pre']['traj_rfnd']['version'] = kernel['refine']['version']
         self.data['pre']['traj_rfnd']['gdb'] = getGDBpath('{}_traj_rfnd'.format(self.data['pre']['traj_rfnd']['version']))
         self.data['pre']['traj_rfnd']['filename'] = '_'.join([self.data['pre']['traj']['filename'],'rfnd', self.data['pre']['traj_rfnd']['version']])
         self.data['pre']['traj_rfnd']['path']  = '\\'.join([self.data['pre']['traj_rfnd']['gdb'], self.data['pre']['traj_rfnd']['filename']])  
+
 
 
 
@@ -225,45 +223,33 @@ class ProcessingObject(object):
         self.data['refine']['arbitrary_noncrop'] = getArbitraryCropValue(self.data['pre']['traj']['filename'], self.data['global']['years'], 'noncrop')
 
 
-        
+        ## NLCD mask  ################################
         self.data['refine']['mask_nlcd']['years_nlcd'] = kernel['refine']['years_nlcd']
         self.data['refine']['mask_nlcd']['operator'] = kernel['refine']['operator']
-        # self.data['refine']['mask_nlcd']['arbitrary_expand'] = getArbitraryCropValue(self.data['pre']['traj']['filename'], self.data['global']['years'], 'crop')
-        # self.data['refine']['mask_nlcd']['arbitrary_abandon'] = 1
-        self.data['refine']['mask_nlcd']['filename'] = '{}_mask_nlcd_{}_{}'.format(self.data['refine']['version'], 'and'.join(str(e) for e in self.data['refine']['mask_nlcd']['years_nlcd']), self.data['global']['datarange'])
+        self.data['refine']['mask_nlcd']['filename'] = '{}_mask_nlcd_{}'.format(self.data['refine']['version'], self.data['global']['datarange'])
         self.data['refine']['mask_nlcd']['path'] = '\\'.join([self.data['refine']['gdb'], self.data['refine']['mask_nlcd']['filename']])
         
-        
-        
-        
-        
+        ## developement,alfalfa and fallow mask  ################################
         self.data['refine']['mask_dev_alfalfa_fallow']['filename'] = '{}_mask_dev_alfalfa_fallow_{}'.format(self.data['refine']['version'], self.data['global']['datarange'])
         self.data['refine']['mask_dev_alfalfa_fallow']['path'] = '\\'.join([self.data['refine']['gdb'], self.data['refine']['mask_dev_alfalfa_fallow']['filename']])
 
-        
+        ## 2007 cdl  ################################
+        if self.data['global']['years_conv'] == 2009: 
+            self.data['refine']['mask_2007']['filename'] = '{}_mask_2007_{}'.format(self.data['refine']['version'], self.data['global']['datarange'])
+            self.data['refine']['mask_2007']['path'] = '\\'.join([self.data['refine']['gdb'], self.data['refine']['mask_2007']['filename']])
 
 
-        self.data['refine']['mask_2007']['filename'] = '{}_mask_2007_{}'.format(self.data['refine']['version'], self.data['global']['datarange'])
-        self.data['refine']['mask_2007']['path'] = '\\'.join([self.data['refine']['gdb'], self.data['refine']['mask_2007']['filename']])
 
 
-
-        # self.data['refine']['mask_dev_alfalfa_fallow']['arbitrary'] = getArbitraryCropValue(self.data['pre']['traj']['filename'], self.data['global']['years'], 'noncrop')
-        
-
-
- 
-    #####   core functions  ################################################################################
     def updateCoreObject(self, kernel):
         print '###############    updateCoreObject()   #############################'
-        
+        ## transfer over the arguments from the kernel to the current data instance
         self.data['core']['gdb'] = getGDBpath('core_{}'.format(self.data['global']['instance']))
-        print "self.data['core']['gdb']-----------------------", self.data['core']['gdb']
         self.data['core']['filter'] = kernel['core']['filter']
         self.data['core']['route'] = kernel['core']['route']
         self.data['core']['rg'] = kernel['core']['rg']
         self.data['core']['mmu'] = kernel['core']['mmu']
-        # self.data['core']['lookup'] = '{}_traj_lookup_{}_{}'.format(self.data['pre']['traj']['version'], self.data['global']['datarange'], kernel['core']['lookup_version'])
+       
 
         if self.data['core']['route'] == 'r1':
             self.data['core']['filename'] = '{}_{}_mtr_{}_{}_mmu{}'.format(self.data['global']['instance'], self.data['pre']['traj_rfnd']['filename'], self.data['core']['filter'], self.data['core']['rg'], self.data['core']['mmu'])
@@ -283,9 +269,6 @@ class ProcessingObject(object):
 
 
 
-    #####   post functions  ################################################################################
-    
-
     def updatePostObject_YTC(self, kernel):
         print '###############    updatePostObject_YTC()   #############################'
         def getvalues():
@@ -302,6 +285,9 @@ class ProcessingObject(object):
 
         self.data['post']['ytc'] = getvalues()
     
+
+
+
     def updatePostObject_YFC(self, kernel):
         print '###############    updatePostObject_YFC()   #############################'
         def getvalues():
@@ -348,30 +334,23 @@ class ProcessingObject(object):
     ####  create ########################################################################################
     def updateVectorsObject(self, kernel):
         print '###############    updateVectorsObject()   #############################'
-        # self.data['refine']['version'] = kernel['refine']['version']
         self.data['vectors'] = "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\{}\\{}\\vectors".format(self.data['core']['route'], self.data['global']['instance'])
 
 
 
 
-     #####   export objects  ################################################################################
-    def exportObject(self, directory):
-        with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\instances\\current_instance.json'.format(directory), 'w') as outfile:
+     #####   export the data objects  ################################################################################
+    def exportObject(self):
+        with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\config\\current_instance.json', 'w') as outfile:
             json.dump(self.data, outfile, indent=4)
 
 
 
 
 ###########  create instance of class ################################################
-def run(arg_list, version):
+def run(kernel, tmw, version):
 
-    ProcessingObject(getKernelfile(arg_list), version)
-
-
-
+    ProcessingObject(kernel, tmw, version)
 if __name__ == '__main__':
-    run(arg_list, version)
-
-
-
+    run(kernel, tmw, version)
 

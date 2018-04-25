@@ -34,7 +34,7 @@ except:
 
 
 def run(route, instance):
-
+    print('inside cc--------------------------------')
     # create the directories and gdbs for this instance
     instance_directory = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\{}\\{}'.format(route,instance)
     gen.createDirectory(instance_directory)

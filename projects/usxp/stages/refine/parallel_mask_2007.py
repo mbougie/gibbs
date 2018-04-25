@@ -1,7 +1,7 @@
 import sys
 import os
 #import modules from other folders
-sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\misc\\')
+sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\modules')
 import arcpy
 from arcpy import env
 from arcpy.sa import *
@@ -34,22 +34,12 @@ arcpy.env.overwriteOutput = True
 arcpy.env.scratchWorkspace = "in_memory" 
 
 
-###make this a general function
-def getJSONfile():
-    with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\config\\current_instance.json') as json_data:
-        template = json.load(json_data)
-        # print(template)
-        # print type(template)
-        return template
-
-
-
 
 ###NOTE STILL HAVE TO DEAL WITH YFC IN QUERY BELOW  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 def createReclassifyList():
 	cur = conn.cursor()
 	
-	query = "SELECT \"Value\", ytc, yfc from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array WHERE ytc=2009 or yfc=2009".format(data['pre']['traj']['filename'], data['core']['lookup'])
+	query = "SELECT \"Value\", ytc, yfc from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array WHERE ytc=2009 or yfc=2009".format(data['pre']['traj']['filename'], data['pre']['traj']['lookup_name'])
 	# print 'query:', query
 
 	cur.execute(query)
@@ -64,14 +54,15 @@ def createReclassifyList():
 	
 
 ##create global objects to reference through the script
-data = getJSONfile()
+data = gen.getJSONfile()
 traj_list = createReclassifyList()
 # print data
 
 
 
 
-def execute_task(in_extentDict):
+def execute_task(args):
+	in_extentDict, data = args
 
 	fc_count = in_extentDict[0]
 
@@ -96,7 +87,7 @@ def execute_task(in_extentDict):
     
     ### create numpy arrays for input datasets nlcds and traj
     # arcpy.RasterToNumPyArray(in_raster='C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\binaries.gdb\\cdl30_b_2007_resampled', lower_left_corner = arcpy.Point(XMin,YMin), nrows = 13789, ncols = 21973),
-	cdls = {2007:arcpy.RasterToNumPyArray(in_raster='C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\binaries.gdb\\cdl30_b_2007_resampled', lower_left_corner = arcpy.Point(XMin,YMin), nrows = 13789, ncols = 21973, nodata_to_value=255)}
+	cdls = {2007:arcpy.RasterToNumPyArray(in_raster='C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\binaries.gdb\\cdl30_b_2007', lower_left_corner = arcpy.Point(XMin,YMin), nrows = 13789, ncols = 21973, nodata_to_value=255)}
 	
 	arr_traj = arcpy.RasterToNumPyArray(in_raster=data['pre']['traj']['path'], lower_left_corner = arcpy.Point(XMin,YMin), nrows = 13789, ncols = 21973)
 
@@ -154,7 +145,7 @@ def execute_task(in_extentDict):
 
 
 
-def mosiacRasters():
+def mosiacRasters(data):
 	######Description: mosiac tiles together into a new raster
 	tilelist = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*.tif")
 	print 'tilelist:', tilelist 
@@ -178,7 +169,7 @@ def mosiacRasters():
 
 
 
-if __name__ == '__main__':
+def run(data):
 
 	tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
 	for tile in tiles:
@@ -186,34 +177,32 @@ if __name__ == '__main__':
 
 	#get extents of individual features and add it to a dictionary
 	extDict = {}
-	count = 1 
 
-	for row in arcpy.da.SearchCursor(data['ancillary']['vector']['shapefiles']['fishnet_mtr'], ["SHAPE@"]):
-		extent_curr = row[0].extent
+	for row in arcpy.da.SearchCursor(data['ancillary']['vector']['shapefiles']['fishnet_mtr'], ["oid","SHAPE@"]):
+		atlas_stco = row[0]
+		print atlas_stco
+		extent_curr = row[1].extent
 		ls = []
 		ls.append(extent_curr.XMin)
 		ls.append(extent_curr.YMin)
 		ls.append(extent_curr.XMax)
 		ls.append(extent_curr.YMax)
-		extDict[count] = ls
-		count+=1
-    
+		extDict[atlas_stco] = ls
+
 	print 'extDict', extDict
 	print'extDict.items',  extDict.items()
 
 	#######create a process and pass dictionary of extent to execute task
 	pool = Pool(processes=5)
-	# pool = Pool(processes=cpu_count())
-	pool.map(execute_task, extDict.items())
-	# pool.map(execute_task, [(ed, nibble) for ed in extDict.items()])
+	pool.map(execute_task, [(ed, data) for ed in extDict.items()])
 	pool.close()
 	pool.join
 
-	mosiacRasters()
+	mosiacRasters(data)
 
 
-
-
+if __name__ == '__main__':
+	run(data)
    
 
    

@@ -212,7 +212,7 @@ def addTrajArrayField(schema, tablename, fields):
     conn.close()
 
 
-def createRefinedTrajectory():
+def createRefinedTrajectory(data):
 
     ##### loop through each of the cdl rasters and make sure nlcd is last 
     filelist = [data['pre']['traj']['path'], data['refine']['mask_dev_alfalfa_fallow']['path'], data['refine']['mask_2007']['path'], data['refine']['mask_nlcd']['path']]
@@ -245,3 +245,30 @@ def createRefinedTrajectory():
 #######  these functions are to update the lookup tables  ######
 # labelTrajectories()
 # FindRedundantTrajectories()
+
+
+
+
+
+
+def run(data):
+    if data['global']['version']=='initial':
+        print '------running pre_imw(initial)--------'
+        createTrajectories(data)
+        addGDBTable2postgres(data, 'pre_imw')
+        
+    elif data['global']['version']=='final':
+        print '------running pre_imw(final)--------'
+        createRefinedTrajectory(data)
+
+
+
+
+
+if __name__ == '__main__':
+    run(data)
+
+
+
+
+

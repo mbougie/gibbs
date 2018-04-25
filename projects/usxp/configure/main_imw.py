@@ -9,41 +9,37 @@ from sqlalchemy import create_engine
 import pandas as pd
 import json
 import psycopg2
-sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\modules\\')
+sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\misc\\')
 import general as gen
 
-sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\configure\\')
-sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\pre\\')
-sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\refine\\')
-sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\core\\')
-sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\post\\yxc\\')
-sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\post\\cdl\\')
 
-# sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\qaqc\\')
-# sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\temp\\')
+sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\pre\\imw\\')
+sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\refine\\imw\\')
+sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\core\\imw\\')
+sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\post\\')
+
+# sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\qaqc\\')
+# sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\temp\\')
 
 
 
 import create_containers as cc
-import create_instance_imw as ci
+import create_instance_tmw as ci
 
 ###  import pre-processing script ###
-import pre
+import pre_imw as pre
 
 ###  import refinement scripts  ###
-import parallel_mask_2007 as mask_2007
-import parallel_mask_nlcd as mask_nlcd
-import parallel_masks_dev_36_61 as masks
+import parallel_mask_2007_imw as mask_2007
+import parallel_mask_nlcd_imw as mask_nlcd
+import parallel_masks_dev_36_61_imw as masks
 
 ###  import core-processing script ###
-import parallel_core as core
+import parallel_core_imw as core
 import parallel_yxc as yxc
 import parallel_cdl as cdl
-
-
-###  import post-processing script ###
-# import post as post
-# import add2pg
+import post_imw as post
+import add2pg
 # import qaqc_now as qaqc
 # import temp_rg as temp
 
@@ -80,6 +76,15 @@ def subsetList(data):
 
 
 
+def getjsonfile():
+    with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\configure\\multiple_instances.json') as json_data:
+        template = json.load(json_data)
+        return template
+
+
+
+
+
 def getKernelfile(kernelpath):
     with open(kernelpath) as json_data:
         template = json.load(json_data)
@@ -91,7 +96,7 @@ def getKernelfile(kernelpath):
 
 
 def getKernelDict():
-	kernels = gen.getJSONfile()
+	kernels = getjsonfile()
 	print 'kernels------------------------', kernels
 	for key, list_kernels in kernels.iteritems():
 		print key
@@ -177,8 +182,8 @@ def dmlPGtable(data, yxc):
 
 if __name__ == '__main__':
 	yxc = 'yfc'
-	# kernel=getKernelDict()
-	cc.run(route,instance)
+	kernel=getKernelDict()
+	# cc.run(route,instance)
 
     ### DDL-----create the count table in postgres  
 	# ddlPGtable(kernel, yxc)
@@ -193,32 +198,32 @@ if __name__ == '__main__':
 	# 		print 'cy------------', cy
 	# 		years = [2008, 2009, 2010]
 
-	##========  create the intial chunk of the current instance  =============
-	ci.run(kernel, {cy:years}, version='initial')
-	data = gen.getJSONfile()
-	# pre.run(data)
-	##========================================================================
+	# 		##========  create the intial chunk of the current instance  =============
+	# 		ci.run(kernel, {cy:years}, version='initial')
+	# 		# data = gen.getJSONfile()
+	# 		# pre.run(data)
+	# 		##========================================================================
 
-	##========  update the current instance  =================================
-	# ci.run(kernel, {cy:years}, version='final')
-	# data = gen.getJSONfile()
-	##========================================================================
+	# 		##========  update the current instance  =================================
+	# 		ci.run(kernel, {cy:years}, version='final')
+	# 		data = gen.getJSONfile()
+	# 		##========================================================================
 
 
-	#######  refinement scripts  ############################################
-	##______create the 3 masks___________________________________
-	# mask_2007.run(data)
-	# mask_nlcd.run(data)
-	# masks.run(data)
-	# 
-	### create the refined trajectories dataset 
-	# pre.run(data)
+	# 		#######  refinement scripts  ############################################
+	# 		##______create the 3 masks___________________________________
+	# 		# mask_2007.run(data)
+	# 		# mask_nlcd.run(data)
+	# 		# masks.run(data)
+	# 		# 
+	# 		### create the refined trajectories dataset 
+	# 		# pre.run(data)
 
-	######  core script  ###################################################
-	# core.run(data)
+	# 		######  core script  ###################################################
+	# 		# core.run(data)
 
-	######  DML----add mtr3 value to pgtable  #####################################
-	# dmlPGtable(data, yxc)
+	# 		######  DML----add mtr3 value to pgtable  #####################################
+	# 		dmlPGtable(data, yxc)
 
 
 

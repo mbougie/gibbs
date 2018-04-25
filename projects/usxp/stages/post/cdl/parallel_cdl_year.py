@@ -11,9 +11,11 @@ import sys
 import time
 import logging
 from multiprocessing import Process, Queue, Pool, cpu_count, current_process, Manager
-sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\misc\\')
+sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\modules\\')
 import general as gen
 import json
+
+import add2pg_cdl
 
 
 #import extension
@@ -109,9 +111,9 @@ def run(data, subtype):
 		print year, cdlpath
 
 		###  remove a files in tiles directory
-		tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
-		for tile in tiles:
-			os.remove(tile)
+		# tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
+		# for tile in tiles:
+		# 	os.remove(tile)
 
 		#get extents of individual features and add it to a dictionary
 		extDict = {}
@@ -135,11 +137,16 @@ def run(data, subtype):
 		pool = Pool(processes=7)
 		# pool = Pool(processes=cpu_count())
 		# pool.map(execute_task, extDict.items())
-		pool.map(execute_task, [(ed, data, year, cdlpath) for ed in extDict.items()])
-		pool.close()
-		pool.join
+		# pool.map(execute_task, [(ed, data, year, cdlpath) for ed in extDict.items()])
+		# pool.close()
+		# pool.join
 
-		mosiacRasters(data, subtype, year)
+		# mosiacRasters(data, subtype, year)
+
+
+		add2pg_cdl.run(data, 'ytc', subtype, year)
+        
+
 
 
 

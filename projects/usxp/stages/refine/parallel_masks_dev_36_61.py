@@ -35,66 +35,51 @@ arcpy.env.overwriteOutput = True
 arcpy.env.scratchWorkspace = "in_memory" 
 
 
-
-###make this a general function
-def getJSONfile():
-    with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\config\\current_instance.json') as json_data:
-        template = json.load(json_data)
-        # print(template)
-        # print type(template)
-        return template
-
-
-
-def createReclassifyList():
+def createReclassifyList(data):
 	cur = conn.cursor()
 
-	query = "SELECT \"Value\", ytc from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array WHERE ytc IS NOT NULL".format(data['pre']['traj']['filename'], data['core']['lookup'])
+	query = "SELECT \"Value\", ytc from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array WHERE ytc IS NOT NULL".format(data['pre']['traj']['filename'], data['pre']['traj']['lookup_name'])
 	print 'query:', query
 
 	cur.execute(query)
 	#create empty list
 	fulllist=[[0,0,"NODATA"]]
 
-	# fetch all rows from table
+	### fetch all rows from table
 	rows = cur.fetchall()
-	print rows
-	print 'number of records in lookup table', len(rows)
+	# print rows
+	# print 'number of records in lookup table', len(rows)
 	return rows
+
+
+
+
 
 
 def getNonCropList():
 	cur = conn.cursor()
 
 	query = "SELECT value FROM misc.lookup_cdl WHERE b = '0'"
-	print 'query:', query
+	# print 'query:', query
 
 	cur.execute(query)
 
-	# fetch all rows from table
+	### fetch all rows from table
 	rows = cur.fetchall()
-	#use list comprehension to convert list of tuples to list
+
+	### use list comprehension to convert list of tuples to list
 	noncrop_list = [i[0] for i in rows]
-	print 'noncrop_list:', noncrop_list
-	##add 36 and 61 to noncrop list!!!
+	# print 'noncrop_list:', noncrop_list
+	
+	### add 36 and 61 to noncrop list!!!
 	return noncrop_list + [36,61]
 
 
 	
 
 
-
-##create global objects to reference through the script
-
-data = getJSONfile()
-# print data
-location_list = createReclassifyList()
-noncrop_list = getNonCropList()
-
-
-
-
-def execute_task(in_extentDict):
+def execute_task(args):
+	in_extentDict, data = args
 
 	fc_count = in_extentDict[0]
 	
@@ -136,7 +121,7 @@ def execute_task(in_extentDict):
 	arr_traj = arcpy.RasterToNumPyArray(in_raster=data['pre']['traj']['path'], lower_left_corner = arcpy.Point(XMin,YMin), nrows = 13789, ncols = 21973)
 
 	# find the location of each pixel labeled with specific arbitray value in the rows list  
-	for row in location_list:
+	for row in createReclassifyList(data):
 		#year of conversion for either expansion or abandonment
 		ytx = row[1]
 		print 'ytx', ytx
@@ -163,7 +148,7 @@ def execute_task(in_extentDict):
 
 			#####  create dev mask  ##################################################################################
 			if pixel_value_ybx in [122,123,124]:
-				outData[row,col] = data['refine']['mask_dev_alfalfa_fallow']['arbitrary']
+				outData[row,col] = data['refine']['arbitrary_noncrop']
 
 	        #####  create 36_61 mask  ################################################################################
 			if pixel_value_ytx in [36,61]:
@@ -176,10 +161,10 @@ def execute_task(in_extentDict):
 				# print 'noncrop_list:', noncrop_list
 				# print 'templist--outside:', templist
 				# print 'checking:', np.isin(templist, noncrop_list)
-				if len(set(np.isin(templist, noncrop_list))) == 1:
+				if len(set(np.isin(templist, getNonCropList()))) == 1:
 					# print 'all true', np.isin(templist, noncrop_list)
 					# print 'templist--inside', templist 
-					outData[row,col] = data['refine']['mask_dev_alfalfa_fallow']['arbitrary']
+					outData[row,col] = data['refine']['arbitrary_noncrop']
 
 
 
@@ -201,7 +186,7 @@ def execute_task(in_extentDict):
 
 
 
-def mosiacRasters():
+def mosiacRasters(data):
 	######Description: mosiac tiles together into a new raster
 	tilelist = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*.tif")
 	print 'tilelist:', tilelist 
@@ -227,41 +212,38 @@ def mosiacRasters():
 
 
 
+def run(data):
 
-
-# def run():  
-if __name__ == '__main__':
-    #######clear the tiles from directory
 	tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
 	for tile in tiles:
 		os.remove(tile)
 
 	#get extents of individual features and add it to a dictionary
 	extDict = {}
-	count = 1 
 
-	for row in arcpy.da.SearchCursor(data['ancillary']['vector']['shapefiles']['fishnet_mtr'], ["SHAPE@"]):
-		extent_curr = row[0].extent
+	for row in arcpy.da.SearchCursor(data['ancillary']['vector']['shapefiles']['fishnet_mtr'], ["oid","SHAPE@"]):
+		atlas_stco = row[0]
+		print atlas_stco
+		extent_curr = row[1].extent
 		ls = []
 		ls.append(extent_curr.XMin)
 		ls.append(extent_curr.YMin)
 		ls.append(extent_curr.XMax)
 		ls.append(extent_curr.YMax)
-		extDict[count] = ls
-		count+=1
-    
+		extDict[atlas_stco] = ls
+
 	print 'extDict', extDict
 	print'extDict.items',  extDict.items()
 
-	#######create a process and pass dictionary of extent to execute task
+	######create a process and pass dictionary of extent to execute task
 	pool = Pool(processes=5)
-	pool.map(execute_task, extDict.items())
+	pool.map(execute_task, [(ed, data) for ed in extDict.items()])
 	pool.close()
 	pool.join
 
-	mosiacRasters()
+	mosiacRasters(data)
 
 
-# run()
-    
+if __name__ == '__main__':
+	run(data)
    

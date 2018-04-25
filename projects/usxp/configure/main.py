@@ -8,13 +8,15 @@ import os
 from sqlalchemy import create_engine
 import pandas as pd
 import json
-sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\misc\\')
+sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\modules\\')
 import general as gen
 
 
-sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\pre\\')
-sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\core\\')
-sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\post\\')
+sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\pre\\')
+sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\refine')
+sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\core\\')
+sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\post\\yxc\\')
+sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\post\\cdl\\')
 # sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\qaqc\\')
 # sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\temp\\')
 
@@ -22,6 +24,16 @@ sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\post\\')
 
 import create_containers as cc
 import create_instance as ci
+
+### import pre
+import pre
+
+###  import refinement scripts  ###
+import parallel_mask_2007 as mask_2007
+import parallel_mask_nlcd as mask_nlcd
+import parallel_masks_dev_36_61 as masks
+
+
 import parallel_core as core
 import parallel_yxc as yxc
 import parallel_cdl as cdl
@@ -33,10 +45,10 @@ import add2pg
 
 
 
-def getjsonfile():
-    with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\configure\\multiple_instances.json') as json_data:
-        template = json.load(json_data)
-        return template
+# def getjsonfile():
+#     with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\configure\\multiple_instances.json') as json_data:
+#         template = json.load(json_data)
+#         return template
 
 def getKernelfile(kernelpath):
     with open(kernelpath) as json_data:
@@ -57,34 +69,100 @@ if __name__ == '__main__':
 			print route
 			instance = data_kernel['global']['instance']
 			print 'instance---------', instance
-			
 
+            #############  could be junk!!!!  ########################################
 			# cc.run(route,instance)
-			# ci.run([key,route,instance])
+			# ci.run([key,route,instance],'initial')
+			# data = gen.getJSONfile()
+			# pre.run(data)
+			# ci.run([key,route,instance],'final')
 
 
+			##========  create the intial chunk of the current instance  =============
+			# ci.run([key,route,instance],'initial'))
+			# data = gen.getJSONfile()
+			# pre.run(data)
+			##========================================================================
 
-
+			##========  update the current instance  =================================
+			# ci.run([key,route,instance],'final')
 			data = gen.getJSONfile()
+			##========================================================================
+
+
+			#######  refinement scripts  ############################################
+			##______create the 3 masks___________________________________
+			# mask_2007.run(data)
+			# mask_nlcd.run(data)
+			# masks.run(data)
+
+			### create the refined trajectories dataset 
+			# pre.run(data)
+
+			######  core script  ###################################################
+			# core.run(data)
+
+			######  post script  ###################################################
+			# yxc.run(data, 'ytc')
+			add2pg.run(data, 'ytc')
+			# yxc.run(data, 'yfc')
+			add2pg.run(data, 'yfc')
+
+			
+			######  DML----add mtr3 value to pgtable  #####################################
+			# dmlPGtable(data, yxc)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+##################  possible junk  ##############################################################################
+			# data = gen.getJSONfile()
 			# temp.run(data)
 
 
-            ####------this is imw only----------------start-----------------------
+			####------this is imw only----------------start-----------------------
 			## create the mosaiced dataset
 			# post_imw.run(data, 'yfc')
-            
-            ## add the table to merged_table
+
+			## add the table to merged_table
 			# add2pg.run(data, 'yfc')
-            
-            ####------this is imw only---------------end-------------------------
+
+			####------this is imw only---------------end-------------------------
 			# core.run(data)
 
 			# yxc.run(data, 'ytc')
 			# add2pg.run(data, 'ytc')
 			# yxc.run(data, 'yfc')
 			# add2pg.run(data, 'yfc')
-			
-			cdl_year.run(data, 'fc')
+
+			# cdl_year.run(data, 'fc')
 
 
 

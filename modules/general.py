@@ -786,7 +786,7 @@ def createDirectory(directory):
 
 
 def getJSONfile():
-    with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\config\\current_instance.json') as json_data:
+    with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\instances\\current_instance.json') as json_data:
         template = json.load(json_data)
         return template
 
@@ -809,9 +809,3 @@ def getTablesInSchema(schema):
     return rows
 
 
-
-
-
-
-
-# importCSVtoPG()

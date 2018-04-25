@@ -34,22 +34,11 @@ arcpy.env.overwriteOutput = True
 arcpy.env.scratchWorkspace = "in_memory" 
 
 
-###make this a general function
-def getJSONfile():
-    with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\config\\current_instance.json') as json_data:
-        template = json.load(json_data)
-        # print(template)
-        # print type(template)
-        return template
-
-
-
-
 ###NOTE STILL HAVE TO DEAL WITH YFC IN QUERY BELOW  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 def createReclassifyList():
 	cur = conn.cursor()
 	
-	query = "SELECT \"Value\", ytc, yfc from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array WHERE mtr=3 or mtr=4".format(data['pre']['traj']['filename'], data['core']['lookup'])
+	query = "SELECT \"Value\", ytc, yfc from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array WHERE mtr=3 or mtr=4".format(data['pre']['traj']['filename'], data['pre']['traj']['lookup_name'])
 	print 'query:', query
 
 	cur.execute(query)
@@ -64,12 +53,13 @@ def createReclassifyList():
 	
 
 ##create global objects to reference through the script
-data = getJSONfile()
+data = gen.getJSONfile()
 traj_list = createReclassifyList()
 print data
 
 
-def execute_task(in_extentDict):
+def execute_task(args):
+	in_extentDict, data = args
 
 	fc_count = in_extentDict[0]
 	print 'fc_count-------------------------------------', fc_count
@@ -132,8 +122,8 @@ def execute_task(in_extentDict):
 				nlcd_list.append(nlcds[2011][row][col])
 
 			#get the length of nlcd list containing only the value 82
-			count_81 = nlcd_list.count(82)
-			count_82 = nlcd_list.count(81)
+			count_81 = nlcd_list.count(81)
+			count_82 = nlcd_list.count(82)
 			count_81_82 = count_81 + count_82
 
 			if data['refine']['mask_nlcd']['operator'] == 'or':
@@ -164,7 +154,7 @@ def execute_task(in_extentDict):
 
 
 
-def mosiacRasters():
+def mosiacRasters(data):
 	######Description: mosiac tiles together into a new raster
 	tilelist = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*.tif")
 	print 'tilelist:', tilelist 
@@ -193,12 +183,11 @@ def mosiacRasters():
 
 
 
+def run(data):
 
-if __name__ == '__main__':
-
-	tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
-	for tile in tiles:
-		os.remove(tile)
+	# tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
+	# for tile in tiles:
+	# 	os.remove(tile)
 
 	#get extents of individual features and add it to a dictionary
 	extDict = {}
@@ -213,22 +202,22 @@ if __name__ == '__main__':
 		ls.append(extent_curr.XMax)
 		ls.append(extent_curr.YMax)
 		extDict[atlas_stco] = ls
-    
+
 	print 'extDict', extDict
 	print'extDict.items',  extDict.items()
 
 	#######create a process and pass dictionary of extent to execute task
-	pool = Pool(processes=5)
-	# pool = Pool(processes=cpu_count())
-	pool.map(execute_task, extDict.items())
-	# pool.map(execute_task, [(ed, nibble) for ed in extDict.items()])
-	pool.close()
-	pool.join
+	# pool = Pool(processes=5)
+	# pool.map(execute_task, [(ed, data) for ed in extDict.items()])
+	# pool.close()
+	# pool.join
 
-	mosiacRasters()
+	mosiacRasters(data)
 
 
-
+if __name__ == '__main__':
+	run(data)
+   
 
     
    

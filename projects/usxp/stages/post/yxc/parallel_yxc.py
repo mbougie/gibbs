@@ -25,7 +25,7 @@ arcpy.env.scratchWorkspace = "in_memory"
 
 def createReclassifyList(data, yxc):
 	engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
-	query = " SELECT \"Value\", {} from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array WHERE {} IS NOT NULL".format(yxc, data['pre']['traj']['filename'], data['core']['lookup'], yxc)
+	query = " SELECT \"Value\", {} from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array WHERE {} IS NOT NULL".format(yxc, data['pre']['traj']['filename'],  data['pre']['traj']['lookup_name'], yxc)
 	print 'query:', query
 	df = pd.read_sql_query(query, con=engine)
 	print df
@@ -88,7 +88,7 @@ def execute_task(args):
 	# print fc_count
 	outname = "tile_" + str(fc_count) +'.tif'
 
-	outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/", r"tiles", outname)
+	outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/misc/", r"tiles", outname)
 
 	final.save(outpath)
 
@@ -97,7 +97,7 @@ def execute_task(args):
 
 def mosiacRasters(data, yxc):
 	######Description: mosiac tiles together into a new raster
-	tilelist = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*.tif")
+	tilelist = glob.glob("C:/Users/Bougie/Desktop/Gibbs/misc/tiles/*.tif")
 	print 'tilelist:', tilelist 
 
 	#### need to wrap these paths with Raster() fct or complains about the paths being a string
@@ -123,7 +123,7 @@ def mosiacRasters(data, yxc):
 def run(data, yxc):
 
 	#####  remove a files in tiles directory
-	tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
+	tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/misc/tiles/*")
 	for tile in tiles:
 		os.remove(tile)
 

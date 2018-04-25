@@ -94,13 +94,15 @@ formatAC<-function(x){x/1000000}
 ####  important series   ##########################################################################################
 
 ###query the data from postgreSQL
-df <- dbGetQuery(con, "SELECT years,acres,series,yxc,series_order,series || ': ' || label_traj as label FROM series_counts.merged_series as a inner join series_meta.meta as b using(series)  where yxc = 'yfc' and series != 's21_seperate' ")
+# df <- dbGetQuery(con, "SELECT years,acres,series,yxc,series_order,series || ': ' || label_traj as label FROM counts_yxc.merged_series as a inner join series_meta.meta as b using(series)  where yxc = 'yfc' and series != 's21_seperate' ")
+df <- dbGetQuery(con, "SELECT years,acres,series,yxc,series_order FROM counts_yxc.merged_series where yxc = 'yfc' and (series = 's20' or series = 's22') ")
+
 
 ##this reorders the labels in the legend in chronological order
-df$label <- with(df, reorder(label, series_order))
+df$series <- with(df, reorder(series, series_order))
 
 
-ggplot(df, aes(x=years, y=acres, group=series_order, color=label, ordered = TRUE)) +
+ggplot(df, aes(x=years, y=acres, group=series_order, color=series, ordered = TRUE)) +
   geom_line(size=0.80) +
   scale_linetype_manual(values=c("dashed"))+
   scale_y_continuous(labels=formatAC) +
