@@ -13,7 +13,7 @@ import psycopg2
 
 
 try:
-    conn = psycopg2.connect("dbname='usxp' user='mbougie' host='144.92.235.105' password='Mend0ta!'")
+    conn = psycopg2.connect("dbname='nass' user='mbougie' host='144.92.235.105' password='Mend0ta!'")
 except:
     print "I am unable to connect to the database"
 
@@ -21,7 +21,7 @@ except:
 
 
 def getZonalinfo():
-	arcpy.env.workspace = 'C:/Users/Bougie/Desktop/Gibbs/data/usxp/ancillary/shapefiles.gdb/'
+	arcpy.env.workspace = 'C:/Users/Bougie/Desktop/Gibbs/data/usxp/ancillary/vector/shapefiles.gdb/'
 
 	# Use the ListFeatureClasses function to return a list of shapefiles.
 	fc = 'states'
@@ -34,17 +34,15 @@ def getZonalinfo():
 
 
 
-
-
 def applyAPI():
 
 	### get each states tables from NASS using the NASS api and import each table into postgres database 
-	engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
+	engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/nass')
 	api_key = '19FA0F9C-F4C3-31F3-AB57-AFA3C5346527'
 	api = nass.NassApi(api_key)
 	q = api.query()
 
-
+	df_list = []
 	for state in getZonalinfo():
 		# print 'county---', county
 		q.filter('source_desc', 'SURVEY').filter('sector_desc', 'CROPS').filter('group_desc', 'FIELD CROPS').filter('agg_level_desc', 'COUNTY').filter('state_alpha', state).filter('year__GE', 2008).filter('freq_desc', 'ANNUAL')
@@ -59,10 +57,21 @@ def applyAPI():
 			##export df to postgres table
 			table_name = 'nass_'+state.lower()
 			print table_name 
-			df.to_sql(table_name, engine, schema='nass')
+			
+			df_list.append(testit(state))
+
         else:
         	print 'no records for state:', state
 
+
+	print(df_list)
+
+    ## merge all dataframes in list into one postgres table
+	df_final=pd.concat(df_list)
+
+	print 'df_final:', df_final
+
+	df_final.to_sql('merged_acres', engine, schema='counts', if_exists='replace')
 
 
 
@@ -78,7 +87,37 @@ def refInfoSchema():
 
 
 
+def testit(state):
+	print 'insde test:', state
+	## component function of CreateBaseHybrid() function --grandchild
+	## get all the tables with nass wildcard
+	engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/nass')
 
+
+	query = ("""SELECT 
+				  short_desc,
+				  state_name,
+				  state_alpha,
+				  state_ansi,
+				  year,
+				  sum(replace("Value", ',', '')::bigint) as acres_yo
+				FROM 
+				  nass.nass_{}
+				WHERE short_desc similar to '%%(SOYBEANS - ACRES PLANTED|CORN - ACRES PLANTED)%%'
+				group by
+				  short_desc,
+				  state_name,
+				  state_alpha,
+				  state_ansi,
+				  year
+
+				order by year""".format(state))
+
+
+	print(query)
+	df = pd.read_sql_query(query, engine)
+	print 'df------',df
+	return df
 
 def createNassLookupList(query):
 
@@ -339,14 +378,14 @@ if __name__ == '__main__':
 
 
     #################  call functions  #####################################
-	#get tables via the api
-
-	#create the base table
+	#### get tables via the api
+	applyAPI()
+	#### create the base table
 	# createBase(query_create_base)
 
-	#create and modify the counts and stats tables
+	#### create and modify the counts and stats tables
 	# executeQueries([query_create_base_counts, query_update_base_counts, query_create_base_stats])
 
 	#### file in the r2 and slope fields
-	updatePGtableWithStats() 
+	# updatePGtableWithStats() 
 							  

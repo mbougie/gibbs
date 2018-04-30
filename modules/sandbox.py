@@ -28,7 +28,7 @@ arcpy.CheckOutExtension("Spatial")
 ###################  declare functions  #######################################################
 
 db = 'usxp'
-rootpath = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/data/usxp/'
+
 
 # db = 'ksu'
 # rootpath = 'D:/projects/'
@@ -36,7 +36,7 @@ rootpath = 'C:/Users/'+case[0]+'/Desktop/'+case[1]+'/data/usxp/'
 
 ### establish gdb path  ####
 def defineGDBpath(arg_list):
-    gdb_path = rootpath + arg_list[0]+'/'+arg_list[1]+'.gdb/'
+    gdb_path = 'D:\\projects\\usxp\\series\\s5\\xp_update_refined.gdb'
     print 'gdb path: ', gdb_path 
     return gdb_path
 
@@ -54,107 +54,60 @@ except:
 
 
 
-
-
-
-
-
-# gen.importCSVtoPG()
-
-# gen.getPGColumnsList("'refinement'", "'counties_yfc_bfnc'", " , ")
-
-
-# gen.transposeTable(['refinement','refinement'],'counties_yfc_years')
-
-
-
-# def addGDBTable2postgres(gdb_args,tablename,pg_shema):
-#     # set the engine.....
-#     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
+def addGDBTable2postgres(yxc, schema):
+    # set the engine.....
+    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
     
-#     tablename = 'traj_'+wc
-#     # path to the table you want to import into postgres
-#     input = defineGDBpath(gdb_args)+tablename
+    # # path to the table you want to import into postgres
+    # input = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\pre\\traj_rfnd\\v3\\v3_traj_rfnd.gdb\\v4_traj_cdl30_b_2008to2017_rfnd_v3'
+    raster = 'D:\\projects\\usxp\\series\\s9\\yfc.gdb\\s9_yfc30_2008to2016_mmu5_nbl'
 
-#     # Execute AddField twice for two new fields
-#     fields = [f.name for f in arcpy.ListFields(input)]
+    # Execute AddField twice for two new fields
+    fields = [f.name for f in arcpy.ListFields(raster)]
    
-#     # converts a table to NumPy structured array.
-#     arr = arcpy.da.TableToNumPyArray(input,fields)
-#     print arr
+    # converts a table to NumPy structured array.
+    arr = arcpy.da.TableToNumPyArray(raster,fields)
+    print arr
     
-#     # convert numpy array to pandas dataframe
-#     df = pd.DataFrame(data=arr)
+    # convert numpy array to pandas dataframe
+    df = pd.DataFrame(data=arr)
 
-#     print df
+    df.columns = map(str.lower, df.columns)
+
+    print 'df-----------------------', df
+
+    tablename = 's9_yfc30_2008to2016_mmu5_nbl'
     
-#     # use pandas method to import table into psotgres
-#     df.to_sql(tablename, engine, schema=pg_shema)
+    # # # use pandas method to import table into psotgres
+    df.to_sql(tablename, engine, schema=schema)
     
-#     #add trajectory field to table
-#     addTrajArrayField(tablename, fields)
-
-
-
-def addGDBTable2postgres(gdb_args,wc,pg_shema):
-	print 'running addGDBTable2postgres() function....'
-	####description: adds tables in geodatabse to postgres
-	# set the engine.....
-	engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/'+db)
-
-	arcpy.env.workspace = defineGDBpath(gdb_args)
-
-	for table in arcpy.ListTables(wc): 
-		print 'table: ', table
-
-		# Execute AddField twice for two new fields
-		fields = [f.name for f in arcpy.ListFields(table)]
-		print fields
-
-		# converts a table to NumPy structured array.
-		arr = arcpy.da.TableToNumPyArray(table,fields)
-		print arr
-
-		# convert numpy array to pandas dataframe
-		df = pd.DataFrame(data=arr)
-
-		print df
-
-		df.columns = map(str.lower, df.columns)
-
-		# use pandas method to import table into psotgres
-		df.to_sql(table, engine, schema=pg_shema)
-
-		#add trajectory field to table
-		# addTrajArrayField(table, fields, pg_shema)
+    # #add trajectory field to table
+    addAcresField(schema, tablename, yxc, '30')
 
 
 
 
 
-def addTrajArrayField(tablename, fields, schema):
+
+
+def addAcresField(schema, tablename, yxc, res):
     #this is a sub function for addGDBTable2postgres()
     
     cur = conn.cursor()
     
-    #convert the rasterList into a string
-    columnList = ','.join(fields[3:])
-    print columnList
+    ####DDL: add column to hold arrays
+    query = 'ALTER TABLE {}.{} ADD COLUMN acres bigint, ADD COLUMN series text, ADD COLUMN yxc text, ADD COLUMN series_order integer'.format(schema, tablename)
+    print query
+    cur.execute(query)
 
-    #DDL: add column to hold arrays
-    cur.execute('ALTER TABLE ' + schema + '.' + tablename + ' ADD COLUMN traj_array integer[];');
-    
-    #DML: insert values into new array column
-    cur.execute('UPDATE '+ schema + '.' + tablename + ' SET traj_array = ARRAY['+columnList+'];');
-    
-    conn.commit()
-    print "Records created successfully";
-    conn.close()
+    print int(tablename.split("_")[0][1:])
+
+    #####DML: insert values into new array column
+    cur.execute("UPDATE {0}.{1} SET acres=count*{2}, series='{3}', yxc='{4}', series_order={5}".format(schema, tablename, gen.getPixelConversion2Acres(res), tablename.split("_")[0], yxc, int(tablename.split("_")[0][1:])))
+    conn.commit() 
 
 
 
-
-# addGDBTable2postgres(['ancillary','data_2008_2012'],'*','counts')
 
 
 def importCSVtoPG():
@@ -167,16 +120,32 @@ def importCSVtoPG():
 
     df.to_sql("fsa_2012", engine, schema='sa')
 
-importCSVtoPG()
 
-# create table refinement.traj_ytc56_2008to2012_table_lookup as  
 
-# select distinct traj_array
-# from refinement.traj_ytc56_2008to2012_table 
-# where 61 = ANY(traj_array) 
-# OR 122 = ANY(traj_array)
-# OR 123 = ANY(traj_array)
-# OR 124 = ANY(traj_array)
-# OR '{37,36}' = traj_array
-# OR '{152,36}' = traj_array
-# OR '{176,36}' = traj_array
+
+def createMergedTable():
+  cur = conn.cursor()
+  query="SELECT table_name FROM information_schema.tables WHERE table_schema = 'counts_yxc' AND SUBSTR(table_name, 1, 1) = 's';"
+  cur.execute(query)
+  rows = cur.fetchall()
+  print rows
+  
+  table_list = []
+  for row in rows:
+    query_temp="SELECT value as years,count,acres,series,yxc,series_order FROM counts_yxc.{}".format(row[0])
+    table_list.append(query_temp)
+
+  query_final = "DROP TABLE IF EXISTS counts_yxc.merged_series; CREATE TABLE counts_yxc.merged_series AS {}".format(' UNION '.join(table_list))
+  print query_final
+  cur.execute(query_final)
+  conn.commit()
+
+
+
+
+
+##############  call functions  #############################################
+
+
+# addGDBTable2postgres('yfc','counts_yxc')
+createMergedTable()

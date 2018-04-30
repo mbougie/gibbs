@@ -246,7 +246,7 @@ def createRefinedTrajectory(data):
 def run(data):
     if data['global']['version']=='initial':
         print '------running pre_imw(initial)--------'
-        createTrajectories(data)
+        # createTrajectories(data)
         addGDBTable2postgres(data, 'pre_imw')
         
     elif data['global']['version']=='final':
