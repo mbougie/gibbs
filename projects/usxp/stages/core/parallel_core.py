@@ -26,8 +26,8 @@ arcpy.env.scratchWorkspace = "in_memory"
 
 def createReclassifyList(data):
     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
-    query = " SELECT \"Value\", mtr from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array".format(data['pre']['traj']['filename'], data['pre']['traj']['lookup_name'])
-    # print 'query:', query
+    query = " SELECT \"Value\", mtr from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array WHERE ytc <= 2014  OR yfc <= 2014 OR (ytc IS NULL AND yfc IS NULL)".format(data['pre']['traj']['filename'], data['pre']['traj']['lookup_name'])
+    print 'query:', query
     df = pd.read_sql_query(query, con=engine)
     print df
     fulllist=[[0,0,"NODATA"]]
@@ -83,7 +83,7 @@ def execute_task(args):
 
 		outname = "tile_" + str(fc_count) +'.tif'
 
-		outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/", r"tiles", outname)
+		outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/data/", r"tiles", outname)
 
 		raster_nbl.save(outpath)
   
@@ -91,23 +91,21 @@ def execute_task(args):
 	elif data['core']['route'] == 'r2':
 		raster_filter = MajorityFilter(Raster(data['pre']['traj_rfnd']['path']), filter_combos[filter_key][0], filter_combos[filter_key][1])
 		raster_yxc = Reclassify(raster_filter, "Value", RemapRange(createReclassifyList(data)), "NODATA")
-		raster_rg = RegionGroup(raster_yxc, rg_instance[0], rg_instance[1], "NO_LINK")
-		raster_mask = SetNull(raster_rg, raster_yxc, cond)
-		filled_1 = Con(IsNull(raster_mask),FocalStatistics(raster_mask,NbrRectangle(3, 3, "CELL"),'MAJORITY'), raster_mask)
-		filled_2 = Con(IsNull(filled_1),FocalStatistics(filled_1,NbrRectangle(10, 10, "CELL"),'MAJORITY'), filled_1)
-		# final = SetNull(path_mtr, filled_2, "VALUE <> 3")
-		# raster_mask = SetNull(raster_rg, 1, cond)
-		# raster_nbl = arcpy.sa.Nibble(raster_yxc, raster_mask, "DATA_ONLY")
+		# raster_rg = RegionGroup(raster_yxc, rg_instance[0], rg_instance[1], "NO_LINK")
+		# raster_mask = SetNull(raster_rg, raster_yxc, cond)
+		# filled_1 = Con(IsNull(raster_mask),FocalStatistics(raster_mask,NbrRectangle(3, 3, "CELL"),'MAJORITY'), raster_mask)
+		# filled_2 = Con(IsNull(filled_1),FocalStatistics(filled_1,NbrRectangle(10, 10, "CELL"),'MAJORITY'), filled_1)
+
 
 		#clear out the extent for next time
 		arcpy.ClearEnvironment("extent")
 
 		outname = "tile_" + str(fc_count) +'.tif'
 
-		outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/", r"tiles", outname)
+		outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/data/", r"tiles", outname)
 
 		# raster_shrink.save(outpath)
-		filled_2.save(outpath)
+		raster_yxc.save(outpath)
 
 
 	if data['core']['route'] == 'r3':
@@ -122,7 +120,7 @@ def execute_task(args):
 
 		outname = "tile_" + str(fc_count) +'.tif'
 
-		outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/", r"tiles", outname)
+		outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/data/", r"tiles", outname)
 
 		raster_yxc.save(outpath)
 
@@ -133,7 +131,7 @@ def execute_task(args):
 
 def mosiacRasters(data):
 	######Description: mosiac tiles together into a new raster
-	tilelist = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*.tif")
+	tilelist = glob.glob("C:/Users/Bougie/Desktop/Gibbs/data/tiles/*.tif")
 	print 'tilelist:', tilelist 
 
 	#### need to wrap these paths with Raster() fct or complains about the paths being a string
@@ -158,7 +156,7 @@ def mosiacRasters(data):
 
 def run(data):
 
-	tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
+	tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/data/tiles/*")
 	for tile in tiles:
 		os.remove(tile)
 

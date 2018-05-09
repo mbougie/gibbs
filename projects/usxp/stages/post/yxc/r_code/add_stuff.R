@@ -95,7 +95,7 @@ formatAC<-function(x){x/1000000}
 
 ###query the data from postgreSQL
 # df <- dbGetQuery(con, "SELECT years,acres,series,yxc,series_order,series || ': ' || label_traj as label FROM counts_yxc.merged_series as a inner join series_meta.meta as b using(series)  where yxc = 'yfc' and series != 's21_seperate' ")
-df <- dbGetQuery(con, "SELECT years,acres,series,yxc,series_order FROM counts_yxc.merged_series where yxc = 'yfc'")
+df <- dbGetQuery(con, "SELECT years,acres,series,yxc,series_order FROM counts_yxc.merged_series where yxc = 'ytc' AND (series='s22' OR series='s23') ")
 
 
 ##this reorders the labels in the legend in chronological order
@@ -113,6 +113,6 @@ plot = ggplot(df, aes(x=years, y=acres, group=series_order, color=series, ordere
   # scale_colour_manual(values = c("#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00", "#ff7f00"))
 
 plot
-pdf("C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\post\\yxc\\r_code\\yfc_all.pdf")
+pdf("C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\post\\yxc\\r_code\\ytc_all.pdf")
 print(plot)
 dev.off()

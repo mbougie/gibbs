@@ -39,8 +39,8 @@ def getGDBpath(wc):
 
 
 
-data = gen.getJSONfile()
-print data
+# data = gen.getJSONfile()
+# print data
 
 
 

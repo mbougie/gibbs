@@ -53,9 +53,9 @@ def createReclassifyList():
 	
 
 ##create global objects to reference through the script
-data = gen.getJSONfile()
-traj_list = createReclassifyList()
-print data
+# data = gen.getJSONfile()
+# traj_list = createReclassifyList()
+# print data
 
 
 def execute_task(args):

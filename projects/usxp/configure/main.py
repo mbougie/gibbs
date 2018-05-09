@@ -45,10 +45,11 @@ import add2pg
 
 
 
-# def getjsonfile():
-#     with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\configure\\multiple_instances.json') as json_data:
-#         template = json.load(json_data)
-#         return template
+def getTemplateJSONpath():
+    with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\configure\\multiple_instances.json') as json_data:
+        template = json.load(json_data)
+        print 'template', template
+        return template
 
 def getKernelfile(kernelpath):
     with open(kernelpath) as json_data:
@@ -58,7 +59,7 @@ def getKernelfile(kernelpath):
 # print  getKernelfile()
 
 if __name__ == '__main__':
-	kernels = getjsonfile()
+	kernels = getTemplateJSONpath()
 	print 'kernels------------------------', kernels
 	for key, list_kernels in kernels.iteritems():
 		for kernelpath in list_kernels:
@@ -70,23 +71,29 @@ if __name__ == '__main__':
 			instance = data_kernel['global']['instance']
 			print 'instance---------', instance
 
-            #############  could be junk!!!!  ########################################
+
+
+            ##########  create the geodatabase structure  #######################
 			# cc.run(route,instance)
+
+
+            #############  could be junk!!!!  ########################################
+
 			# ci.run([key,route,instance],'initial')
-			# data = gen.getJSONfile()
+			# data = gen.getKernels()
 			# pre.run(data)
 			# ci.run([key,route,instance],'final')
 
 
 			##========  create the intial chunk of the current instance  =============
-			# ci.run([key,route,instance],'initial'))
-			# data = gen.getJSONfile()
+			# ci.run([key,route,instance],'initial')
+			# data = gen.getKernels()
 			# pre.run(data)
 			##========================================================================
 
 			##========  update the current instance  =================================
 			# ci.run([key,route,instance],'final')
-			data = gen.getJSONfile()
+			data = gen.getCurrentInstance()
 			##========================================================================
 
 
@@ -100,13 +107,13 @@ if __name__ == '__main__':
 			# pre.run(data)
 
 			######  core script  ###################################################
-			# core.run(data)
+			core.run(data)
 
 			######  post script  ###################################################
 			# yxc.run(data, 'ytc')
-			add2pg.run(data, 'ytc')
+			# add2pg.run(data, 'ytc')
 			# yxc.run(data, 'yfc')
-			add2pg.run(data, 'yfc')
+			# add2pg.run(data, 'yfc')
 
 			
 			######  DML----add mtr3 value to pgtable  #####################################
@@ -114,8 +121,12 @@ if __name__ == '__main__':
 
 
 
+37664686
 
+37650966
 
+4485928
+4481090
 
 
 
@@ -143,7 +154,7 @@ if __name__ == '__main__':
 
 
 ##################  possible junk  ##############################################################################
-			# data = gen.getJSONfile()
+			# data = gen.getKernels()
 			# temp.run(data)
 
 
