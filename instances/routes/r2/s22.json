@@ -8,5 +8,5 @@
 	"pre":{"version":{"traj":"v4", "lookup":"v3"}},
 	"refine":{"version":"v5", "operator":"or", "years_nlcd":[2001,2006,2011]},
 	"core":{"route":"r2", "filter":"n8h", "rg":"8w", "mmu":"5"},
-	"note":"added NLCD 81 to the mlcd_mask condition"
+	"note":"added NLCD 81 to the nlcd_mask condition"
 }

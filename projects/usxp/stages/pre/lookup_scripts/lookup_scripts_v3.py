@@ -11,7 +11,7 @@ import pandas as pd
 import numpy as np
 import psycopg2
 from itertools import groupby
-sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\misc\\')
+sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\modules\\')
 import general as gen
 import json
 import fnmatch
@@ -39,8 +39,7 @@ def getGDBpath(wc):
 
 
 
-
-data = gen.getJSONfile()
+data = gen.getCurrentInstance()
 print data
 
 
@@ -50,9 +49,10 @@ def labelByMTRqueries():
     ## NOTE: the order that these queries is important!?!?----maybe not because factored in the IS NULL into queries and mtr1 and mtr2 should be fine---mtr5 query needs to last though!!
     cur = conn.cursor()
     res = data['global']['res']
+    years=data['global']['years']
     datarange = data['global']['datarange']
     table = data['pre']['traj']['filename']
-    lookuptable = data['core']['lookup']
+    lookuptable = data['pre']['traj']['lookup_name']
 
     #clear columns of values each time run script
     query_initial = 'update pre.{} set mtr = NULL, ytc = NULL, yfc = NULL'.format(lookuptable)
@@ -67,7 +67,7 @@ def labelByMTRqueries():
     conn.commit()
 
     #run query_mtr2
-    query_mtr2 = 'update pre.{} set mtr = 2 where traj_array in (SELECT (SELECT traj_array FROM UNNEST(traj_array) as s HAVING SUM(s) >= 9) from pre.{})'.format(lookuptable,lookuptable)
+    query_mtr2 = 'update pre.{} set mtr = 2 where traj_array in (SELECT (SELECT traj_array FROM UNNEST(traj_array) as s HAVING SUM(s) >= {}) from pre.{})'.format(lookuptable, str(len(years)-1), lookuptable)
     print query_mtr2
     cur.execute(query_mtr2)
     conn.commit()
@@ -117,5 +117,6 @@ def labelByMTRqueries():
 
 
 #######  update the lookup table  ######
-# labelByMTRqueries()
+labelByMTRqueries()
+
 

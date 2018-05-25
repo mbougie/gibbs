@@ -1,0 +1,12 @@
+{
+	"global":{
+		"instance":"s23",
+	    "res":"30",
+	    "years":[2008,2015],
+	    "conv_years":[2009,2014]
+	},
+	"pre":{"version":{"traj":"v4", "lookup":"v3"}},
+	"refine":{"version":"v5", "operator":"or", "years_nlcd":[2001,2006,2011]},
+	"core":{"route":"r2", "filter":"n8h", "rg":"8w", "mmu":"5"},
+	"note":"truncated the time series to test if there is major drop off with 2014 being last cy"
+}

@@ -26,7 +26,7 @@ arcpy.env.scratchWorkspace = "in_memory"
 
 def createReclassifyList(data):
     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
-    query = " SELECT \"Value\", mtr from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array WHERE ytc <= 2014  OR yfc <= 2014 OR (ytc IS NULL AND yfc IS NULL)".format(data['pre']['traj']['filename'], data['pre']['traj']['lookup_name'])
+    query = " SELECT \"Value\", mtr from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array".format(data['pre']['traj']['filename'], data['pre']['traj']['lookup_name'])
     print 'query:', query
     df = pd.read_sql_query(query, con=engine)
     print df
@@ -46,7 +46,7 @@ def createReclassifyList(data):
 
 
 def execute_task(args):
-	in_extentDict, data = args
+	in_extentDict, data, traj_list = args
 	#########  Execute Nibble  #####################
 	filter_combos = {'n4h':["FOUR", "HALF"],'n4m':["FOUR", "MAJORITY"],'n8h':["EIGHT", "HALF"],'n8m':["EIGHT", "MAJORITY"]}
 	filter_key = data['core']['filter']
@@ -72,7 +72,7 @@ def execute_task(args):
 	arcpy.env.extent = arcpy.Extent(XMin, YMin, XMax, YMax)
 
 	if data['core']['route'] == 'r1':
-		raster_yxc = Reclassify(Raster(data['pre']['traj_rfnd']['path']), "Value", RemapRange(createReclassifyList(data)), "NODATA")
+		raster_yxc = Reclassify(Raster(data['pre']['traj_rfnd']['path']), "Value", RemapRange(traj_list), "NODATA")
 		raster_filter = MajorityFilter(raster_yxc, filter_combos[filter_key][0], filter_combos[filter_key][1])
 		raster_rg = RegionGroup(raster_filter, rg_instance[0], rg_instance[1],"NO_LINK")
 		raster_mask = SetNull(raster_rg, 1, cond)
@@ -90,11 +90,16 @@ def execute_task(args):
 
 	elif data['core']['route'] == 'r2':
 		raster_filter = MajorityFilter(Raster(data['pre']['traj_rfnd']['path']), filter_combos[filter_key][0], filter_combos[filter_key][1])
-		raster_yxc = Reclassify(raster_filter, "Value", RemapRange(createReclassifyList(data)), "NODATA")
-		# raster_rg = RegionGroup(raster_yxc, rg_instance[0], rg_instance[1], "NO_LINK")
-		# raster_mask = SetNull(raster_rg, raster_yxc, cond)
-		# filled_1 = Con(IsNull(raster_mask),FocalStatistics(raster_mask,NbrRectangle(3, 3, "CELL"),'MAJORITY'), raster_mask)
-		# filled_2 = Con(IsNull(filled_1),FocalStatistics(filled_1,NbrRectangle(10, 10, "CELL"),'MAJORITY'), filled_1)
+		raster_yxc = Reclassify(raster_filter, "Value", RemapRange(traj_list), "NODATA")
+		raster_filter=None
+		raster_rg = RegionGroup(raster_yxc, rg_instance[0], rg_instance[1], "NO_LINK")
+		raster_mask = SetNull(raster_rg, raster_yxc, cond)
+		raster_yxc=None
+		raster_rg=None
+		filled_1 = Con(IsNull(raster_mask),FocalStatistics(raster_mask,NbrRectangle(3, 3, "CELL"),'MAJORITY'), raster_mask)
+		raster_mask=None
+		filled_2 = Con(IsNull(filled_1),FocalStatistics(filled_1,NbrRectangle(10, 10, "CELL"),'MAJORITY'), filled_1)
+		filled_1=None
 
 
 		#clear out the extent for next time
@@ -105,15 +110,15 @@ def execute_task(args):
 		outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/data/", r"tiles", outname)
 
 		# raster_shrink.save(outpath)
-		raster_yxc.save(outpath)
-
+		filled_2.save(outpath)
+        filled_2=None
 
 	if data['core']['route'] == 'r3':
 		raster_filter = MajorityFilter(Raster(data['pre']['traj_rfnd']['path']), filter_combos[filter_key][0], filter_combos[filter_key][1])
 		raster_rg = RegionGroup(raster_filter, rg_instance[0], rg_instance[1],"NO_LINK")
 		raster_mask = SetNull(raster_rg, 1, cond)
 		raster_nbl = arcpy.sa.Nibble(raster_filter, raster_mask, "DATA_ONLY")
-		raster_yxc = Reclassify(raster_nbl, "Value", RemapRange(createReclassifyList(data)), "NODATA")
+		raster_yxc = Reclassify(raster_nbl, "Value", RemapRange(traj_list), "NODATA")
 
 		#clear out the extent for next time
 		arcpy.ClearEnvironment("extent")
@@ -154,11 +159,14 @@ def mosiacRasters(data):
 
 
 
+
 def run(data):
 
 	tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/data/tiles/*")
 	for tile in tiles:
 		os.remove(tile)
+
+	traj_list = createReclassifyList(data)
 
 	#get extents of individual features and add it to a dictionary
 	extDict = {}
@@ -177,9 +185,9 @@ def run(data):
 	print 'extDict', extDict
 	print'extDict.items',  extDict.items()
 
-	#######create a process and pass dictionary of extent to execute task
-	pool = Pool(processes=5)
-	pool.map(execute_task, [(ed, data) for ed in extDict.items()])
+	######create a process and pass dictionary of extent to execute task
+	pool = Pool(processes=9)
+	pool.map(execute_task, [(ed, data, traj_list) for ed in extDict.items()])
 	pool.close()
 	pool.join
 

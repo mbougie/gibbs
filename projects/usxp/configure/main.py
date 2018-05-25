@@ -17,6 +17,7 @@ sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\sta
 sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\core\\')
 sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\post\\yxc\\')
 sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\post\\cdl\\')
+sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\deliverables\\')
 # sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\qaqc\\')
 # sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\temp\\')
 
@@ -39,6 +40,7 @@ import parallel_yxc as yxc
 import parallel_cdl as cdl
 import parallel_cdl_year as cdl_year
 import add2pg
+import deliver
 # import qaqc_now as qaqc
 # import temp_rg as temp
 
@@ -73,11 +75,11 @@ if __name__ == '__main__':
 
 
 
-            ##########  create the geodatabase structure  #######################
+			##########  create the geodatabase structure  #######################
 			# cc.run(route,instance)
 
 
-            #############  could be junk!!!!  ########################################
+			#############  could be junk!!!!  ########################################
 
 			# ci.run([key,route,instance],'initial')
 			# data = gen.getKernels()
@@ -107,88 +109,15 @@ if __name__ == '__main__':
 			# pre.run(data)
 
 			######  core script  ###################################################
-			core.run(data)
+			# core.run(data)
 
 			######  post script  ###################################################
 			# yxc.run(data, 'ytc')
 			# add2pg.run(data, 'ytc')
 			# yxc.run(data, 'yfc')
 			# add2pg.run(data, 'yfc')
+			deliver.run(data)
 
-			
 			######  DML----add mtr3 value to pgtable  #####################################
 			# dmlPGtable(data, yxc)
-
-
-
-37664686
-
-37650966
-
-4485928
-4481090
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-##################  possible junk  ##############################################################################
-			# data = gen.getKernels()
-			# temp.run(data)
-
-
-			####------this is imw only----------------start-----------------------
-			## create the mosaiced dataset
-			# post_imw.run(data, 'yfc')
-
-			## add the table to merged_table
-			# add2pg.run(data, 'yfc')
-
-			####------this is imw only---------------end-------------------------
-			# core.run(data)
-
-			# yxc.run(data, 'ytc')
-			# add2pg.run(data, 'ytc')
-			# yxc.run(data, 'yfc')
-			# add2pg.run(data, 'yfc')
-
-			# cdl_year.run(data, 'fc')
-
-
-
-			# qaqc.addGDBTable2postgres(data)
-
-
-
-
-
-
-			# qaqc.rasterToPoly(data, data['core']['gdb'])
-			
-		
-
-
-
-
 

@@ -17,7 +17,7 @@ formatAC<-function(x){x/1000000}
 ####  important series   ##########################################################################################
 
 ###query the data from postgreSQL
-df <- dbGetQuery(con, "SELECT short_desc, year::integer, sum(acres_yo) acres FROM counts.merged_acres GROUP BY short_desc,year")
+df <- dbGetQuery(con, "SELECT label, year::integer, sum(acres_yo) acres FROM counts.merged_acres INNER JOIN counts.merged_acres_lookup_t2 using(short_desc) WHERE label IS NOT NULL GROUP BY label,year")
 
 ##this reorders the labels in the legend in chronological order
 # df$name <- with(df, reorder(name, -acres))
@@ -25,7 +25,7 @@ df <- dbGetQuery(con, "SELECT short_desc, year::integer, sum(acres_yo) acres FRO
 # names(jColors) <- df$name
 # print(head(jColors))
 
-yo = ggplot(df, aes(x=year, y=acres, group=short_desc, color=short_desc, ordered = TRUE)) +
+yo = ggplot(df, aes(x=year, y=acres, group=label, color=label, ordered = TRUE)) +
   geom_line(size=0.80) +
   scale_linetype_manual(values=c("dashed"))+
   scale_y_continuous(labels=formatAC) +
@@ -35,6 +35,6 @@ yo = ggplot(df, aes(x=year, y=acres, group=short_desc, color=short_desc, ordered
   theme(aspect.ratio=0.5, legend.title=element_blank(), legend.position = c(0.12, -0.18)) ##this creates 1 to 1 aspect ratio so when export to pdf not stretched
   # scale_colour_manual(values = jColors)
 
-pdf("C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\nass\\nass_conus.pdf")
+pdf("C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\nass\\nass_conus2.pdf")
 print(yo)
 dev.off()

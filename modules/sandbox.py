@@ -27,7 +27,7 @@ arcpy.CheckOutExtension("Spatial")
 
 ###################  declare functions  #######################################################
 
-db = 'usxp'
+db = 'side_projects'
 
 
 # db = 'ksu'
@@ -60,7 +60,7 @@ def addGDBTable2postgres(yxc, schema):
     
     # # path to the table you want to import into postgres
     # input = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\pre\\traj_rfnd\\v3\\v3_traj_rfnd.gdb\\v4_traj_cdl30_b_2008to2017_rfnd_v3'
-    raster = 'D:\\projects\\usxp\\series\\s9\\yfc.gdb\\s9_yfc30_2008to2016_mmu5_nbl'
+    raster = 'D:\\projects\\usxp\\series\\s9\\ytc.gdb\\s9_ytc30_2008to2016_mmu5_nbl_fc'
 
     # Execute AddField twice for two new fields
     fields = [f.name for f in arcpy.ListFields(raster)]
@@ -76,7 +76,7 @@ def addGDBTable2postgres(yxc, schema):
 
     print 'df-----------------------', df
 
-    tablename = 's9_yfc30_2008to2016_mmu5_nbl'
+    tablename = 's9_ytc30_2008to2016_mmu5_nbl_fc'
     
     # # # use pandas method to import table into psotgres
     df.to_sql(tablename, engine, schema=schema)
@@ -142,10 +142,73 @@ def createMergedTable():
 
 
 
+def addGDBTable2postgres_w_array(parent, filename, schema):
+    # set the engine.....
+    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/side_projects')
+    
+    # arcpy.env.workspace = data['pre']['traj']['path']
+
+    tablename=parent+filename
+
+    # Execute AddField twice for two new fields
+    fields = [f.name for f in arcpy.ListFields(tablename)]
+   
+    # converts a table to NumPy structured array.
+    arr = arcpy.da.TableToNumPyArray(tablename,fields)
+    print arr
+    
+    # convert numpy array to pandas dataframe
+    df = pd.DataFrame(data=arr)
+
+    print df
+    
+    # use pandas method to import table into psotgres
+    # df.to_sql(filename, engine, schema=schema)
+    
+    #add trajectory field to table
+    addTrajArrayField(schema, filename, fields)
+
+
+
+
+def addTrajArrayField(schema, tablename, fields):
+    #this is a sub function for addGDBTable2postgres()
+    cur = conn.cursor()
+    
+    #convert the rasterList into a string
+    columnList = ','.join(fields[3:])
+    print columnList
+
+    #DDL: add column to hold arrays
+    cur.execute('ALTER TABLE {}.{} ADD COLUMN traj_array integer[];'.format(schema, tablename));
+    
+    #DML: insert values into new array column
+    cur.execute('UPDATE {}.{} SET traj_array = ARRAY[{}];'.format(schema, tablename, columnList));
+    
+    conn.commit()
+    print "Records created successfully";
+    conn.close()
+
+
+
+
+
+
+
+a = np.array([288128028,205651,41170,1165935,1086902,864040,854994,823598,448141])
+print a
+print np.cumsum(a)
+
+
+
+
+
+
+
 
 
 ##############  call functions  #############################################
 
 
-# addGDBTable2postgres('yfc','counts_yxc')
-createMergedTable()
+# addGDBTable2postgres_w_array('D:\\projects\\map_biomas\\Test3_subSet\\Test3_subSet\\', 'combine_sc_22', 'mapbiomas')
+# createMergedTable()

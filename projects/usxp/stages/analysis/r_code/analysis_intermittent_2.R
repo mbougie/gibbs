@@ -17,7 +17,7 @@ formatAC<-function(x){x/1000000}
 ####  important series   ##########################################################################################
 
 ###query the data from postgreSQL
-df <- dbGetQuery(con, "SELECT year, crop_type::text, acres::integer FROM counts_gen.total_acres where crop_type='crop';")
+df <- dbGetQuery(con, "SELECT year, crop_type::text, acres::integer FROM counts_gen.total_acres")
 
 ##this reorders the labels in the legend in chronological order
 # df$name <- with(df, reorder(name, -acres))
@@ -35,6 +35,6 @@ yo = ggplot(df, aes(x=year, y=acres, group=crop_type, color=crop_type, ordered =
   theme(aspect.ratio=0.5, legend.title=element_blank(), legend.position = c(0.12, -0.18)) ##this creates 1 to 1 aspect ratio so when export to pdf not stretched
   # scale_colour_manual(values = jColors)
 
-pdf("C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\analysis\\total_crop.pdf")
+pdf("C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\analysis\\total_crop_yo.pdf")
 print(yo)
 dev.off()

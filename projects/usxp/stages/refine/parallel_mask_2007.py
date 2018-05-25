@@ -34,13 +34,28 @@ arcpy.env.overwriteOutput = True
 arcpy.env.scratchWorkspace = "in_memory" 
 
 
+def getPixelsPerTile(vector):
+	pixels_cols=153811
+	pixels_rows=96523
+
+	fishnet_values={"mask_2007":{"rws":7,"cls":7}}
+
+	if vector=='rws':
+		return pixels_rows / fishnet_values['mask_2007'][vector]
+	elif vector=='cls':
+		return pixels_cols / fishnet_values['mask_2007'][vector]
+
+cls = getPixelsPerTile('cls')
+print 'cls',cls
+rws = getPixelsPerTile('rws')
+print 'rws',rws
 
 ###NOTE STILL HAVE TO DEAL WITH YFC IN QUERY BELOW  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-def createReclassifyList():
+def createReclassifyList(data):
 	cur = conn.cursor()
 	
 	query = "SELECT \"Value\", ytc, yfc from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array WHERE ytc=2009 or yfc=2009".format(data['pre']['traj']['filename'], data['pre']['traj']['lookup_name'])
-	# print 'query:', query
+	print 'query:', query
 
 	cur.execute(query)
 	#create empty list
@@ -53,16 +68,11 @@ def createReclassifyList():
 	return rows
 	
 
-##create global objects to reference through the script
-# data = gen.getJSONfile()
-# traj_list = createReclassifyList()
-# print data
-
-
-
 
 def execute_task(args):
-	in_extentDict, data = args
+	in_extentDict, data, traj_list = args
+	# print in_extentDict
+	# print data
 
 	fc_count = in_extentDict[0]
 
@@ -79,20 +89,17 @@ def execute_task(args):
 	arcpy.env.outputCoordinateSystem = data['pre']['traj']['path']	
 	arcpy.env.extent = arcpy.Extent(XMin, YMin, XMax, YMax)
 
-	cls = 21973
-	rws = 13789
 
 	# outData = numpy.zeros((rows,cols), numpy.int16)
-	outData = np.zeros((13789, 21973), dtype=np.int)
+	outData = np.zeros((rws, cls), dtype=np.uint8)
     
     ### create numpy arrays for input datasets nlcds and traj
-    # arcpy.RasterToNumPyArray(in_raster='C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\binaries.gdb\\cdl30_b_2007_resampled', lower_left_corner = arcpy.Point(XMin,YMin), nrows = 13789, ncols = 21973),
-	cdls = {2007:arcpy.RasterToNumPyArray(in_raster='C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\binaries.gdb\\cdl30_b_2007', lower_left_corner = arcpy.Point(XMin,YMin), nrows = 13789, ncols = 21973, nodata_to_value=255)}
+    # arcpy.RasterToNumPyArray(in_raster='C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\binaries.gdb\\cdl30_b_2007_resampled', lower_left_corner = arcpy.Point(XMin,YMin), nrows = rws, ncols = cls),
+	cdls = {2007:arcpy.RasterToNumPyArray(in_raster='C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\binaries.gdb\\cdl30_b_2007', lower_left_corner = arcpy.Point(XMin,YMin), nrows = rws, ncols = cls, nodata_to_value=255)}
 	
-	arr_traj = arcpy.RasterToNumPyArray(in_raster=data['pre']['traj']['path'], lower_left_corner = arcpy.Point(XMin,YMin), nrows = 13789, ncols = 21973)
+	arr_traj = arcpy.RasterToNumPyArray(in_raster=data['pre']['traj']['path'], lower_left_corner = arcpy.Point(XMin,YMin), nrows = rws, ncols = cls)
 
 	#### find the location of each pixel labeled with specific arbitray value in the rows list  
-	#### note the traj_list is derived from the sql query above
 	for row in traj_list:
 		#trajectory value
 		traj = row[0]
@@ -133,13 +140,16 @@ def execute_task(args):
 	outname = "tile_" + str(fc_count) +'.tif'
 
 	# #create
-	outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/", r"tiles", outname)
+	outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/data/", r"tiles", outname)
 
 	# NumPyArrayToRaster (in_array, {lower_left_corner}, {x_cell_size}, {y_cell_size}, {value_to_nodata})
 	myRaster = arcpy.NumPyArrayToRaster(outData, lower_left_corner=arcpy.Point(XMin, YMin), x_cell_size=30, y_cell_size=30, value_to_nodata=0)
 	
+	outData = None
 
 	myRaster.save(outpath)
+
+	myRaster = None
 
 
 
@@ -147,7 +157,7 @@ def execute_task(args):
 
 def mosiacRasters(data):
 	######Description: mosiac tiles together into a new raster
-	tilelist = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*.tif")
+	tilelist = glob.glob("C:/Users/Bougie/Desktop/Gibbs/data/tiles/*.tif")
 	print 'tilelist:', tilelist 
 
 	#### need to wrap these paths with Raster() fct or complains about the paths being a string
@@ -170,14 +180,18 @@ def mosiacRasters(data):
 
 
 def run(data):
-
-	tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
+	print "mask 2007------------"
+	tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/data/tiles/*")
 	for tile in tiles:
 		os.remove(tile)
+
+	traj_list = createReclassifyList(data)
+
 
 	#get extents of individual features and add it to a dictionary
 	extDict = {}
 
+	# for row in arcpy.da.SearchCursor('C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\vector\\shapefiles.gdb\\fishnet_mask2007', ["oid_1","SHAPE@"]):
 	for row in arcpy.da.SearchCursor(data['ancillary']['vector']['shapefiles']['fishnet_mtr'], ["oid","SHAPE@"]):
 		atlas_stco = row[0]
 		print atlas_stco
@@ -192,9 +206,9 @@ def run(data):
 	print 'extDict', extDict
 	print'extDict.items',  extDict.items()
 
-	#######create a process and pass dictionary of extent to execute task
-	pool = Pool(processes=5)
-	pool.map(execute_task, [(ed, data) for ed in extDict.items()])
+	######create a process and pass dictionary of extent to execute task
+	pool = Pool(processes=7)
+	pool.map(execute_task, [(ed, data, traj_list) for ed in extDict.items()])
 	pool.close()
 	pool.join
 

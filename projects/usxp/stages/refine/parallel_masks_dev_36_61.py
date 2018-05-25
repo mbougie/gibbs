@@ -74,12 +74,35 @@ def getNonCropList():
 	### add 36 and 61 to noncrop list!!!
 	return noncrop_list + [36,61]
 
+	
+
+
+
+def getPixelsPerTile(vector):
+	pixels_cols=153811
+	pixels_rows=96523
+
+	fishnet_values={"mask_2007":{"rws":7,"cls":49}}
+
+	if vector=='rws':
+		return pixels_rows / fishnet_values['mask_2007'][vector]
+	elif vector=='cls':
+		return pixels_cols / fishnet_values['mask_2007'][vector]
+
+
+
+
+
+cls = getPixelsPerTile('cls')
+print 'cls',cls
+rws = getPixelsPerTile('rws')
+print 'rws',rws
 
 	
 
 
 def execute_task(args):
-	in_extentDict, data = args
+	in_extentDict, data, traj_list, noncroplist = args
 
 	fc_count = in_extentDict[0]
 	
@@ -97,38 +120,35 @@ def execute_task(args):
 	arcpy.env.outputCoordinateSystem = data['pre']['traj']['path']	
 	arcpy.env.extent = arcpy.Extent(XMin, YMin, XMax, YMax)
 
-	cls = 21973
-	rws = 13789
-
 
 	# outData = numpy.zeros((rows,cols), numpy.int16)
-	outData = np.zeros((13789, 21973), dtype=np.int)
+	outData = np.zeros((rws, cls), dtype=np.uint8)
     
     ### create numpy arrays for input datasets cdls and traj
 	cdls = {
-			2008:arcpy.RasterToNumPyArray(in_raster='C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2008', lower_left_corner = arcpy.Point(XMin,YMin), nrows = 13789, ncols = 21973),
-			2009:arcpy.RasterToNumPyArray(in_raster='C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2009', lower_left_corner = arcpy.Point(XMin,YMin), nrows = 13789, ncols = 21973),
-			2010:arcpy.RasterToNumPyArray(in_raster='C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2010', lower_left_corner = arcpy.Point(XMin,YMin), nrows = 13789, ncols = 21973),
-			2011:arcpy.RasterToNumPyArray(in_raster='C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2011', lower_left_corner = arcpy.Point(XMin,YMin), nrows = 13789, ncols = 21973),
-			2012:arcpy.RasterToNumPyArray(in_raster='C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2012', lower_left_corner = arcpy.Point(XMin,YMin), nrows = 13789, ncols = 21973),
-			2013:arcpy.RasterToNumPyArray(in_raster='C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2013', lower_left_corner = arcpy.Point(XMin,YMin), nrows = 13789, ncols = 21973),
-			2014:arcpy.RasterToNumPyArray(in_raster='C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2014', lower_left_corner = arcpy.Point(XMin,YMin), nrows = 13789, ncols = 21973),
-			2015:arcpy.RasterToNumPyArray(in_raster='C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2015', lower_left_corner = arcpy.Point(XMin,YMin), nrows = 13789, ncols = 21973),
-			2016:arcpy.RasterToNumPyArray(in_raster='C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2016', lower_left_corner = arcpy.Point(XMin,YMin), nrows = 13789, ncols = 21973),
-			2017:arcpy.RasterToNumPyArray(in_raster='C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2017', lower_left_corner = arcpy.Point(XMin,YMin), nrows = 13789, ncols = 21973)
+			2008:arcpy.RasterToNumPyArray(in_raster='C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2008', lower_left_corner = arcpy.Point(XMin,YMin), nrows = rws, ncols = cls),
+			2009:arcpy.RasterToNumPyArray(in_raster='C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2009', lower_left_corner = arcpy.Point(XMin,YMin), nrows = rws, ncols = cls),
+			2010:arcpy.RasterToNumPyArray(in_raster='C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2010', lower_left_corner = arcpy.Point(XMin,YMin), nrows = rws, ncols = cls),
+			2011:arcpy.RasterToNumPyArray(in_raster='C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2011', lower_left_corner = arcpy.Point(XMin,YMin), nrows = rws, ncols = cls),
+			2012:arcpy.RasterToNumPyArray(in_raster='C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2012', lower_left_corner = arcpy.Point(XMin,YMin), nrows = rws, ncols = cls),
+			2013:arcpy.RasterToNumPyArray(in_raster='C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2013', lower_left_corner = arcpy.Point(XMin,YMin), nrows = rws, ncols = cls),
+			2014:arcpy.RasterToNumPyArray(in_raster='C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2014', lower_left_corner = arcpy.Point(XMin,YMin), nrows = rws, ncols = cls),
+			2015:arcpy.RasterToNumPyArray(in_raster='C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2015', lower_left_corner = arcpy.Point(XMin,YMin), nrows = rws, ncols = cls),
+			2016:arcpy.RasterToNumPyArray(in_raster='C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2016', lower_left_corner = arcpy.Point(XMin,YMin), nrows = rws, ncols = cls),
+			2017:arcpy.RasterToNumPyArray(in_raster='C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2017', lower_left_corner = arcpy.Point(XMin,YMin), nrows = rws, ncols = cls)
 	       }
 	
-	arr_traj = arcpy.RasterToNumPyArray(in_raster=data['pre']['traj']['path'], lower_left_corner = arcpy.Point(XMin,YMin), nrows = 13789, ncols = 21973)
+	arr_traj = arcpy.RasterToNumPyArray(in_raster=data['pre']['traj']['path'], lower_left_corner = arcpy.Point(XMin,YMin), nrows = rws, ncols = cls)
 
 	# find the location of each pixel labeled with specific arbitray value in the rows list  
-	for row in createReclassifyList(data):
+	for row in traj_list:
 		#year of conversion for either expansion or abandonment
 		ytx = row[1]
-		print 'ytx', ytx
+		# print 'ytx', ytx
 		
 		#year before conversion for either expansion or abandonment
 		ybx = row[1]-1
-		print 'ybx', ybx
+		# print 'ybx', ybx
 
 		#Return the indices of the pixels that have values of the ytc arbitrsy values of the traj.
 		indices = (arr_traj == row[0]).nonzero()
@@ -158,12 +178,7 @@ def execute_task(args):
 				templist = [pixel_value_ytx]
 				for year in yearsleft:
 					templist.append(cdls[year][row][col])
-				# print 'noncrop_list:', noncrop_list
-				# print 'templist--outside:', templist
-				# print 'checking:', np.isin(templist, noncrop_list)
-				if len(set(np.isin(templist, getNonCropList()))) == 1:
-					# print 'all true', np.isin(templist, noncrop_list)
-					# print 'templist--inside', templist 
+				if len(set(np.isin(templist, noncroplist))) == 1:
 					outData[row,col] = data['refine']['arbitrary_noncrop']
 
 
@@ -174,21 +189,23 @@ def execute_task(args):
 	outname = "tile_" + str(fc_count) +'.tif'
 
 	# #create
-	outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/", r"tiles", outname)
+	outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/data/", r"tiles", outname)
 
 	# NumPyArrayToRaster (in_array, {lower_left_corner}, {x_cell_size}, {y_cell_size}, {value_to_nodata})
 	myRaster = arcpy.NumPyArrayToRaster(outData, lower_left_corner=arcpy.Point(XMin, YMin), x_cell_size=30, y_cell_size=30, value_to_nodata=0)
-	
+
+	##free memory from outdata array!!
+	outData = None
 
 	myRaster.save(outpath)
 
-
+	myRaster = None
 
 
 
 def mosiacRasters(data):
 	######Description: mosiac tiles together into a new raster
-	tilelist = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*.tif")
+	tilelist = glob.glob("C:/Users/Bougie/Desktop/Gibbs/data/tiles/*.tif")
 	print 'tilelist:', tilelist 
 
 	#### need to wrap these paths with Raster() fct or complains about the paths being a string
@@ -213,15 +230,22 @@ def mosiacRasters(data):
 
 
 def run(data):
-
-	tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
+	print "mask mutiple masks-----------"
+	tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/data/tiles/*")
 	for tile in tiles:
 		os.remove(tile)
+
+	traj_list = createReclassifyList(data)
+
+	noncroplist = getNonCropList()
 
 	#get extents of individual features and add it to a dictionary
 	extDict = {}
 
-	for row in arcpy.da.SearchCursor(data['ancillary']['vector']['shapefiles']['fishnet_mtr'], ["oid","SHAPE@"]):
+	for row in arcpy.da.SearchCursor('C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\vector\\shapefiles.gdb\\fishnet_mask_dev_36_61', ["oid","SHAPE@"]):
+	
+	# for row in arcpy.da.SearchCursor('C:\\Users\\Bougie\\Desktop\\Gibbs\data\\usxp\\ancillary\\vector\\shapefiles.gdb\\fishnet_mtr_temp', ["oid","SHAPE@"]):
+	# for row in arcpy.da.SearchCursor(data['ancillary']['vector']['shapefiles']['fishnet_mtr'], ["oid","SHAPE@"]):
 		atlas_stco = row[0]
 		print atlas_stco
 		extent_curr = row[1].extent
@@ -236,8 +260,8 @@ def run(data):
 	print'extDict.items',  extDict.items()
 
 	######create a process and pass dictionary of extent to execute task
-	pool = Pool(processes=5)
-	pool.map(execute_task, [(ed, data) for ed in extDict.items()])
+	pool = Pool(processes=11)
+	pool.map(execute_task, [(ed, data, traj_list, noncroplist) for ed in extDict.items()])
 	pool.close()
 	pool.join
 

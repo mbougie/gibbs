@@ -114,7 +114,7 @@ def createMergedTable():
 
 
 def run(data,yxc):
-  addGDBTable2postgres(data,yxc)
+  # addGDBTable2postgres(data,yxc)
   createMergedTable()
 
 

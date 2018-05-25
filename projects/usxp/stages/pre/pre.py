@@ -18,6 +18,8 @@ import fnmatch
 
 
 arcpy.CheckOutExtension("Spatial")
+arcpy.env.overwriteOutput = True
+# arcpy.env.scratchWorkspace = "in_memory" 
 
 
 try:
@@ -132,11 +134,11 @@ def getReclassifyValuesString(ds, reclass_degree):
 
 
 
-def getCDLlist():
+def getCDLlist(data):
     cdl_list = []
-    for year in data['globals']['years']:
+    for year in data['global']['years']:
         print 'year:', year
-        cdl_dataset = 'cdl{0}_b_{1}'.format(str(data['globals']['res']),str(year))
+        cdl_dataset = 'cdl{0}_b_{1}'.format(str(data['global']['res']),str(year))
         cdl_list.append(cdl_dataset)
     print'cdl_list: ', cdl_list
     return cdl_list
@@ -145,18 +147,18 @@ def getCDLlist():
 
 
 
-def createTrajectories():
+def createTrajectories(data):
     # Description: "Combines multiple rasters so that a unique output value is assigned to each unique combination of input values" -arcGIS def
-    #the rasters where combined in chronoloigal order with the recalssifed nlcd raster being in the inital spot.
+    #the rasters where combined in chronoloigal order.
 
     # Set environment settings
     arcpy.env.workspace = getGDBpath('binaries')
 
-    output = '\\'.join([ data['pre']['traj']['gdb'],data['pre']['traj']['filename'] ])
+    output = data['pre']['traj']['path']
     print 'output', output
     
     # ###Execute Combine
-    outCombine = Combine(getCDLlist())
+    outCombine = Combine(['cdl30_b_2008', 'cdl30_b_2009', 'cdl30_b_2010', 'cdl30_b_2011', 'cdl30_b_2012', 'cdl30_b_2013', 'cdl30_b_2014', 'cdl30_b_2015'])
   
     ###Save the output 
     outCombine.save(output)
@@ -166,11 +168,13 @@ def createTrajectories():
 
 
 
-def addGDBTable2postgres(rasterpath, schema, tablename):
+def addGDBTable2postgres(data, schema):
     # set the engine.....
     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
     
-    arcpy.env.workspace = rasterpath
+    # arcpy.env.workspace = data['pre']['traj']['path']
+
+    tablename=data['pre']['traj']['path']
 
     # Execute AddField twice for two new fields
     fields = [f.name for f in arcpy.ListFields(tablename)]
@@ -185,10 +189,10 @@ def addGDBTable2postgres(rasterpath, schema, tablename):
     print df
     
     # use pandas method to import table into psotgres
-    df.to_sql(tablename, engine, schema=schema)
+    df.to_sql(data['pre']['traj']['filename'], engine, schema=schema)
     
     #add trajectory field to table
-    addTrajArrayField(schema, tablename, fields)
+    addTrajArrayField(schema, data['pre']['traj']['filename'], fields)
 
 
 
@@ -254,8 +258,8 @@ def createRefinedTrajectory(data):
 def run(data):
     if data['global']['version']=='initial':
         print '------running pre_imw(initial)--------'
-        createTrajectories(data)
-        addGDBTable2postgres(data, 'pre_imw')
+        # createTrajectories(data)
+        addGDBTable2postgres(data, 'pre')
         
     elif data['global']['version']=='final':
         print '------running pre_imw(final)--------'

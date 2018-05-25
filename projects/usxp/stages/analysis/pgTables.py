@@ -13,7 +13,7 @@ from arcpy import env
 from arcpy.sa import *
 import glob
 import psycopg2
-sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\misc\\')
+sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\modules\\')
 import general as gen
 import shutil
 import matplotlib.pyplot as plt
@@ -267,10 +267,38 @@ def run(data, yxc, env_path, wc):
 
 
 
+
+def pivotTableFromPostGres():
+	engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
+
+	df = pd.read_sql_query('select * from counts_imw.merged_imw_grouped',con=engine)
+    
+    ###add a string to mtr value to make column names nicer
+	df['mtr'] = 'mtr' + df['mtr'].astype(str)
+
+	##perform a psuedo pivot table
+	y=df.pivot(index='year', columns='mtr', values='acres')
+	# df=pd.melt(df, id_vars=["year"],var_name="mtr", value_name="acres")
+
+	print y
+	# df.columns = map(str.lower, df.columns)
+	y.to_sql('merged_imw_pvt', engine, schema='counts_imw', if_exists='replace')
+
+	# return df
+
+
+
+
+
+
 if __name__ == '__main__':
-  data = gen.getJSONfile()
-  run(data, 'ytc', 'C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\s20\\post\\ytc_s20.gdb', '_fc_')
+  # data = gen.getJSONfile()
+  # run(data, 'ytc', 'C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\s20\\post\\ytc_s20.gdb', '_fc_')
   # run()
+
+  pivotTableFromPostGres()
+
+
 
 
 

@@ -56,9 +56,13 @@ def applyAPI():
 
 			##export df to postgres table
 			table_name = 'nass_'+state.lower()
-			print table_name 
-			
-			df_list.append(testit(state))
+			# print table_name
+
+			#### create individual state table in postgres
+			df.to_sql(table_name, engine, schema='states') 
+
+			#### create a dataframe from the individaul state table and append it to df_list array
+			df_list.append(createDFfromQuery(state))
 
         else:
         	print 'no records for state:', state
@@ -66,12 +70,78 @@ def applyAPI():
 
 	print(df_list)
 
-    ## merge all dataframes in list into one postgres table
+    ## MERGE all dataframes in list into one postgres table
 	df_final=pd.concat(df_list)
 
 	print 'df_final:', df_final
 
 	df_final.to_sql('merged_acres', engine, schema='counts', if_exists='replace')
+
+
+
+
+def createDFfromQuery(state):
+	## component function of CreateBaseHybrid() function --grandchild
+	## get all the tables with nass wildcard
+	engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/nass')
+
+
+	query = ("""SELECT 
+				  short_desc,
+				  state_name,
+				  state_alpha,
+				  state_ansi,
+				  year,
+				  sum(cast(coalesce(nullif(regexp_replace("Value", '[^0-9]+', '', 'g'),''),'0') as numeric))as acres
+
+				FROM 
+				  states.nass_{}
+				group by
+				  short_desc,
+				  state_name,
+				  state_alpha,
+				  state_ansi,
+				  year
+
+				order by year""".format(state))
+
+
+	print(query)
+	df = pd.read_sql_query(query, engine)
+	print 'df------',df
+	return df
+
+
+
+
+
+
+
+#################  call functions  #####################################
+#### get tables via the api
+applyAPI()
+
+
+#### create the base table
+# createBase(query_create_base)
+
+#### create and modify the counts and stats tables
+# executeQueries([query_create_base_counts, query_update_base_counts, query_create_base_stats])
+
+#### file in the r2 and slope fields
+# updatePGtableWithStats() 
+						  
+
+
+
+
+
+
+
+
+########################  OLD STUFF (probably delete soon after push to github)  ##################################################
+
+
 
 
 
@@ -87,37 +157,10 @@ def refInfoSchema():
 
 
 
-def testit(state):
-	print 'insde test:', state
-	## component function of CreateBaseHybrid() function --grandchild
-	## get all the tables with nass wildcard
-	engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/nass')
 
 
-	query = ("""SELECT 
-				  short_desc,
-				  state_name,
-				  state_alpha,
-				  state_ansi,
-				  year,
-				  sum(replace("Value", ',', '')::bigint) as acres_yo
-				FROM 
-				  nass.nass_{}
-				WHERE short_desc similar to '%%(SOYBEANS - ACRES PLANTED|CORN - ACRES PLANTED)%%'
-				group by
-				  short_desc,
-				  state_name,
-				  state_alpha,
-				  state_ansi,
-				  year
-
-				order by year""".format(state))
 
 
-	print(query)
-	df = pd.read_sql_query(query, engine)
-	print 'df------',df
-	return df
 
 def createNassLookupList(query):
 
@@ -377,15 +420,3 @@ if __name__ == '__main__':
 
 
 
-    #################  call functions  #####################################
-	#### get tables via the api
-	applyAPI()
-	#### create the base table
-	# createBase(query_create_base)
-
-	#### create and modify the counts and stats tables
-	# executeQueries([query_create_base_counts, query_update_base_counts, query_create_base_stats])
-
-	#### file in the r2 and slope fields
-	# updatePGtableWithStats() 
-							  

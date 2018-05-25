@@ -79,7 +79,7 @@ def importCSVtoPG():
 
 
 
-
+1295568820
 
 
 
@@ -785,7 +785,7 @@ def createDirectory(directory):
 
 
 
-def getJSONfile():
+def getCurrentInstance():
     with open('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\instances\\current_instance.json') as json_data:
         template = json.load(json_data)
         return template

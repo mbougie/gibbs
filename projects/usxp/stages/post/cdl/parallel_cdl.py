@@ -25,9 +25,9 @@ arcpy.env.scratchWorkspace = "in_memory"
 
 
 
-def createReclassifyList(data):
+def createReclassifyList(data, yxc):
 	engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
-	query = " SELECT \"Value\", ytc from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array WHERE ytc IS NOT NULL".format(data['pre']['traj']['filename'], data['core']['lookup'])
+	query = " SELECT \"Value\", {} from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array WHERE ytc IS NOT NULL".format(yxc, data['pre']['traj']['filename'],  data['pre']['traj']['lookup_name'])
 	# print 'query:', query
 	df = pd.read_sql_query(query, con=engine)
 	print df
@@ -35,7 +35,7 @@ def createReclassifyList(data):
 	for index, row in df.iterrows():
 	    templist=[]
 	    value=row['Value'] 
-	    mtr=row['ytc']  
+	    mtr=row[yxc]  
 	    templist.append(int(value))
 	    templist.append(int(mtr))
 	    fulllist.append(templist)
@@ -46,8 +46,8 @@ def createReclassifyList(data):
   
 # def execute_task(in_extentDict):
 def execute_task(args):
-	in_extentDict, data, subtype = args
-	yxc = {'ytc':3, 'yfc':4}
+	in_extentDict, data, yxc, subtype, traj_list = args
+	yxc_dict = {'ytc':3, 'yfc':4}
 
 
 	fc_count = in_extentDict[0]
@@ -70,12 +70,14 @@ def execute_task(args):
 	arcpy.env.extent = arcpy.Extent(XMin, YMin, XMax, YMax)
 
 	##  Execute the three functions  #####################
-	raster_yxc = Reclassify(Raster(path_traj_rfnd), "Value", RemapRange(createReclassifyList(data)), "NODATA")
+	raster_yxc = Reclassify(Raster(path_traj_rfnd), "Value", RemapRange(traj_list), "NODATA")
 
-	raster_mask = Con((path_mtr == yxc['ytc']) & (raster_yxc >= 2008), raster_yxc)
+	raster_mask = Con((path_mtr == yxc_dict[yxc]) & (raster_yxc >= 2008), raster_yxc)
 
-    ###reference the dictionary in current instance
-	for year, cdlpath in data['post']['ytc'][subtype]['cdlpaths'].iteritems():
+	raster_yxc = None
+
+	###reference the dictionary in current instance
+	for year, cdlpath in data['post'][yxc][subtype]['cdlpaths'].iteritems():
 
 		print year, cdlpath
 
@@ -89,33 +91,27 @@ def execute_task(args):
 
 		raster_mask = Con(raster_mask, cdlpath, raster_mask, cond)
 
-
 	print fc_count
 
-	# raster_mmu = Con((path_mtr == yxc['ytc']) & (IsNull(raster_mask)), 255, raster_mask)
-
-	# raster_nibble = arcpy.sa.Nibble(raster_mmu, raster_mask, "DATA_ONLY")
-
-
 	filled_1 = Con(IsNull(raster_mask),FocalStatistics(raster_mask,NbrRectangle(3, 3, "CELL"),'MAJORITY'), raster_mask)
+	raster_mask=None
 	filled_2 = Con(IsNull(filled_1),FocalStatistics(filled_1,NbrRectangle(10, 10, "CELL"),'MAJORITY'), filled_1)
-	# final = SetNull(path_mtr, filled_2, "VALUE <> {}".format(str(yxc_mtr[yxc])))
-
-
+	filled_1=None
 	outname = "tile_" + str(fc_count) +'.tif'
 
-	outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/", r"tiles", outname)
+	outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/data/", r"tiles", outname)
 
 	arcpy.ClearEnvironment("extent")
 
 	filled_2.save(outpath)
+	filled_2=None
         
 
 
 
 def mosiacRasters(data, subtype):
 	######Description: mosiac tiles together into a new raster
-	tilelist = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*.tif")
+	tilelist = glob.glob("C:/Users/Bougie/Desktop/Gibbs/data/tiles/*.tif")
 	print 'tilelist:', tilelist 
 
 	#### need to wrap these paths with Raster() fct or complains about the paths being a string
@@ -137,18 +133,20 @@ def mosiacRasters(data, subtype):
 
 
 
-def run(data, subtype):
+def run(data, yxc, subtype):
 # if __name__ == '__main__':
 	####  remove a files in tiles directory
 
-	tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
+	tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/data/tiles/*")
 	for tile in tiles:
 		os.remove(tile)
+
+	traj_list = createReclassifyList(data, yxc)
 
 	#get extents of individual features and add it to a dictionary
 	extDict = {}
 
-	for row in arcpy.da.SearchCursor(data['ancillary']['vector']['shapefiles']['fishnet_ytc '], ["oid","SHAPE@"]):
+	for row in arcpy.da.SearchCursor(data['ancillary']['vector']['shapefiles']['fishnet_ytc'], ["oid","SHAPE@"]):
 		atlas_stco = row[0]
 		print atlas_stco
 		extent_curr = row[1].extent
@@ -164,16 +162,14 @@ def run(data, subtype):
     
 
 	#######create a process and pass dictionary of extent to execute task
-	pool = Pool(processes=5)
-	# pool = Pool(processes=cpu_count())
-	# pool.map(execute_task, extDict.items())
-	pool.map(execute_task, [(ed, data, subtype) for ed in extDict.items()])
+	pool = Pool(processes=9)
+	pool.map(execute_task, [(ed, data, yxc, subtype, traj_list) for ed in extDict.items()])
 	pool.close()
 	pool.join
 
-	mosiacRasters(data, subtype)
+	# mosiacRasters(data, subtype)
 
 
 
 if __name__ == '__main__':
-	run(data, subtype)
+	run(data, yxc, subtype)
