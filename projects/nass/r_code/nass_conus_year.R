@@ -36,6 +36,16 @@ format_mil<-function(x){x/1000000}
 ###query the data from postgreSQL
 # df <- dbGetQuery(con, "SELECT years,acres,series,yxc,series_order,series || ': ' || label_traj as label FROM counts_yxc.merged_series as a inner join series_meta.meta as b using(series)  where yxc = 'yfc' and series != 's21_seperate' ")
 # df <- dbGetQuery(con, "SELECT years,acres,series,yxc,series_order FROM counts_yxc.merged_series where yxc = 'ytc' AND (series='s22' OR series='s27') ")
+lm_eqn <- function(df){
+  m <- lm(acres ~ year, df);
+  eq <- substitute(italic(acres) == a + b %.% italic(year)*","~~italic(r)^2~"="~r2, 
+                   list(a = format(coef(m)[1], digits = 2), 
+                        b = format(coef(m)[2], digits = 2), 
+                        r2 = format(summary(m)$r.squared, digits = 3)))
+  as.character(as.expression(eq));                 
+}
+
+
 
 
 ##this reorders the labels in the legend in chronological order
@@ -44,6 +54,7 @@ format_mil<-function(x){x/1000000}
 
 plot = ggplot(df, aes(x=year, y=acres, ordered = TRUE)) +
   geom_line(size=0.40) +
+  geom_smooth(method='lm',formula=y~x, se=FALSE)+
   scale_linetype_manual(values=c("dashed"))+
   scale_y_continuous(labels=format_mil) +
   scale_x_continuous(breaks=c(2008,2009,2010,2011,2012,2013,2014,2015,2016,2017)) +
@@ -52,7 +63,9 @@ plot = ggplot(df, aes(x=year, y=acres, ordered = TRUE)) +
   theme(aspect.ratio=0.5, legend.title=element_blank(), legend.position="bottom") ##this creates 1 to 1 aspect ratio so when export to pdf not stretched
 # scale_colour_manual(values = c("#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00", "#ff7f00"))
 
-plot
+
+p1 <- plot + geom_text(x = 2010.5, y = 276000000, label = lm_eqn(df), parse = TRUE)
+p1
 # pdf("C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\post\\yxc\\r_code\\ytc_all.pdf")
 # print(plot)
 # dev.off()

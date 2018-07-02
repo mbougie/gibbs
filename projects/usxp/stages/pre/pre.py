@@ -11,7 +11,7 @@ import pandas as pd
 import numpy as np
 import psycopg2
 from itertools import groupby
-sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\misc\\')
+sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\modules\\')
 import general as gen
 import json
 import fnmatch
@@ -85,7 +85,7 @@ def reclassifyRaster():
     # Set environment settings
     arcpy.env.workspace = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\'
 
-    raster = 'cdl30_2007_resampled'    
+    raster = 'cdl30_2016'    
     print 'raster: ',raster
 
     outraster = raster.replace("_", "_b_")
@@ -219,7 +219,7 @@ def addTrajArrayField(schema, tablename, fields):
 def createRefinedTrajectory(data):
 
     ##### loop through each of the cdl rasters and make sure nlcd is last 
-    filelist = [data['pre']['traj']['path'], data['refine']['mask_dev_alfalfa_fallow']['path'], data['refine']['mask_2007']['path'], data['refine']['mask_nlcd']['path']]
+    filelist = [data['pre']['traj']['path'], data['refine']['masks_yfc']['path'], data['refine']['masks_ytc']['path'], data['refine']['mask_2007']['path'], data['refine']['mask_nlcd']['path']]
     
     print 'filelist:', filelist
     
@@ -257,12 +257,12 @@ def createRefinedTrajectory(data):
 
 def run(data):
     if data['global']['version']=='initial':
-        print '------running pre_imw(initial)--------'
+        print '------running pre(initial)--------'
         # createTrajectories(data)
         addGDBTable2postgres(data, 'pre')
         
     elif data['global']['version']=='final':
-        print '------running pre_imw(final)--------'
+        print '------running pre(final)--------'
         createRefinedTrajectory(data)
 
 

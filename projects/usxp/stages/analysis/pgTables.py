@@ -276,7 +276,7 @@ def pivotTableFromPostGres():
     ###add a string to mtr value to make column names nicer
 	df['mtr'] = 'mtr' + df['mtr'].astype(str)
 
-	##perform a psuedo pivot table
+	##perform  a pivot table
 	y=df.pivot(index='year', columns='mtr', values='acres')
 	# df=pd.melt(df, id_vars=["year"],var_name="mtr", value_name="acres")
 
@@ -288,6 +288,50 @@ def pivotTableFromPostGres():
 
 
 
+def meltTOPostGres():
+	
+	table = 'D:\\projects\\usxp\\deliverables\\s26\\graphs\\national_breakout_by_year.gdb\\s26_national_breakout_by_year'
+
+	print table
+
+	fields = [f.name for f in arcpy.ListFields(table)]
+
+	# converts a table to NumPy structured array.
+	arr = arcpy.da.TableToNumPyArray(table,fields)
+	# print arr
+
+	# convert numpy array to pandas dataframe
+	df = pd.DataFrame(data=arr)
+	#r## remove column
+	# del df['OBJECTID']
+	print df
+
+	# ##perform a psuedo pivot table
+	# df=pd.melt(df, id_vars=["OBJECTID"],var_name="atlas_st", value_name="count")
+
+	df = pd.melt(df, id_vars=["OBJECTID", "LABEL"], var_name="oid", value_name="Value")
+
+	print df
+
+
+	df.columns = map(str.lower, df.columns)
+
+	#    #### format column in df #########################
+	# ## strip character string off all cells in column
+	df['year'] = df['oid'].map(lambda x: x.strip('Value_'))
+	df['acres'] = df['value']*0.222395
+	print df
+	# ## add zero infront of string if length is less than 2
+	# df['atlas_st'] = df['atlas_st'].apply(lambda x: '{0:0>2}'.format(x))
+	# df[['year']] = df.label.astype('int32')
+	# print df.dtypes
+	print df.dtypes
+
+	df.to_sql('s26_national_breakout_by_year', engine, schema='deliverables', if_exists='replace')
+
+
+
+
 
 
 
@@ -296,7 +340,12 @@ if __name__ == '__main__':
   # run(data, 'ytc', 'C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\s20\\post\\ytc_s20.gdb', '_fc_')
   # run()
 
-  pivotTableFromPostGres()
+  # pivotTableFromPostGres()
+
+   meltTOPostGres()
+
+
+
 
 
 

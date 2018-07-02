@@ -19,7 +19,8 @@
 	},
 	
     "refine":{
-        "mask_dev_alfalfa_fallow":{},
+        "masks_yfc":{},
+        "masks_ytc":{},
         "mask_nlcd":{},
         "mask_2007":{}
      },

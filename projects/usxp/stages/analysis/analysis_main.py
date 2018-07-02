@@ -24,45 +24,51 @@ except:
 
 
 
-
-def getyears():
-	arcpy.env.workspace = 'C:/Users/Bougie/Desktop/Gibbs/data/usxp/ancillary/vector/shapefiles.gdb/'
-
-	# Use the ListFeatureClasses function to return a list of shapefiles.
-	fc = 'states'
-    
-	zonelist = []
-	cursor = arcpy.da.SearchCursor(fc, ['st_abbrev'])
-	for row in cursor:
-		zonelist.append(row[0])
-	return zonelist
+engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
 
 
 
-def applyAPI():
+def getTotalCrop():
 
 	### get each states tables from NASS using the NASS api and import each table into postgres database 
-	engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
+	# engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
 
 
-	df_list = []
+	df_mtr5_list = []
+	df_net_list = []
 
-	for year in range(2008,2017):
-		for crop_type, binary in {'noncrop':0, 'crop':1}.iteritems():
-			
-			df_list.append(testit_2(year, crop_type, binary))
+	for year in range(2009,2017):
 
+		df_mtr5_list.append(createMTR5df(year))
+		df_net_list.append(createNetdf(year))
 
-	print(df_list)
+		# for year in range(2009,2017):
 
-    ## merge all dataframes in list into one postgres table
-	df_final=pd.concat(df_list)
-
-	print 'df_final:', df_final
-
-	df_final.to_sql('total_acres', engine, schema='counts_gen', if_exists='replace')
+		# 	df_net_list.append(createNetdf(year))
 
 
+		# print(df_mtr5_list)
+
+		#    ## merge all dataframes in list into one postgres table
+		# df_mtr5=pd.concat(df_mtr5_list)
+
+		# print 'df_final:', df_mtr5
+
+		# df_final.to_sql('total_acres', engine, schema='counts_gen', if_exists='replace')
+    
+	
+	df_mtr5=pd.concat(df_mtr5_list)
+	print df_mtr5
+	df_net=pd.concat(df_net_list)
+	print df_net
+
+	df_final = pd.concat([df_net, df_mtr5], axis=1, join='inner')
+	print df_final
+
+	df_final['cumm'] = df_final.net.cumsum()+288128028
+	df_final = df_final[['year_yo','cumm', 'mtr5']]
+	print df_final
+	df_final.to_sql('s22_total_traj', engine, schema='counts_total', if_exists='replace')
 
 
 
@@ -89,34 +95,141 @@ def applyAPI():
 
 
 
-def testit_2(year, crop_type, binary):
-	filter_combos = {'noncrop':["1", "4"],'crop':["2", "3"]}
-	mtr_stable = filter_combos[crop_type][0]
-	print mtr_stable
-	mtr_conv = filter_combos[crop_type][1]
-	print mtr_conv
-
-	engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
+def createMTR5df(year):
+	# engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
 
 	####  this is the QAQC query!!! -------query = ('SELECT * FROM pre.v4_traj_cdl30_b_2008to2017 a INNER JOIN pre.v4_traj_lookup_2008to2017_v3 b USING(traj_array) WHERE b.mtr={mtr_stable} or (b.mtr={mtr_conv} and ytc={year} and cdl30_b_{year} = {binary}) or (b.mtr=5 and cdl30_b_{year} = {binary})'.format(mtr_stable=mtr_stable, mtr_conv=mtr_conv, year=year, binary=binary))
-	query = ('SELECT sum("Count") as count, count("Count") as rows FROM pre.v4_traj_cdl30_b_2008to2017 a INNER JOIN pre.v4_traj_lookup_2008to2017_v3 b USING(traj_array) WHERE b.mtr={mtr_stable} or (b.mtr={mtr_conv} and ytc={year} and cdl30_b_{year} = {binary}) or (b.mtr=5 and cdl30_b_{year} = {binary})'.format(mtr_stable=mtr_stable, mtr_conv=mtr_conv, year=year, binary=binary))
-
+	# query = ('SELECT sum("Count") as count, count("Count") as rows FROM pre.v4_traj_cdl30_b_2008to2017 a INNER JOIN pre.v4_traj_lookup_2008to2017_v3 b USING(traj_array) WHERE b.mtr={mtr_stable} or (b.mtr={mtr_conv} and ytc={year} and cdl30_b_{year} = {binary}) or (b.mtr=5 and cdl30_b_{year} = {binary})'.format(mtr_stable=mtr_stable, mtr_conv=mtr_conv, year=year, binary=binary))
+	query = ('SELECT sum("Count") as count, round((sum("Count")*0.222395)::numeric,0) as mtr5 FROM pre.v4_traj_cdl30_b_2008to2017 a INNER JOIN pre.v4_traj_lookup_2008to2017_v3 b USING(traj_array) WHERE b.mtr=5 and cdl30_b_{year} = 1'.format(year=year))
 	print(query)
-	df = pd.read_sql_query(query, engine)
-	print 'df------',df
+	df_mtr5 = pd.read_sql_query(query, engine)
+	print 'df------',df_mtr5
 
 	#### remove column to table ########################
 	# del df['index']
 
 	#### add columns to table ########################
-	df['year'] = year
-	df['crop_type'] = crop_type
-	df['acres'] = gen.getAcres(df['count'], 30)
+	df_mtr5['year_yo'] = year
 
-	print 'df------',df
+
+	print 'df------',df_mtr5
+	return df_mtr5
+
+
+
+
+def createNetdf(year):
+
+	print 'year-----------------------', year
+	####  this is the QAQC query!!! -------query = ('SELECT * FROM pre.v4_traj_cdl30_b_2008to2017 a INNER JOIN pre.v4_traj_lookup_2008to2017_v3 b USING(traj_array) WHERE b.mtr={mtr_stable} or (b.mtr={mtr_conv} and ytc={year} and cdl30_b_{year} = {binary}) or (b.mtr=5 and cdl30_b_{year} = {binary})'.format(mtr_stable=mtr_stable, mtr_conv=mtr_conv, year=year, binary=binary))
+	# query = ('SELECT sum("Count") as count, count("Count") as rows FROM pre.v4_traj_cdl30_b_2008to2017 a INNER JOIN pre.v4_traj_lookup_2008to2017_v3 b USING(traj_array) WHERE b.mtr={mtr_stable} or (b.mtr={mtr_conv} and ytc={year} and cdl30_b_{year} = {binary}) or (b.mtr=5 and cdl30_b_{year} = {binary})'.format(mtr_stable=mtr_stable, mtr_conv=mtr_conv, year=year, binary=binary))
+	query = ('SELECT round((sum("Count")*0.222395)::numeric,0) as mtr3 FROM pre.v4_traj_cdl30_b_2008to2017 as a, pre.v4_traj_cdl30_b_2008to2017_rfnd_v5 as b , pre.v4_traj_lookup_2008to2017_v3 as c WHERE a.traj_array = c.traj_array AND b.value = a."Value" AND ytc = {}'.format(year))
+	print(query)
+	df_mtr3 = pd.read_sql_query(query, engine)
+
+	df_mtr3['year'] = year
+
+	print 'df------',df_mtr3
+
+
+	query = ('SELECT round((sum("Count")*0.222395)::numeric,0) as mtr4 FROM pre.v4_traj_cdl30_b_2008to2017 as a, pre.v4_traj_cdl30_b_2008to2017_rfnd_v5 as b , pre.v4_traj_lookup_2008to2017_v3 as c WHERE a.traj_array = c.traj_array AND b.value = a."Value" AND yfc = {}'.format(year))
+	print(query)
+	df_mtr4 = pd.read_sql_query(query, engine)
+
+	df_mtr4['year'] = year
+
+	print 'df------',df_mtr4
+
+
+	df = pd.concat([df_mtr3, df_mtr4], axis=1, join='inner')
+	print df
+	# df['net'] = df[['mtr3', 'mtr4']].sum(axis=1)
+	df["net"] = df['mtr3'].subtract(df['mtr4'], fill_value=0)
+	print df
+	df = df[['year','net']]
+	print df
+
 	return df
 
 
+
+	#### remove column to table ########################
+	# del df['index']
+
+	# #### add columns to table ########################
+	# df_mtr5['year'] = year
+
+
+	# print 'df------',df_mtr5
+	# return df_mtr5
+
+
+
+
+
+
+
+if __name__ == '__main__':
+
+
+
+    #################  call functions  #####################################
+	#### get tables via the api
+	getTotalCrop()
+
+	#### create the base table
+	# createBase(query_create_base)
+
+	#### create and modify the counts and stats tables
+	# executeQueries([query_create_base_counts, query_update_base_counts, query_create_base_stats])
+
+	#### file in the r2 and slope fields
+	# updatePGtableWithStats() 
+							  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+########################################################################################################################
+#########  functions related to updating nass.base_stats  ##############################################################
+
+def getyears():
+	arcpy.env.workspace = 'C:/Users/Bougie/Desktop/Gibbs/data/usxp/ancillary/vector/shapefiles.gdb/'
+
+	# Use the ListFeatureClasses function to return a list of shapefiles.
+	fc = 'states'
+    
+	zonelist = []
+	cursor = arcpy.da.SearchCursor(fc, ['st_abbrev'])
+	for row in cursor:
+		zonelist.append(row[0])
+	return zonelist
 
 
 
@@ -179,7 +292,12 @@ def executeQueries(querylist):
 
 
 
-#########  functions related to updating nass.base_stats  ##############################################################
+
+
+
+
+
+
 
 def updatePGtableWithStats():
 	print 'getPGtables()'
@@ -279,25 +397,3 @@ def getDistinctValues():
 
 
 
-
-
-
-
-
-if __name__ == '__main__':
-
-
-
-    #################  call functions  #####################################
-	#### get tables via the api
-	applyAPI()
-
-	#### create the base table
-	# createBase(query_create_base)
-
-	#### create and modify the counts and stats tables
-	# executeQueries([query_create_base_counts, query_update_base_counts, query_create_base_stats])
-
-	#### file in the r2 and slope fields
-	# updatePGtableWithStats() 
-							  

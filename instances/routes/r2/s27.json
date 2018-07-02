@@ -1,0 +1,12 @@
+{
+	"global":{
+		"instance":"s27",
+	    "res":"30",
+	    "years":[2008,2017],
+	    "conv_years":[2009,2016]
+	},
+	"pre":{"version":{"traj":"v4", "lookup":"v3"}},
+	"refine":{"version":"v8", "operator":"or", "years_nlcd":[2001,2006,2011]},
+	"core":{"route":"r2", "filter":"n8h", "rg":"8w", "mmu":"5"},
+	"note":"created refine v8_masks -----> removed fuzzy_list from YFC mask and replaced with 36_to_37 mask (see table for refinements)"
+}

@@ -95,7 +95,8 @@ formatAC<-function(x){x/1000000}
 
 ###query the data from postgreSQL
 # df <- dbGetQuery(con, "SELECT years,acres,series,yxc,series_order,series || ': ' || label_traj as label FROM counts_yxc.merged_series as a inner join series_meta.meta as b using(series)  where yxc = 'yfc' and series != 's21_seperate' ")
-df <- dbGetQuery(con, "SELECT years,acres,series,yxc,series_order FROM counts_yxc.merged_series where yxc = 'ytc' AND (series='s22' OR series='s23' or series='s24') ")
+df <- dbGetQuery(con, "SELECT years,acres,series,yxc,series_order FROM counts_yxc.merged_series where yxc = 'yfc' AND (series='s20' OR series='s22'  OR series='s25_2masks' OR series='s25') ")
+
 
 
 ##this reorders the labels in the legend in chronological order
@@ -108,7 +109,7 @@ plot = ggplot(df, aes(x=years, y=acres, group=series_order, color=series, ordere
   scale_y_continuous(labels=formatAC) +
   scale_x_continuous(breaks=c(2009,2010,2011,2012,2013,2014,2015,2016)) +
   labs(y="Acreage in Millions",x="Years")+
-  ggtitle('Comparison of Final Time Segment Slope') + theme(plot.title = element_text(hjust = 0.5)) +
+  ggtitle('YFC') + theme(plot.title = element_text(hjust = 0.5)) +
   theme(aspect.ratio=0.5, legend.title=element_blank(), legend.position="bottom") ##this creates 1 to 1 aspect ratio so when export to pdf not stretched
   # scale_colour_manual(values = c("#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00", "#ff7f00"))
 

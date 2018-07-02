@@ -45,7 +45,7 @@ def createReclassifyList(data, yxc):
 
 def execute_task(args):
 	in_extentDict, data, yxc, traj_list = args
-	yxc_mtr = {'ytc':3, 'yfc':4}
+	yxc_dict = {'ytc':3, 'yfc':4}
 
 
 	fc_count = in_extentDict[0]
@@ -70,14 +70,22 @@ def execute_task(args):
 
 	##  Execute the three functions  #####################
 	raster_yxc = Reclassify(Raster(path_traj_rfnd), "Value", RemapRange(traj_list), "NODATA")
-	raster_mask = Con((path_mtr == yxc_mtr[yxc]) & (raster_yxc >= 2008), raster_yxc)
+	raster_mask = Con((path_mtr == yxc_dict[yxc]) & (raster_yxc >= 2008), raster_yxc)
 	raster_yxc = None
 	filled_1 = Con(IsNull(raster_mask),FocalStatistics(raster_mask,NbrRectangle(3, 3, "CELL"),'MAJORITY'), raster_mask)
 	raster_mask = None
-	filled_2 = Con(IsNull(filled_1),FocalStatistics(filled_1,NbrRectangle(10, 10, "CELL"),'MAJORITY'), filled_1)
+	filled_2 = Con(IsNull(filled_1),FocalStatistics(filled_1,NbrRectangle(5, 5, "CELL"),'MAJORITY'), filled_1)
 	filled_1 = None
-	final = SetNull(path_mtr, filled_2, "VALUE <> {}".format(str(yxc_mtr[yxc])))
+	filled_3 = Con(IsNull(filled_2),FocalStatistics(filled_2,NbrRectangle(10, 10, "CELL"),'MAJORITY'), filled_2)
 	filled_2 = None
+	filled_4 = Con(IsNull(filled_3),FocalStatistics(filled_3,NbrRectangle(20, 20, "CELL"),'MAJORITY'), filled_3)
+	filled_3 = None
+	final = SetNull(path_mtr, filled_4, "VALUE <> {}".format(str(yxc_dict[yxc])))
+	filled_4 = None
+
+
+
+
 	#clear out the extent for next time
 	arcpy.ClearEnvironment("extent")
 
@@ -132,7 +140,7 @@ def run(data, yxc):
 	#get extents of individual features and add it to a dictionary
 	extDict = {}
 
-	for row in arcpy.da.SearchCursor(data['ancillary']['vector']['shapefiles']['fishnet_ytc'], ["oid","SHAPE@"]):
+	for row in arcpy.da.SearchCursor('C:\\Users\\Bougie\\Desktop\\Gibbs\data\\usxp\\ancillary\\vector\\shapefiles.gdb\\fishnet_yxc', ["oid","SHAPE@"]):
 		atlas_stco = row[0]
 		print atlas_stco
 		extent_curr = row[1].extent
@@ -147,7 +155,7 @@ def run(data, yxc):
 	print'extDict.items',  extDict.items()
     
 	#######create a process and pass dictionary of extent to execute task
-	pool = Pool(processes=9)
+	pool = Pool(processes=7)
 	pool.map(execute_task, [(ed, data, yxc, traj_list) for ed in extDict.items()])
 	pool.close()
 	pool.join
@@ -158,3 +166,12 @@ def run(data, yxc):
 
 if __name__ == '__main__':
 	run(data, yxc)
+
+
+
+
+
+
+
+
+

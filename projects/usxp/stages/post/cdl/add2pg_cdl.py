@@ -31,20 +31,13 @@ except:
 
 
 
-
-
-
-
-def addGDBTable2postgres(data, yxc, subtype, year):
+def addGDBTable2postgres(data, yxc, subtype):
     # set the engine.....
     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
     
     # # path to the table you want to import into postgres
     # input = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\pre\\traj_rfnd\\v3\\v3_traj_rfnd.gdb\\v4_traj_cdl30_b_2008to2017_rfnd_v3'
-    input_filename = '{}_{}_{}'.format(data['post'][yxc]['filename'], subtype, year)
-    input_path = '{}_{}_{}'.format(data['post'][yxc]['path'], subtype, year)
 
-    print input_path
 
     # fields = [f.name for f in arcpy.ListFields(data['post'][yxc]['path'])]
 
@@ -53,24 +46,27 @@ def addGDBTable2postgres(data, yxc, subtype, year):
     # print arr
 
     # Execute AddField twice for two new fields
-    fields = [f.name for f in arcpy.ListFields(input_path)]
+    fields = [f.name for f in arcpy.ListFields(data['post'][yxc][subtype]['path'])]
    
     # converts a table to NumPy structured array.
-    arr = arcpy.da.TableToNumPyArray(input_path,fields)
+    arr = arcpy.da.TableToNumPyArray(data['post'][yxc][subtype]['path'],fields)
     print arr
     
     # convert numpy array to pandas dataframe
     df = pd.DataFrame(data=arr)
+    # df_cdl = pd.read_sql_query('select * from "Stat_Table"',con=engine)
 
     df.columns = map(str.lower, df.columns)
 
     print 'df-----------------------', df
+
+    total=df['count'].sum()
     
-    # # # use pandas method to import table into psotgres
-    df.to_sql(input_filename, engine, schema='cdl_counts')
+    # # use pandas method to import table into psotgres
+    df.to_sql(data['post'][yxc][subtype]['filename'], engine, schema='counts_cdl', if_exists='replace')
     
-    # #add trajectory field to table
-    addAcresField('cdl_counts', input_filename, yxc, year, '30')
+    #add trajectory field to table
+    addAcresField('counts_cdl', data['post'][yxc][subtype]['filename'], yxc, '30', total)
 
 
 
@@ -78,18 +74,36 @@ def addGDBTable2postgres(data, yxc, subtype, year):
 
 
 
-def addAcresField(schema, tablename, yxc, year, res):
+# def addAcresField(schema, tablename, yxc, res):
+#     #this is a sub function for addGDBTable2postgres()
+    
+#     cur = conn.cursor()
+    
+#     ####DDL: add column to hold arrays
+#     query1 = 'ALTER TABLE {}.{} ADD COLUMN acres bigint, ADD COLUMN series text, ADD COLUMN yxc text'.format(schema, tablename)
+#     print query1
+#     cur.execute(query1)
+
+#     #####DML: insert values into new array column
+#     cur.execute("UPDATE {0}.{1} SET acres=count*{2}, series='{3}', yxc='{4}'".format(schema, tablename, gen.getPixelConversion2Acres(res), tablename.split("_")[0], yxc))
+#     conn.commit() 
+
+
+
+def addAcresField(schema, tablename, yxc, res, total):
     #this is a sub function for addGDBTable2postgres()
     
     cur = conn.cursor()
     
     ####DDL: add column to hold arrays
-    query1 = 'ALTER TABLE {}.{} ADD COLUMN acres bigint, ADD COLUMN series text, ADD COLUMN yxc text, ADD COLUMN year integer'.format(schema, tablename)
-    print query1
-    cur.execute(query1)
+    query = 'ALTER TABLE {}.{} ADD COLUMN acres bigint, ADD COLUMN perc numeric, ADD COLUMN series text'.format(schema, tablename)
+    print query
+    cur.execute(query)
+
+    print int(tablename.split("_")[0][1:])
 
     #####DML: insert values into new array column
-    cur.execute("UPDATE {0}.{1} SET acres=count*{2}, series='{3}', yxc='{4}', year={5}".format(schema, tablename, gen.getPixelConversion2Acres(res), tablename.split("_")[0], yxc, year))
+    cur.execute("UPDATE {0}.{1} SET acres=count*{2}, perc=(count/{3})*100, series='{4}'".format(schema, tablename, gen.getPixelConversion2Acres(res), total, tablename.split("_")[0]))
     conn.commit() 
 
 
@@ -104,7 +118,7 @@ def createMergedTable():
   
   table_list = []
   for row in rows:
-    query_temp="SELECT value,count,acres,series,yxc,year FROM cdl_counts.{}".format(row[0])
+    query_temp="SELECT value,count,acres,series,yxc FROM cdl_counts.{}".format(row[0])
     table_list.append(query_temp)
 
   query_final = "DROP TABLE IF EXISTS cdl_counts.merged_series; CREATE TABLE cdl_counts.merged_series AS {}".format(' UNION '.join(table_list))
@@ -114,13 +128,13 @@ def createMergedTable():
 
 
 
-def run(data, yxc, subtype, year):
-  addGDBTable2postgres(data, yxc, subtype, year)
+def run(data, yxc, subtype):
+  addGDBTable2postgres(data, yxc, subtype)
   createMergedTable()
 
 
 if __name__ == '__main__':
-  run(data, yxc, subtype, year)
+  run(data, yxc, subtype)
 
 
 

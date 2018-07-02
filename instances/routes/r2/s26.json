@@ -1,0 +1,12 @@
+{
+	"global":{
+		"instance":"s26",
+	    "res":"30",
+	    "years":[2008,2017],
+	    "conv_years":[2009,2016]
+	},
+	"pre":{"version":{"traj":"v4", "lookup":"v3"}},
+	"refine":{"version":"v7", "operator":"or", "years_nlcd":[2001,2006,2011]},
+	"core":{"route":"r2", "filter":"n8h", "rg":"8w", "mmu":"5"},
+	"note":"added more masks to yfc and ytc mask (see table for refinements)"
+}

@@ -54,6 +54,7 @@ print 'rws',rws
 def createReclassifyList(data):
 	cur = conn.cursor()
 	
+	#####just want the pixels converted in 2009 so can get the value of the binary cdl 2007 to see if want to mask out the pixel or not
 	query = "SELECT \"Value\", ytc, yfc from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array WHERE ytc=2009 or yfc=2009".format(data['pre']['traj']['filename'], data['pre']['traj']['lookup_name'])
 	print 'query:', query
 
@@ -106,7 +107,6 @@ def execute_task(args):
 		#conversion year ytc
 		ytc = row[1]
 		# print 'ytc', ytc
-
 		yfc = row[2]
 		# print 'yfc', yfc
 
@@ -123,11 +123,13 @@ def execute_task(args):
 
 
 			if ytc==2009 and cdls[2007][row][col]==1:
+				##logic: if has {1,0,1} than false conversion
 				# print cdls[2007][row][col]
 				outData[row,col] = data['refine']['arbitrary_crop']
 
 
 			elif yfc==2009 and cdls[2007][row][col]==0:
+				##logic: if has {0,1,0} than false conversion
 				# print cdls[2007][row][col]
 				outData[row,col] = data['refine']['arbitrary_noncrop']
                 

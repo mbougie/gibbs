@@ -237,8 +237,11 @@ class ProcessingObject(object):
         
         
         
-        self.data['refine']['mask_dev_alfalfa_fallow']['filename'] = '{}_mask_dev_alfalfa_fallow_{}'.format(self.data['refine']['version'], self.data['global']['datarange'])
-        self.data['refine']['mask_dev_alfalfa_fallow']['path'] = '\\'.join([self.data['refine']['gdb'], self.data['refine']['mask_dev_alfalfa_fallow']['filename']])
+        self.data['refine']['masks_ytc']['filename'] = '{}_masks_ytc_{}'.format(self.data['refine']['version'], self.data['global']['datarange'])
+        self.data['refine']['masks_ytc']['path'] = '\\'.join([self.data['refine']['gdb'], self.data['refine']['masks_ytc']['filename']])
+
+        self.data['refine']['masks_yfc']['filename'] = '{}_masks_yfc_{}'.format(self.data['refine']['version'], self.data['global']['datarange'])
+        self.data['refine']['masks_yfc']['path'] = '\\'.join([self.data['refine']['gdb'], self.data['refine']['masks_yfc']['filename']])
 
         
 

@@ -27,7 +27,7 @@ arcpy.env.scratchWorkspace = "in_memory"
 
 def createReclassifyList(data, yxc):
 	engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
-	query = " SELECT \"Value\", {} from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array WHERE ytc IS NOT NULL".format(yxc, data['pre']['traj']['filename'],  data['pre']['traj']['lookup_name'])
+	query = " SELECT \"Value\", {} from pre.{} as a JOIN pre.{} as b ON a.traj_array = b.traj_array WHERE {} IS NOT NULL".format(yxc, data['pre']['traj']['filename'],  data['pre']['traj']['lookup_name'], yxc)
 	# print 'query:', query
 	df = pd.read_sql_query(query, con=engine)
 	print df
@@ -61,7 +61,8 @@ def execute_task(args):
 
 	path_traj_rfnd = data['pre']['traj_rfnd']['path']
 	print 'path_traj_rfnd:', path_traj_rfnd
-
+    
+    ## the finished mtr product datset
 	path_mtr = Raster(data['core']['path'])
 
 	#set environments
@@ -70,13 +71,17 @@ def execute_task(args):
 	arcpy.env.extent = arcpy.Extent(XMin, YMin, XMax, YMax)
 
 	##  Execute the three functions  #####################
+
+	## this is the base yxc dataset derived from trajectory (speckles)
 	raster_yxc = Reclassify(Raster(path_traj_rfnd), "Value", RemapRange(traj_list), "NODATA")
-
+    
+    ## clean the speckles so only left with yxc where the mtr regions fullfilling mmu requirement are
 	raster_mask = Con((path_mtr == yxc_dict[yxc]) & (raster_yxc >= 2008), raster_yxc)
-
+    
+    ##delete object for memory
 	raster_yxc = None
 
-	###reference the dictionary in current instance
+	###get the cdl path object from current instance to loop through each of the cdl paths in the object
 	for year, cdlpath in data['post'][yxc][subtype]['cdlpaths'].iteritems():
 
 		print year, cdlpath
@@ -88,28 +93,40 @@ def execute_task(args):
 		#establish the condition
 		cond = "Value = " + year
 		print 'cond: ', cond
-
+        
+        ## replace the yxc year value with the appropriate cdl value for that given year
 		raster_mask = Con(raster_mask, cdlpath, raster_mask, cond)
-
-	print fc_count
-
+    
+    ####fill in the null values ####################################
 	filled_1 = Con(IsNull(raster_mask),FocalStatistics(raster_mask,NbrRectangle(3, 3, "CELL"),'MAJORITY'), raster_mask)
 	raster_mask=None
-	filled_2 = Con(IsNull(filled_1),FocalStatistics(filled_1,NbrRectangle(10, 10, "CELL"),'MAJORITY'), filled_1)
+	filled_2 = Con(IsNull(filled_1),FocalStatistics(filled_1,NbrRectangle(5, 5, "CELL"),'MAJORITY'), filled_1)
 	filled_1=None
+	filled_3 = Con(IsNull(filled_2),FocalStatistics(filled_2,NbrRectangle(10, 10, "CELL"),'MAJORITY'), filled_2)
+	filled_2=None
+	filled_4 = Con(IsNull(filled_3),FocalStatistics(filled_3,NbrRectangle(20, 20, "CELL"),'MAJORITY'), filled_3)
+	filled_3=None
+	final = SetNull(path_mtr, filled_4, "VALUE <> {}".format(str(yxc_dict[yxc])))
+	filled_4 = None
+
 	outname = "tile_" + str(fc_count) +'.tif'
 
 	outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/data/", r"tiles", outname)
 
 	arcpy.ClearEnvironment("extent")
 
-	filled_2.save(outpath)
-	filled_2=None
-        
+	final.save(outpath)
+
+	outpath=None
+	final=None
 
 
 
-def mosiacRasters(data, subtype):
+
+
+
+
+def mosiacRasters(data, yxc, subtype):
 	######Description: mosiac tiles together into a new raster
 	tilelist = glob.glob("C:/Users/Bougie/Desktop/Gibbs/data/tiles/*.tif")
 	print 'tilelist:', tilelist 
@@ -117,17 +134,17 @@ def mosiacRasters(data, subtype):
 	#### need to wrap these paths with Raster() fct or complains about the paths being a string
 	inTraj=Raster(data['pre']['traj']['path'])
 
-	filename = data['post']['ytc'][subtype]['filename']
+	filename = data['post'][yxc][subtype]['filename']
 	print 'filename:', filename
 	
 	######mosiac tiles together into a new raster
-	arcpy.MosaicToNewRaster_management(tilelist, data['post']['ytc']['gdb'], filename, inTraj.spatialReference, "16_BIT_UNSIGNED", 30, "1", "LAST","FIRST")
+	arcpy.MosaicToNewRaster_management(tilelist, data['post'][yxc]['gdb'], filename, inTraj.spatialReference, "16_BIT_UNSIGNED", 30, "1", "LAST","FIRST")
 
 	#Overwrite the existing attribute table file
-	arcpy.BuildRasterAttributeTable_management(data['post']['ytc'][subtype]['path'], "Overwrite")
+	arcpy.BuildRasterAttributeTable_management(data['post'][yxc][subtype]['path'], "Overwrite")
 
 	# Overwrite pyramids
-	gen.buildPyramids(data['post']['ytc'][subtype]['path'])
+	gen.buildPyramids(data['post'][yxc][subtype]['path'])
 
 
 
@@ -146,7 +163,7 @@ def run(data, yxc, subtype):
 	#get extents of individual features and add it to a dictionary
 	extDict = {}
 
-	for row in arcpy.da.SearchCursor(data['ancillary']['vector']['shapefiles']['fishnet_ytc'], ["oid","SHAPE@"]):
+	for row in arcpy.da.SearchCursor('C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\vector\\shapefiles.gdb\\fishnet_yxc', ["oid","SHAPE@"]):
 		atlas_stco = row[0]
 		print atlas_stco
 		extent_curr = row[1].extent
@@ -162,12 +179,12 @@ def run(data, yxc, subtype):
     
 
 	#######create a process and pass dictionary of extent to execute task
-	pool = Pool(processes=9)
+	pool = Pool(processes=7)
 	pool.map(execute_task, [(ed, data, yxc, subtype, traj_list) for ed in extDict.items()])
 	pool.close()
 	pool.join
 
-	# mosiacRasters(data, subtype)
+	mosiacRasters(data, yxc, subtype)
 
 
 

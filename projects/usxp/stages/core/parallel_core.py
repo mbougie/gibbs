@@ -71,6 +71,9 @@ def execute_task(args):
 	#set environments
 	arcpy.env.extent = arcpy.Extent(XMin, YMin, XMax, YMax)
 
+	cdl=Raster('C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2012')
+	
+
 	if data['core']['route'] == 'r1':
 		raster_yxc = Reclassify(Raster(data['pre']['traj_rfnd']['path']), "Value", RemapRange(traj_list), "NODATA")
 		raster_filter = MajorityFilter(raster_yxc, filter_combos[filter_key][0], filter_combos[filter_key][1])
@@ -86,22 +89,73 @@ def execute_task(args):
 		outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/data/", r"tiles", outname)
 
 		raster_nbl.save(outpath)
-  
+
+
+
+	# elif data['core']['route'] == 'r2':
+	# 	raster_filter = MajorityFilter(Raster(data['pre']['traj_rfnd']['path']), filter_combos[filter_key][0], filter_combos[filter_key][1])
+	# 	raster_yxc = Reclassify(raster_filter, "Value", RemapRange(traj_list), "NODATA")
+	# 	raster_filter=None
+	# 	raster_rg = RegionGroup(raster_yxc, rg_instance[0], rg_instance[1], "NO_LINK")
+	# 	raster_mask = SetNull(raster_rg, raster_yxc, cond)
+	# 	raster_yxc=None
+	# 	raster_rg=None
+	# 	filled_1 = Con(IsNull(raster_mask),FocalStatistics(raster_mask,NbrRectangle(3, 3, "CELL"),'MAJORITY'), raster_mask)
+	# 	raster_mask=None
+	# 	filled_2 = Con(IsNull(filled_1),FocalStatistics(filled_1,NbrRectangle(3, 3, "CELL"),'MAJORITY'), filled_1)
+	# 	filled_1=None
+	# 	filled_3 = Con(IsNull(filled_2),FocalStatistics(filled_2,NbrRectangle(3, 3, "CELL"),'MAJORITY'), filled_2)
+	# 	filled_2=None
+	# 	cond = "Value = 0"
+	# 	raster_mask = SetNull(cdl, filled_3, cond)
+	# 	filled_3=None
+
+	# 	#clear out the extent for next time
+	# 	arcpy.ClearEnvironment("extent")
+
+	# 	outname = "tile_" + str(fc_count) +'.tif'
+
+	# 	outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/data/", r"tiles", outname)
+
+	# 	# raster_shrink.save(outpath)
+	# 	raster_mask.save(outpath)
+	# 	raster_mask=None
 
 	elif data['core']['route'] == 'r2':
+		##perform a majority filter on the refined trajectory 
 		raster_filter = MajorityFilter(Raster(data['pre']['traj_rfnd']['path']), filter_combos[filter_key][0], filter_combos[filter_key][1])
+		
+        ####reclassify the filtered raster to the MTR labels
 		raster_yxc = Reclassify(raster_filter, "Value", RemapRange(traj_list), "NODATA")
 		raster_filter=None
+
+		### perform region group on the raster_yxc to get the number of pixels for each region
 		raster_rg = RegionGroup(raster_yxc, rg_instance[0], rg_instance[1], "NO_LINK")
+		
+		### set null the regions that are less than the mmu treshold
 		raster_mask = SetNull(raster_rg, raster_yxc, cond)
 		raster_yxc=None
 		raster_rg=None
+
+		### fill in the regions that were below the mmu threshold.  Perform these in series startting small (taking advantage of spatial autocorelation) and expanding out to get past the equalibrrium sink of 
+		### a certain kernel size
 		filled_1 = Con(IsNull(raster_mask),FocalStatistics(raster_mask,NbrRectangle(3, 3, "CELL"),'MAJORITY'), raster_mask)
 		raster_mask=None
-		filled_2 = Con(IsNull(filled_1),FocalStatistics(filled_1,NbrRectangle(10, 10, "CELL"),'MAJORITY'), filled_1)
+		filled_2 = Con(IsNull(filled_1),FocalStatistics(filled_1,NbrRectangle(5, 5, "CELL"),'MAJORITY'), filled_1)
 		filled_1=None
+		filled_3 = Con(IsNull(filled_2),FocalStatistics(filled_2,NbrRectangle(10, 10, "CELL"),'MAJORITY'), filled_2)
+		filled_2=None
+		filled_4 = Con(IsNull(filled_3),FocalStatistics(filled_3,NbrRectangle(20, 20, "CELL"),'MAJORITY'), filled_3)
+		filled_3=None
+
+		##### trim of the patches that have expanded past the cdl map boundaries  #####################
+		cond = "Value = 0"
+		raster_mask = SetNull(cdl, filled_4, cond)
+		filled_4=None
 
 
+        ##### create a tiff file from the raster object  #######################################
+		
 		#clear out the extent for next time
 		arcpy.ClearEnvironment("extent")
 
@@ -110,24 +164,28 @@ def execute_task(args):
 		outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/data/", r"tiles", outname)
 
 		# raster_shrink.save(outpath)
-		filled_2.save(outpath)
-        filled_2=None
+		raster_mask.save(outpath)
+        raster_mask=None
 
-	if data['core']['route'] == 'r3':
-		raster_filter = MajorityFilter(Raster(data['pre']['traj_rfnd']['path']), filter_combos[filter_key][0], filter_combos[filter_key][1])
-		raster_rg = RegionGroup(raster_filter, rg_instance[0], rg_instance[1],"NO_LINK")
-		raster_mask = SetNull(raster_rg, 1, cond)
-		raster_nbl = arcpy.sa.Nibble(raster_filter, raster_mask, "DATA_ONLY")
-		raster_yxc = Reclassify(raster_nbl, "Value", RemapRange(traj_list), "NODATA")
 
-		#clear out the extent for next time
-		arcpy.ClearEnvironment("extent")
 
-		outname = "tile_" + str(fc_count) +'.tif'
 
-		outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/data/", r"tiles", outname)
 
-		raster_yxc.save(outpath)
+	# if data['core']['route'] == 'r3':
+	# 	raster_filter = MajorityFilter(Raster(data['pre']['traj_rfnd']['path']), filter_combos[filter_key][0], filter_combos[filter_key][1])
+	# 	raster_rg = RegionGroup(raster_filter, rg_instance[0], rg_instance[1],"NO_LINK")
+	# 	raster_mask = SetNull(raster_rg, 1, cond)
+	# 	raster_nbl = arcpy.sa.Nibble(raster_filter, raster_mask, "DATA_ONLY")
+	# 	raster_yxc = Reclassify(raster_nbl, "Value", RemapRange(traj_list), "NODATA")
+
+	# 	#clear out the extent for next time
+	# 	arcpy.ClearEnvironment("extent")
+
+	# 	outname = "tile_" + str(fc_count) +'.tif'
+
+	# 	outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/data/", r"tiles", outname)
+
+	# 	raster_yxc.save(outpath)
 
 
 
@@ -186,7 +244,7 @@ def run(data):
 	print'extDict.items',  extDict.items()
 
 	######create a process and pass dictionary of extent to execute task
-	pool = Pool(processes=9)
+	pool = Pool(processes=7)
 	pool.map(execute_task, [(ed, data, traj_list) for ed in extDict.items()])
 	pool.close()
 	pool.join

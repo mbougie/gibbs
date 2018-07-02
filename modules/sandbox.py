@@ -34,11 +34,11 @@ db = 'side_projects'
 # rootpath = 'D:/projects/'
 
 
-### establish gdb path  ####
-def defineGDBpath(arg_list):
-    gdb_path = 'D:\\projects\\usxp\\series\\s5\\xp_update_refined.gdb'
-    print 'gdb path: ', gdb_path 
-    return gdb_path
+# ### establish gdb path  ####
+# def defineGDBpath(arg_list):
+#     gdb_path = 'D:\\projects\\usxp\\series\\s5\\xp_update_refined.gdb'
+#     print 'gdb path: ', gdb_path 
+#     return gdb_path
 
 
 
@@ -54,13 +54,13 @@ except:
 
 
 
-def addGDBTable2postgres(yxc, schema):
+def addGDBTable2postgres():
     # set the engine.....
     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
     
     # # path to the table you want to import into postgres
     # input = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\pre\\traj_rfnd\\v3\\v3_traj_rfnd.gdb\\v4_traj_cdl30_b_2008to2017_rfnd_v3'
-    raster = 'D:\\projects\\usxp\\series\\s9\\ytc.gdb\\s9_ytc30_2008to2016_mmu5_nbl_fc'
+    raster = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\pre\\traj_rfnd\\v5\\v5_traj_rfnd.gdb\\v4_traj_cdl30_b_2008to2017_rfnd_v5'
 
     # Execute AddField twice for two new fields
     fields = [f.name for f in arcpy.ListFields(raster)]
@@ -76,10 +76,10 @@ def addGDBTable2postgres(yxc, schema):
 
     print 'df-----------------------', df
 
-    tablename = 's9_ytc30_2008to2016_mmu5_nbl_fc'
+    tablename = 'v4_traj_cdl30_b_2008to2017_rfnd_v5'
     
     # # # use pandas method to import table into psotgres
-    df.to_sql(tablename, engine, schema=schema)
+    df.to_sql(tablename, engine, schema='pre')
     
     # #add trajectory field to table
     addAcresField(schema, tablename, yxc, '30')
@@ -195,10 +195,33 @@ def addTrajArrayField(schema, tablename, fields):
 
 
 
-a = np.array([288128028,205651,41170,1165935,1086902,864040,854994,823598,448141])
-print a
-print np.cumsum(a)
+def addGDBTable2postgres_t2(gdb_args,wc,pg_shema):
+    print 'running addGDBTable2postgres() function....'
+    ####description: adds tables in geodatabse to postgres
+    # set the engine.....
+    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
 
+    arcpy.env.workspace = gdb_args
+
+    for table in arcpy.ListTables(wc): 
+        print 'table: ', table
+
+        # Execute AddField twice for two new fields
+        fields = [f.name for f in arcpy.ListFields(table)]
+        
+        # converts a table to NumPy structured array.
+        arr = arcpy.da.TableToNumPyArray(table,fields)
+        print arr
+        
+        # convert numpy array to pandas dataframe
+        df = pd.DataFrame(data=arr)
+
+        print df
+
+        df.columns = map(str.lower, df.columns)
+        
+        # use pandas method to import table into psotgres
+        df.to_sql(table, engine, schema=pg_shema)
 
 
 
@@ -212,3 +235,68 @@ print np.cumsum(a)
 
 # addGDBTable2postgres_w_array('D:\\projects\\map_biomas\\Test3_subSet\\Test3_subSet\\', 'combine_sc_22', 'mapbiomas')
 # createMergedTable()
+# addGDBTable2postgres_t2('C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\misc.gdb', 'zonal_hist_states_and_tiles_t3', 'test_yo')
+
+
+
+
+
+
+
+# a = np.array([288128028,205651,41170,1165935,1086902,864040,854994,823598,448141])
+# print a
+# print np.cumsum(a)
+
+
+
+
+
+
+
+
+# year= 2015
+# series_years = [2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017]
+
+
+
+# years_after_list = [i for i in series_years if i > year]
+
+# print 'years_after_list', years_after_list
+
+
+
+
+# hi = {u'2009': u'C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2009', u'2015': u'C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2015', u'2014': u'C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2014', u'2016': u'C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2016', u'2011': u'C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2011', u'2010': u'C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2010', u'2013': u'C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2013', u'2012': u'C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2012'}
+
+
+# for year, cdlpath in hi.iteritems():
+#     print year
+
+
+
+
+
+
+# def createFIPS():
+
+# list_after = np.array([61,61,61,61,61,73])
+# croplist_subset = [1,5,23,24,73]
+
+
+# mask = np.isin(series, croplist)
+# print series[np.where(np.isin(series, croplist))[0][0]]
+
+# print mask
+
+
+
+
+
+# first_index_true = np.where(np.isin(list_after, croplist_subset))[0][0]
+# print 'first_index_true: ', first_index_true
+# print 'list_after[first_index_true]', list_after[first_index_true]
+
+
+
+
+tryout()

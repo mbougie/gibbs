@@ -103,14 +103,17 @@ def commitPG(query):
 
 
 
-def getPixelConversion2Acres(resolution):
+def getPixelConversion2Acres(res):
+    res_dict = {56:0.774922476, 30: 0.222395}
 
-    if resolution == '56':
-        coef = '0.774922476'
-        return coef
-    elif resolution == '30':
-        coef = '0.222395'
-        return coef
+    return res_dict[res]
+
+    # if resolution == 56:
+    #     coef = 0.774922476
+    #     return coef
+    # elif resolution == 30:
+    #     coef = 0.222395
+    #     return coef
 
 
 def getPixelCount(resolution, acres):
@@ -720,6 +723,23 @@ def buildPyramids(inras):
 
     arcpy.BuildPyramids_management(inras, pyramid_level, skipfirst, resample_technique, 
                                    compression_type, compression_quality, skipexist)
+
+
+def buildPyramids_new(inras, technique):
+    print 'running buildPyramids() function....'
+
+    #Build Pyramids for single Raster Dataset
+    #Define the type and compression of pyramids in the tool
+    #Skip if dataset already has pyramids
+
+    pyramid_level = "-1"
+    skipfirst = "NONE"
+    resample_technique = technique
+    compression_type = "JPEG"
+    compression_quality = "100"
+    skipexist = "OVERWRITE"
+
+    arcpy.BuildPyramids_management(inras, pyramid_level, skipfirst, resample_technique, compression_type, compression_quality, skipexist)
 
 
 ############   CALL FUNCTIONS   #######################################

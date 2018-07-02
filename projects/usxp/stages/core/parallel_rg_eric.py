@@ -9,9 +9,15 @@ import sys
 import psycopg2
 from sqlalchemy import create_engine
 from multiprocessing import Process, Queue, Pool, cpu_count, current_process, Manager
-sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\misc\\')
+sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\modules\\')
 import general as gen
 
+
+
+
+
+
+series = 's25'
 
 
 
@@ -54,32 +60,22 @@ def execute_task(args):
 	cond = "LINK <> 3"
 	print 'cond: ',cond
 
-	raster_in = Raster('C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\s18\\core\\core_s18.gdb\\s18_v4_traj_cdl30_b_2008to2017_rfnd_v2_n8h_mtr_8w_mmu5')
+	raster_in = Raster('C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\{0}\\core\\core_{0}.gdb\\{0}_v4_traj_cdl30_b_2008to2017_rfnd_v6_n8h_mtr_8w_mmu5'.format(series))
 	raster_rg = RegionGroup(raster_in, rg_instance[0], rg_instance[1], "ADD_LINK")
-	# raster_oid = Lookup(raster_rg, "OID")
-	# raster_mask = SetNull(raster_rg, raster_rg, cond)
-
 
 	#clear out the extent for next time
 	arcpy.ClearEnvironment("extent")
 
 	outname = "tile_" + str(fc_count) +'.tif'
 
-	outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/", r"tiles", outname)
+	outpath = os.path.join("C:/Users/Bougie/Desktop/Gibbs/data/", r"tiles", outname)
 
-	# outname2 = "tile_rg2_" + str(fc_count) +'.tif'
-	# outpath2 = os.path.join("C:/Users/Bougie/Desktop/Gibbs/", r"tiles", outname2)
-
-	# raster_shrink.save(outpath)
 	raster_rg.save(outpath)
 
 
 	arcpy.AddField_management(Raster(outpath), field_name='tile', field_type='TEXT')
 	expression = "{}".format(str(fc_count))
 	arcpy.CalculateField_management(outpath, "tile", expression, "PYTHON_9.3")
-
-	# arcpy.CopyRaster_management(outpath, outpath2,"DEFAULTS","","","","","16_BIT_UNSIGNED")
-
 
 
 
@@ -89,7 +85,7 @@ def execute_task(args):
 
 def mosiacRasters():
 	######Description: mosiac tiles together into a new raster
-	tilelist = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*.tif")
+	tilelist = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/data/*.tif")
 	print 'tilelist:', tilelist 
 
 	for tile in tilelist:
@@ -107,8 +103,6 @@ def mosiacRasters():
 		expression = "{}".format(hi[0])
 		arcpy.CalculateField_management(tile, "tile", expression, "PYTHON_9.3")
 
-		# arcpy.CalculateField_management(tile, "obj_id",  "!tile! + '_' + str(!OID!)", "PYTHON_9.3")
-
 
 
 
@@ -117,7 +111,7 @@ def mosiacRasters_v2():
 	# set the engine.....
 	engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
 
-	tilelist = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*.tif")
+	tilelist = glob.glob("C:/Users/Bougie/Desktop/Gibbs/data/tiles/*.tif")
 	print 'tilelist:', tilelist 
 
 	querylist=[]
@@ -163,7 +157,7 @@ def mosiacRasters_v2():
 
 	conn.commit()
 	print "Records created successfully";
-	conn.close()
+	# conn.close()
 
 
 
@@ -171,7 +165,7 @@ def mosiacRasters_v2():
 
 
 def reclassTiles(field, mtr):
-	tilelist = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*.tif")
+	tilelist = glob.glob("C:/Users/Bougie/Desktop/Gibbs/data/tiles/*.tif")
 	print 'tilelist:', tilelist 
 
 	for tile in tilelist:
@@ -227,13 +221,13 @@ def getReclassifyValuesString(tile_num, field, mtr):
 
 
 def mosiacRasters(mtr, field):
-	tilelist = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/mtr{}/*{}.tif".format(mtr, field))
+	tilelist = glob.glob("C:/Users/Bougie/Desktop/Gibbs/data/tiles/mtr{}/*{}.tif".format(mtr, field))
 	print tilelist 
 	#### need to wrap these paths with Raster() fct or complains about the paths being a string
 	inTraj=Raster(tilelist[0])
 
-	gdb = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\s18\\core\\core_s18.gdb'
-	filename = 's18_mtr{}_{}'.format(mtr, field)
+	gdb = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\sa\\r2\\{0}\\core\\core_{0}.gdb'.format(series)
+	filename = '{}_mtr{}_{}'.format(series, mtr, field)
 	path = '{}\\{}'.format(gdb, filename)
 
 	######mosiac tiles together into a new raster
@@ -253,43 +247,43 @@ def mosiacRasters(mtr, field):
 
 if __name__ == '__main__':
 
-	# #####  remove a files in tiles directory
-	# tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/tiles/*")
+	# # # #####  remove a files in tiles directory
+	# tiles = glob.glob("C:/Users/Bougie/Desktop/Gibbs/data/tiles/*")
 	# for tile in tiles:
 	# 	os.remove(tile)
 
-	#get extents of individual features and add it to a dictionary
-	extDict = {}
+	# #get extents of individual features and add it to a dictionary
+	# extDict = {}
 
-	for row in arcpy.da.SearchCursor('C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\vector\\shapefiles.gdb\\fishnet_mtr', ["oid","SHAPE@"]):
-		atlas_stco = row[0]
-		print atlas_stco
-		extent_curr = row[1].extent
-		ls = []
-		ls.append(extent_curr.XMin)
-		ls.append(extent_curr.YMin)
-		ls.append(extent_curr.XMax)
-		ls.append(extent_curr.YMax)
-		extDict[atlas_stco] = ls
+	# for row in arcpy.da.SearchCursor('C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\vector\\shapefiles.gdb\\fishnet_mtr', ["oid","SHAPE@"]):
+	# 	atlas_stco = row[0]
+	# 	print atlas_stco
+	# 	extent_curr = row[1].extent
+	# 	ls = []
+	# 	ls.append(extent_curr.XMin)
+	# 	ls.append(extent_curr.YMin)
+	# 	ls.append(extent_curr.XMax)
+	# 	ls.append(extent_curr.YMax)
+	# 	extDict[atlas_stco] = ls
 	
-	print 'extDict', extDict
-	print'extDict.items',  extDict.items()
+	# print 'extDict', extDict
+	# print'extDict.items',  extDict.items()
 
-	#######create a process and pass dictionary of extent to execute task
+	# # #######create a process and pass dictionary of extent to execute task
 	# pool = Pool(processes=5)
 	# # pool = Pool(processes=cpu_count())
 	# pool.map(execute_task, extDict.items())
 	# pool.close()
 	# pool.join
 
-	print('---starting mosaic process----')
+	# print('---starting mosaic process----')
 	# mosiacRasters_v2()
     
 	reclassTiles('id', '3')
-	# reclassTiles('count', '3')
+	reclassTiles('count', '3')
 
 
-	# reclassTiles('id', '4')
+	reclassTiles('id', '4')
 	reclassTiles('count', '4')
 
 

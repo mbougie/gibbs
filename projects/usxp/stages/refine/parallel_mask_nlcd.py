@@ -121,7 +121,8 @@ def execute_task(args):
 			col = pixel_location[1]
             
 			nlcd_list = []
-            
+
+			####depending on year of conversion, append the value of the two previous nlcds
 			if ytc < 2012:
 				nlcd_list.append(nlcds[2001][row][col])
 				nlcd_list.append(nlcds[2006][row][col])
@@ -129,15 +130,24 @@ def execute_task(args):
 				nlcd_list.append(nlcds[2006][row][col])
 				nlcd_list.append(nlcds[2011][row][col])
 
-			#get the length of nlcd list containing only the value 82
+			#get the length of nlcd list containing only the value 81 and 82
+			##81 = pasture/hay
+			##82 = cultivated crop
 			count_81 = nlcd_list.count(81)
 			count_82 = nlcd_list.count(82)
 			count_81_82 = count_81 + count_82
 
+			####create masks for both ytc and yfc ######################
+			### use or operator to say if an 82 value in either nlcd dataset then mask
 			if data['refine']['mask_nlcd']['operator'] == 'or':
+				#### for each ytc value, if there is a 82 value at that pixel reclass as crop
+				#### because this is indicating that the pixel was recently cropped
 				if count_82 > 0 and ytc != None:
 					outData[row,col] = data['refine']['arbitrary_crop']
-			
+				#### for each yfc value, if there is a no 81 or 82 value at that pixel reclass as noncrop
+				#### note: added 81 to 82 to essentailly increase the cropland that can be converted to be less stringent on yfc conversion
+				#### needs to now have to years of non 81 or 82 for both years to be considered a false conversion  (i.e. no crop there so how can there be abandonment when no crop exists!!!)
+
 				elif count_81_82 == 0 and yfc != None:
 					outData[row,col] = data['refine']['arbitrary_noncrop']
 
