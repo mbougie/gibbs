@@ -66,7 +66,7 @@ def addGDBTable2postgres(data, yxc, subtype):
     df.to_sql(data['post'][yxc][subtype]['filename'], engine, schema='counts_cdl', if_exists='replace')
     
     #add trajectory field to table
-    addAcresField('counts_cdl', data['post'][yxc][subtype]['filename'], yxc, '30', total)
+    addAcresField('counts_cdl', data['post'][yxc][subtype]['filename'], yxc, 30, total)
 
 
 
@@ -111,17 +111,17 @@ def addAcresField(schema, tablename, yxc, res, total):
 
 def createMergedTable():
   cur = conn.cursor()
-  query="SELECT table_name FROM information_schema.tables WHERE table_schema = 'cdl_counts' AND SUBSTR(table_name, 1, 1) = 's';"
+  query="SELECT table_name FROM information_schema.tables WHERE table_schema = 'counts_cdl' AND SUBSTR(table_name, 1, 1) = 's';"
   cur.execute(query)
   rows = cur.fetchall()
   print rows
   
   table_list = []
   for row in rows:
-    query_temp="SELECT value,count,acres,series,yxc FROM cdl_counts.{}".format(row[0])
+    query_temp="SELECT value,count,acres,series,yxc FROM counts_cdl.{}".format(row[0])
     table_list.append(query_temp)
 
-  query_final = "DROP TABLE IF EXISTS cdl_counts.merged_series; CREATE TABLE cdl_counts.merged_series AS {}".format(' UNION '.join(table_list))
+  query_final = "DROP TABLE IF EXISTS counts_cdl.merged_series; CREATE TABLE counts_cdl.merged_series AS {}".format(' UNION '.join(table_list))
   print query_final
   cur.execute(query_final)
   conn.commit()
@@ -130,7 +130,7 @@ def createMergedTable():
 
 def run(data, yxc, subtype):
   addGDBTable2postgres(data, yxc, subtype)
-  createMergedTable()
+  # createMergedTable()
 
 
 if __name__ == '__main__':

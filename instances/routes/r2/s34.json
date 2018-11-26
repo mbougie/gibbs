@@ -1,0 +1,16 @@
+{
+	"global":{
+		"instance":"s34",
+	    "res":"30",
+	    "years":[2008,2017],
+	    "conv_years":[2009,2016]
+	},
+	"pre":{"version":{"traj":"v4", "lookup":"v4"}},
+	"refine":{"version":"v13", "operator":"or", "years_nlcd":[2001,2006,2011]},
+	"core":{"route":"r2", "filter":"n8h", "rg":"8w", "mmu":"5"},
+	"note":"S27 + mutually exlusive exploration"
+}
+
+
+
+

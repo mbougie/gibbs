@@ -229,6 +229,46 @@ def addGDBTable2postgres_t2(gdb_args,wc,pg_shema):
 
 
 
+def addGDBTable2postgres(currentobject):
+    print currentobject
+
+    arcpy.env.workspace = currentobject
+  
+    ##set the engine.....
+    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/parcels')
+
+    featureclasses = arcpy.ListFeatureClasses()
+
+    columnlist = []
+    # Copy shapefiles to a file geodatabase
+    for fc in featureclasses:
+    
+        # Execute AddField twice for two new fields
+        fields = [f.name for f in arcpy.ListFields(fc)]
+
+        # print fields
+
+        columnlist.append(fields)
+
+
+    # print listit
+    flat_list = [item for sublist in columnlist for item in sublist]
+
+        ##merge the lists into a tuple 
+    data_tuples = list(zip(flat_list))
+
+    df=pd.DataFrame(data_tuples, columns=['name'])
+
+    print df
+
+    # use pandas method to import table into psotgres
+    df.to_sql('test_mn', engine, schema='test')
+
+    # df2 = df[['name']].groupby(['name']).agg(['count'])
+
+    # print df2
+
+
 
 ##############  call functions  #############################################
 
@@ -299,4 +339,9 @@ def addGDBTable2postgres_t2(gdb_args,wc,pg_shema):
 
 
 
-tryout()
+# tryout()
+
+
+
+
+addGDBTable2postgres('D:\\projects\\intact_land\\parcels\\Minnesota.gdb')

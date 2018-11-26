@@ -1,0 +1,16 @@
+{
+	"global":{
+		"instance":"s32",
+	    "res":"30",
+	    "years":[2008,2017],
+	    "conv_years":[2009,2016]
+	},
+	"pre":{"version":{"traj":"v4", "lookup":"v3"}},
+	"refine":{"version":"v11", "operator":"or", "years_nlcd":[2001,2006,2011]},
+	"core":{"route":"r2", "filter":"n8h", "rg":"8w", "mmu":"5"},
+	"note":"3rd iteration of changing the nlcd mask for abandonment----where mtr=1 and mtr=5 and [crop][61 or noncrop]"
+}
+
+
+
+

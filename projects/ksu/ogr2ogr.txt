@@ -1,0 +1,65 @@
+ogr2ogr -f "PostgreSQL" PG:"dbname=ksu_v3 user=mbougie host=144.92.235.105 password=Mend0ta! ACTIVE_SCHEMA=yans_roy" E:\clu_yo.gdb -overwrite -progress --config PG_USE_COPY YES
+
+ogr2ogr -f "PostgreSQL" PG:"dbname=ksu_v3 user=mbougie host=144.92.235.105 password=Mend0ta! ACTIVE_SCHEMA=yan_roy" D:\projects\ksu\v2\main\yan_roy.gdb -nlt PROMOTE_TO_MULTI -nln yan_roy.yans_roy_5070_erase_singleparts_026_samples_plan_b_4152 yans_roy_5070_erase_singleparts_026_samples_plan_b_4152 -progress --config PG_USE_COPY YES
+
+
+
+ogr2ogr -f "PostgreSQL" PG:"dbname=ksu_v3 user=mbougie host=144.92.235.105 password=Mend0ta!" D:\projects\ksu\v2\main\clu.gdb -nlt PROMOTE_TO_MULTI -nln clu.clu2008county_5070_polygon -progress --config PG_USE_COPY YES
+
+
+
+ogr2ogr -f "PostgreSQL" PG:"dbname=ksu_v3 user=mbougie host=144.92.235.105 password=Mend0ta!" E:\\ksu\\ksu.gdb -nlt PROMOTE_TO_MULTI -nln merged.ksu_polygon ksu_polygons_initial -progress -t_srs EPSG:4152 --config PG_USE_COPY YES 
+
+
+######################################
+ogr2ogr -f "PostgreSQL" PG:"dbname=ksu_v3 user=postgres host=localhost port=5433 password=postgres" E:\\ksu\\merged.gdb -nlt POINT -nln merged.ksu_samples_counties_huc8_mlra_statsgo ksu_samples_counties_huc8_mlra_statsgo -progress --config PG_USE_COPY YES
+
+ogr2ogr -f "PostgreSQL" PG:"dbname=ksu_v4 user=mbougie host=144.92.235.105 password=Mend0ta!" E:\\ksu\\ksu.gdb -nlt POINT -nln merged.ksu_polygons_5070_samples_states_counties_huc8_statsgo_mlra ksu_polygons_5070_samples_states_counties_huc8_statsgo_mlra -progress -t_srs EPSG:4152 --config PG_USE_COPY YES
+######################################
+
+
+
+
+ogr2ogr -f "PostgreSQL" 
+    PG:"host=localhost port=5432 dbname=SampleNY user=postgres" 
+    NYPluto/Pluto.gdb 
+    -overwrite -progress --config PG_USE_COPY YES
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ogr2ogr -f "FileGDB" -update E:\\ksu\\v4\\ksu_v4.gdb -progress PG:"dbname=ksu_v4 user=mbougie host=144.92.235.105 password=Mend0ta!" -sql "SELECT * FROM merged.ksu_samples_final" -nln ksu_samples -t_srs EPSG:4152 -nlt POINT 
+
+ogr2ogr -f "FileGDB" -update E:\\ksu\\merged3.gdb -progress PG:"dbname=ksu_v3 user=mbougie host=144.92.235.105 password=Mend0ta!" -sql "SELECT oid,geom FROM merged.ksu_samples" -nln ksu_samples_bb -t_srs EPSG:5070 -nlt POINT 
+
+
+ogr2ogr -f "FileGDB" -update E:\\ksu\\merged3.gdb -progress PG:"dbname=ksu_v3 user=mbougie host=144.92.235.105 password=Mend0ta!" -sql "SELECT * FROM yans_roy.yans_roy_raster_attrib_4152_states_within_final" -nln yans_roy_raster_attrib_4152_states_within_final -t_srs EPSG:5070 -nlt POINT 
+
+
+
+
+ogr2ogr -f "FileGDB" -update E:\\ksu\\merged3.gdb -progress PG:"dbname=ksu_v3 user=mbougie host=144.92.235.105 password=Mend0ta!" -sql "SELECT * FROM clu.clu_raster_attrib_4152_states_within_final" -nln clu_raster_attrib_4152_states_within_final -t_srs EPSG:5070 -nlt POINT 
+
+
+
+
+
+
+
+
+ogr2ogr -f "topojson" -progress D:\\projects\\lem\\matt\\json\\yo_topo.json PG:"dbname=lem user=mbougie host=144.92.235.105 password=Mend0ta!" -sql "SELECT * FROM blocks.us_blck_grp_2016_mainland_5070_maj_states_wi" -t_srs EPSG:4326'

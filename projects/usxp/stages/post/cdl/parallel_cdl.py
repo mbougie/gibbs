@@ -159,11 +159,14 @@ def run(data, yxc, subtype):
 		os.remove(tile)
 
 	traj_list = createReclassifyList(data, yxc)
+	
+	###NOTE: for arcgis NEED to subset tiles because empty tiles dont work.  FOr numpy processing it can deal with empty tiles!!!
+	fishnet = 'fishnet_cdl_7_7_subset_yxc'
 
 	#get extents of individual features and add it to a dictionary
 	extDict = {}
 
-	for row in arcpy.da.SearchCursor('C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\vector\\shapefiles.gdb\\fishnet_yxc', ["oid","SHAPE@"]):
+	for row in arcpy.da.SearchCursor('C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\vector\\shapefiles.gdb\\{}'.format(fishnet), ["oid","SHAPE@"]):
 		atlas_stco = row[0]
 		print atlas_stco
 		extent_curr = row[1].extent
@@ -179,7 +182,7 @@ def run(data, yxc, subtype):
     
 
 	#######create a process and pass dictionary of extent to execute task
-	pool = Pool(processes=7)
+	pool = Pool(processes=4)
 	pool.map(execute_task, [(ed, data, yxc, subtype, traj_list) for ed in extDict.items()])
 	pool.close()
 	pool.join

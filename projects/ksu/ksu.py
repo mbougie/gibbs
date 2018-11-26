@@ -14,13 +14,15 @@ import glob
 import psycopg2
 import fnmatch
 import rasterstats
+import geopandas as gpd
 
-# import general as gen 
+sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\modules\\')
+import general as gen
 
 case=['Bougie','Gibbs']
 
 try:
-    conn = psycopg2.connect("dbname='ksu' user='mbougie' host='144.92.235.105' password='Mend0ta!'")
+    conn = psycopg2.connect("dbname='ksu_v3' user='mbougie' host='144.92.235.105' password='Mend0ta!'")
 except:
     print "I am unable to connect to the database"
 
@@ -709,7 +711,370 @@ def exportPGtoCSV(state):
 # updateField()
 
 
-formatTables()
+# formatTables()
+
+
+
+
+
+
+
+
+
+#####################################  version 3 #######################################################################################
+
+def importFCintoPG():
+    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/ksu_v3')
+    # import the feature class into postgres
+    tablename = 'yans_roy_5070_erase_singleparts_026_samples_raster_attrib_4152'
+    fc = "D:\\projects\\ksu\\v2\\main\\yan_roy.gdb\\yans_roy_5070_erase_singleparts_026_samples_raster_attrib_4152"
+    # arr = arcpy.da.FeatureClassToNumPyArray(fc, '*')
+    # print arr
+
+    # print type(arr)
+
+
+    df = pd.DataFrame([row for row in arcpy.da.SearchCursor(fc, '*')])
+
+    # yo=gpd.read_file(fc)
+
+    # print yo
+
+    # geodataframe = gpd.GeoDataFrame(pd.DataFrame.from_csv('<your dataframe source>'))
+    # # convert numpy array to pandas dataframe
+    # df = pd.DataFrame(data=arr)
+
+    # print df
+
+
+    df.to_sql(tablename, engine, schema='test', index=True, if_exists='replace', chunksize=20000)
+
+
+
+
+
+def addGDBTable2postgres():
+    print 'running addGDBTable2postgres() function....'
+    ####description: adds tables in geodatabse to postgres
+    # set the engine.....
+    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/ksu_v3')
+
+    arcpy.env.workspace = "D:\\projects\\ksu\\v2\\main\\clu.gdb\\"
+
+    post_table = 'clu_raster_attrib_plan_b'
+
+    for table in arcpy.ListTables('*plan_b*'): 
+        print 'table:------- ', table
+
+        # Execute AddField twice for two new fields
+        fields = [f.name for f in arcpy.ListFields(table)]
+        print fields
+
+        # converts a table to NumPy structured array.
+        arr = arcpy.da.TableToNumPyArray(table,fields, null_value=0)
+        print arr
+
+
+        # print np.split(arr, 40)
+
+        for subarray in np.array_split(arr, 80):
+            print subarray
+
+
+            # convert numpy array to pandas dataframe
+            df = pd.DataFrame(data=subarray)
+
+            print df
+
+            df.columns = map(str.lower, df.columns)
+
+            # use pandas method to import table into psotgres
+            df.to_sql(post_table, engine, schema='clu',  if_exists='append')
+
+
+
+
+
+
+def reclassCDLtoZero(table):
+    ##this is a function to replace the -1 that were assigned to NULL values when the dataset was imported into postgres
+    cur = conn.cursor()
+
+    cdl_columns = ['cdl30_2001_5070',
+                  'cdl30_2002_5070',
+                  'cdl30_2003_5070', 
+                  'cdl30_2004_5070', 
+                  'cdl30_2005_5070', 
+                  'cdl30_2007_5070', 
+                  'cdl30_2008_5070', 
+                  'cdl30_2010_5070', 
+                  'cdl30_2011_5070', 
+                  'cdl30_2012_5070', 
+                  'cdl30_2013_5070', 
+                  'cdl30_2014_5070', 
+                  'cdl30_2015_5070', 
+                  'cdl30_2016_5070', 
+                  'cdl56_2005_5070', 
+                  'cdl56_2006_5070', 
+                  'cdl56_2007_5070', 
+                  'cdl56_2008_5070', 
+                  'cdl56_2009_5070']
+
+    for cdl_column in cdl_columns:
+        query = 'UPDATE {0} SET {1} = 0 WHERE {1} IS NULL'.format(table,cdl_column)
+        print query
+
+        cur.execute(query);
+        conn.commit()
+    
+    conn.close()
+
+
+
+
+
+
+def changeNulltoZero_30m():
+    arcpy.env.workspace = "D:\\projects\\ksu\\v2\\attributes\\rasters"
+
+
+
+    # Copy each file with a .csv extension to a dBASE file
+
+    for raster in arcpy.ListFiles("*30*_5070.img"):
+        print raster
+
+        ###set environment###############################################################
+        cdl_2014 = Raster('C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl30_2014')
+        print cdl_2014.extent
+
+        XMin=arcpy.GetRasterProperties_management(cdl_2014, "LEFT")
+        YMin=arcpy.GetRasterProperties_management(cdl_2014, "BOTTOM")
+        XMax=arcpy.GetRasterProperties_management(cdl_2014, "RIGHT")
+        YMax=arcpy.GetRasterProperties_management(cdl_2014, "TOP")
+
+        arcpy.env.snapRaster = cdl_2014
+        arcpy.env.cellsize = cdl_2014
+        arcpy.env.outputCoordinateSystem = cdl_2014
+        arcpy.env.extent = arcpy.Extent(XMin, YMin, XMax, YMax)
+        #################################################################################
+
+
+        ###set null to zero###########################################################
+        reclassed_raster = Con(IsNull(raster), 0, raster)
+
+        ##save reclassed raster in gdb#######################################################
+        outraster = raster.replace(".img", "_nullToZero")
+        print outraster
+        outpath = 'E:\\ksu\\rasters\\cds.gdb\\{}'.format(outraster)
+        print outpath
+
+        reclassed_raster.save(outpath)
+        gen.buildPyramids(outpath)
+        reclassed_raster=None
+
+
+
+
+def changeNulltoZero_56m():
+    arcpy.env.workspace = "D:\\projects\\ksu\\v2\\attributes\\rasters"
+
+
+
+    # Copy each file with a .csv extension to a dBASE file
+
+    for raster in arcpy.ListFiles("*56*.img"):
+        print raster
+
+        ###set environment###############################################################
+        cdl_2009 = Raster('C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\raster\\cdl.gdb\\cdl56_2009')
+        print cdl_2009.extent
+
+        XMin=arcpy.GetRasterProperties_management(cdl_2009, "LEFT")
+        YMin=arcpy.GetRasterProperties_management(cdl_2009, "BOTTOM")
+        XMax=arcpy.GetRasterProperties_management(cdl_2009, "RIGHT")
+        YMax=arcpy.GetRasterProperties_management(cdl_2009, "TOP")
+
+        arcpy.env.snapRaster = cdl_2009
+        arcpy.env.cellsize = cdl_2009
+        arcpy.env.outputCoordinateSystem = cdl_2009
+        arcpy.env.extent = arcpy.Extent(XMin, YMin, XMax, YMax)
+        #################################################################################
+
+
+        ###set null to zero###########################################################
+        reclassed_raster = Con(IsNull(raster), 0, raster)
+
+        ##save reclassed raster in gdb#######################################################
+        outraster = raster.replace(".img", "_nullToZero")
+        print outraster
+        outpath = 'E:\\ksu\\rasters\\cds.gdb\\{}'.format(outraster)
+        print outpath
+
+        reclassed_raster.save(outpath)
+        gen.buildPyramids(outpath)
+        reclassed_raster=None
+
+
+
+def spatialJoinArcgis():
+    # SpatialJoin_analysis (target_features, join_features, out_feature_class, {join_operation}, {join_type}, {field_mapping}, {match_option}, {search_radius}, {distance_field_name})
+    # Set local variables
+
+    target_features = r"E:\\ksu\\merged.gdb\\ksu_samples_counties_huc8_mlra"
+
+    join_features = r"D:\\projects\\ksu\\v2\\attributes\\vectors\\statsgo_5070.shp"
+
+
+
+    # Want to join USA cities to states and calculate the mean city population
+
+    # for each state
+
+    # targetFeatures = os.path.join(workspace_pt, "ksu_samples")
+
+    # joinFeatures = os.path.join(workspace, "cities")
+
+
+
+    # Output will be the target features, states, with a mean city population field (mcp)
+    out_feature_class = "E:\\ksu\\merged.gdb\\ksu_samples_counties_huc8_mlra_statsgo"
+
+
+
+    arcpy.SetProgressor("step")
+
+
+    # Update the progressor label for current shapefile
+
+    arcpy.SetProgressorLabel("Loading {0}...".format(out_feature_class))
+
+
+    arcpy.SetProgressorPosition()
+
+    # Create a new fieldmappings and add the two input feature classes.
+
+    # fieldmappings = arcpy.FieldMappings()
+
+    # fieldmappings.addTable(targetFeatures)
+
+    # fieldmappings.addTable(joinFeatures)
+
+
+
+    # First get the POP1990 fieldmap. POP1990 is a field in the cities feature class.
+
+    # The output will have the states with the attributes of the cities. Setting the
+
+    # field's merge rule to mean will aggregate the values for all of the cities for
+
+    # each state into an average value. The field is also renamed to be more appropriate
+
+    # for the output.
+
+    # pop1990FieldIndex = fieldmappings.findFieldMapIndex("POP1990")
+
+    # fieldmap = fieldmappings.getFieldMap(pop1990FieldIndex)
+
+
+
+    # Get the output field's properties as a field object
+
+    # field = fieldmap.outputField
+
+
+
+    # Rename the field and pass the updated field object back into the field map
+
+    # field.name = "mean_city_pop"
+
+    # field.aliasName = "mean_city_pop"
+
+    # fieldmap.outputField = field
+
+
+
+    # Set the merge rule to mean and then replace the old fieldmap in the mappings object
+
+    # with the updated one
+
+    # fieldmap.mergeRule = "mean"
+
+    # fieldmappings.replaceFieldMap(pop1990FieldIndex, fieldmap)
+
+
+
+    # Delete fields that are no longer applicable, such as city CITY_NAME and CITY_FIPS
+
+    # as only the first value will be used by default
+
+    # x = fieldmappings.findFieldMapIndex("CITY_NAME")
+
+    # fieldmappings.removeFieldMap(x)
+
+    # y = fieldmappings.findFieldMapIndex("CITY_FIPS")
+
+    # fieldmappings.removeFieldMap(y)
+
+
+
+    #Run the Spatial Join tool, using the defaults for the join operation and join type
+
+    arcpy.SpatialJoin_analysis(target_features, join_features, out_feature_class)
+
+
+# geodataframe['geom'] = geodataframe['geometry'].apply(lambda x: WKTElement(x.wkt, srid=<your_SRID>)
+
+# #drop the geometry column as it is now duplicative
+# geodataframe.drop('geometry', 1, inplace=True)
+
+# # Use 'dtype' to specify column's type
+# # For the geom column, we will use GeoAlchemy's type 'Geometry'
+# geodataframe.to_sql(table_name, engine, if_exists='append', index=False, 
+#                          dtype={'geom': Geometry('POINT', srid= <your_srid>)})
+
+
+
+
+def yo():
+    path = 'E:\\ksu\\csv_now'
+    extension = 'csv'
+
+    os.chdir(path)
+    result = [i for i in glob.glob('*.{}'.format(extension))]
+
+    ##create empty dataframe to append rows to 
+    df = pd.DataFrame([])
+ 
+    counts = []
+    for csv in result:
+        print csv
+        df1=pd.read_csv(csv)
+        print len(df1.index)
+        counts.append(len(df1.index))
+        
+        ###create the row of data 
+        data = pd.DataFrame(data={'count': [len(df1.index)], 'dataset': [csv]})
+        print 'data', data
+
+        ###append row of data to dataframe
+        df = df.append(data)
+        print 'df', df
+
+
+    print 'total number of rows:', sum(counts)
+    df.to_csv('E:\\ksu\\csv_now\\metadata\\csv_counts.csv', encoding='utf-8', index=False)
+
+####call functions ####################################################################
+# addGDBTable2postgres()
+# reclassCDLtoZero('clu_t2.clu2008county_5070_samples_plan_b_4152')
+# changeNulltoZero_30m()
+# changeNulltoZero_56m()
+
+
+# spatialJoinArcgis()
+
+yo()
 
 
 
@@ -742,6 +1107,23 @@ formatTables()
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+################################  ignore below !?!????  #################################################################################################
 
 
 

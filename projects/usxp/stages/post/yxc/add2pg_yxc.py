@@ -62,7 +62,7 @@ def addGDBTable2postgres(data,yxc):
     df.to_sql(data['post'][yxc]['filename'], engine, schema='counts_yxc', if_exists='replace')
     
     # #add trajectory field to table
-    addAcresField('counts_yxc', data['post'][yxc]['filename'], yxc, '30', total)
+    addAcresField('counts_yxc', data['post'][yxc]['filename'], yxc, 30, total)
 
 
 

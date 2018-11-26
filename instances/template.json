@@ -1,28 +1,40 @@
 {    
     
     "ancillary":{
-    	"vector":{
-    		"shapefiles":{
+        "rasters":{"cdl":{"cls":153811, "rws":96523}, "nlcd":{"cls":161190, "rws":104424}},
+    	"vectors":{
                 "counties_subset":"C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\vector\\shapefiles.gdb\\counties_subset",
                 "states":"C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\vector\\shapefiles.gdb\\states",
-                "fishnet":"C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\vector\\shapefiles.gdb\\fishnet",
-                "fishnet_mtr":"C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\vector\\shapefiles.gdb\\fishnet_mtr",
-                "fishnet_ytc":"C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\vector\\shapefiles.gdb\\fishnet_ytc",
-                "fishnet_refine":"C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\vector\\shapefiles.gdb\\fishnet_refine"
-
-    		}
-    	}
+                "fishnet_cdl_7_7":{"path":"C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\vector\\shapefiles.gdb\\fishnet_cdl_7_7", "cls":7, "rws":7},
+                "fishnet_cdl_49_7":{"path":"C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\vector\\shapefiles.gdb\\fishnet_cdl_49_7", "cls":49, "rws":7},
+                "fishnet_nlcd_6_19":{"path":"C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\vector\\shapefiles.gdb\\fishnet_nlcd_6_19", "cls":6, "rws":19}
+    	},
+        "tiles":{"fishnet_cdl_7_7":{},
+                "fishnet_cdl_49_7":{},
+                "fishnet_nlcd_6_19":{}
+        }
     },
 	"pre":{
 		"traj":{},
+        "traj_yfc":{},
 		"traj_rfnd":{}
 	},
 	
     "refine":{
-        "masks_yfc":{},
-        "masks_ytc":{},
-        "mask_nlcd":{},
-        "mask_2007":{}
+        "mask_fn_yfc_nlcd":{},
+        "mask_fn_yfc_61":{},
+        "mask_fn_yfc_61_preview":{},
+        "mask_fn_yfc_nlcd_mtr1":{},
+        
+        "mask_fp_yfc":{},
+        "mask_fp_yfc_preview":{},
+        "mask_fp_ytc":{},
+        "mask_fp_ytc_preview":{},
+        "mask_fp_nlcd_yfc":{},
+        "mask_fp_nlcd_ytc":{},
+        "mask_fp_nlcd":{},
+        "mask_fp_2007":{},
+        "mask_fp_yfc_potential":{}
      },
 
 

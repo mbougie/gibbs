@@ -166,10 +166,10 @@ def main():
                 processingCluster(inraster, outraster, year, value)
 
 
-                addField(outraster, (value*value))
+            #     addField(outraster, (value*value))
             
          
-            styleLayer(outraster, 's25_{1}_{2}_b_bs_{0}'.format(key, yxc, str(year)), mxd)
+            # styleLayer(outraster, 's25_{1}_{2}_b_bs_{0}'.format(key, yxc, str(year)), mxd)
 
 
         
@@ -184,7 +184,7 @@ def main():
 # scale_dict = {'3km':100, '90km':3000}
 scale_dict = {'9km':300}
 years = range(2009,2017)
-series='s26'
+series='s35'
 mxd = arcpy.mapping.MapDocument('D:\\projects\\usxp\\deliverables\\groups\\yxc\\template.mxd')
 
 

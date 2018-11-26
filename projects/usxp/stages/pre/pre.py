@@ -22,10 +22,10 @@ arcpy.env.overwriteOutput = True
 # arcpy.env.scratchWorkspace = "in_memory" 
 
 
-try:
-    conn = psycopg2.connect("dbname='usxp' user='mbougie' host='144.92.235.105' password='Mend0ta!'")
-except:
-    print "I am unable to connect to the database"
+# try:
+#     conn = psycopg2.connect("dbname='usxp' user='mbougie' host='144.92.235.105' password='Mend0ta!'")
+# except:
+#     print "I am unable to connect to the database"
 
 
 
@@ -216,11 +216,44 @@ def addTrajArrayField(schema, tablename, fields):
     conn.close()
 
 
+
+
+
+
+def createAddYFCTrajectory(data):
+    print 'createAddYFCTrajectory(data)'
+    # filelist = [data['pre']['traj']['path'], data['refine']['mask_fn_yfc_61']['path'], data['refine']['mask_fn_yfc_nlcd_mtr1']['path']]
+    filelist = [data['pre']['traj']['path'], data['refine']['mask_fn_yfc_61']['path']]
+    
+    print 'filelist:', filelist
+    
+    ##### mosaicRasters():
+    arcpy.MosaicToNewRaster_management(filelist, data['pre']['traj_rfnd']['gdb'], data['pre']['traj_yfc']['filename'], Raster(data['pre']['traj']['path']).spatialReference, '16_BIT_UNSIGNED', data['global']['res'], "1", "LAST","FIRST")
+
+    #Overwrite the existing attribute table file
+    arcpy.BuildRasterAttributeTable_management(data['pre']['traj_yfc']['path'], "Overwrite")
+
+    # Overwrite pyramids
+    gen.buildPyramids(data['pre']['traj_yfc']['path'])
+
+
+
 def createRefinedTrajectory(data):
+    # mask_fp_2007.run(data)
+    # mask_fp_yfc_potential.run(data)
+    # mask_fp_nlcd_yfc.run(data)
+    # mask_fp_nlcd_ytc.run(data)
+    # mask_fp_yfc.run(data)
+    # mask_fp_ytc.run(data)
+
 
     ##### loop through each of the cdl rasters and make sure nlcd is last 
-    filelist = [data['pre']['traj']['path'], data['refine']['masks_yfc']['path'], data['refine']['masks_ytc']['path'], data['refine']['mask_2007']['path'], data['refine']['mask_nlcd']['path']]
+    # filelist = [data['pre']['traj']['path'], data['refine']['masks_yfc']['path'], data['refine']['masks_ytc']['path'], data['refine']['mask_2007']['path'], data['refine']['mask_nlcd']['path']]
+    # filelist = [data['pre']['traj_yfc']['path'], data['refine']['mask_fp_2007']['path'], data['refine']['mask_fp_yfc_potential']['path'], data['refine']['mask_fp_nlcd_yfc']['path'], data['refine']['mask_fp_nlcd_ytc']['path'], data['refine']['mask_fp_yfc']['path'], data['refine']['mask_fp_ytc']['path']]
+    filelist = [data['pre']['traj_yfc']['path'], data['refine']['mask_fp_2007']['path'], data['refine']['mask_fp_nlcd_yfc']['path'], data['refine']['mask_fp_nlcd_ytc']['path'], data['refine']['mask_fp_yfc']['path'], data['refine']['mask_fp_ytc']['path']]
     
+
+
     print 'filelist:', filelist
     
     ##### mosaicRasters():
@@ -260,6 +293,12 @@ def run(data):
         print '------running pre(initial)--------'
         # createTrajectories(data)
         addGDBTable2postgres(data, 'pre')
+
+    elif data['global']['version']=='add_yfc':
+        print '------running pre(add_yfc)--------'
+        # createAddYFCTrajectory(data)
+        gen.addGDBTable2postgres_recent(data['pre']['traj']['path'], data['pre']['traj']['filename'], 'usxp', 'qaqc_pre')
+        gen.addGDBTable2postgres_recent(data['pre']['traj_yfc']['path'], data['pre']['traj_yfc']['filename'], 'usxp', 'qaqc_pre')
         
     elif data['global']['version']=='final':
         print '------running pre(final)--------'

@@ -22,8 +22,7 @@ arcpy.CheckOutExtension("Spatial")
 arcpy.env.parallelProcessingFactor = "95%"
 
 
-# set the engine.....
-engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
+
 
 
 # class fireItUp():
@@ -331,6 +330,67 @@ def meltTOPostGres():
 
 
 
+def meltTOPostGres_v2():
+	# set the engine.....
+	engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/intact_lands')
+	table = 'D:\\projects\\intact_land\\intact\\refine\\test_areas\\mn_mitchell\\final.gdb\\zonal_stats_nlcd_oid'
+
+	print table
+
+	fields = [f.name for f in arcpy.ListFields(table)]
+
+	# converts a table to NumPy structured array.
+	arr = arcpy.da.TableToNumPyArray(table,fields)
+	# print arr
+
+	# convert numpy array to pandas dataframe
+	df = pd.DataFrame(data=arr)
+	#r## remove column
+	# del df['OBJECTID']
+	print df
+
+	##perform a psuedo pivot table
+	df=pd.melt(df, id_vars=["OBJECTID"],var_name="oid")
+	print 'df', df
+
+
+
+
+	# df = pd.melt(df, id_vars=["OBJECTID"], var_name="hi", value_name="Value")
+
+	# print df
+
+
+	df.columns = map(str.lower, df.columns)
+
+	# #    #### format column in df #########################
+	# # ## strip character string off all cells in column
+	df['oid'] = df['oid'].map(lambda x: x.strip('OBJEC_'))
+
+	df.columns = map(str.lower, df.columns)
+
+	print 'df', df
+	# df['acres'] = df['value']*0.222395
+	# print df
+	# # ## add zero infront of string if length is less than 2
+	# # df['atlas_st'] = df['atlas_st'].apply(lambda x: '{0:0>2}'.format(x))
+	# # df[['year']] = df.label.astype('int32')
+	# # print df.dtypes
+	# print df.dtypes
+
+	df.to_sql('testit', engine, schema='refine', if_exists='replace')
+
+
+
+
+
+
+
+def createFCfromPG():
+
+
+
+
 
 
 
@@ -342,7 +402,9 @@ if __name__ == '__main__':
 
   # pivotTableFromPostGres()
 
-   meltTOPostGres()
+
+  #####  NEW  #############################
+   # meltTOPostGres_v2()
 
 
 

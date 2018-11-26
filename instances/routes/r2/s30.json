@@ -1,0 +1,12 @@
+{
+	"global":{
+		"instance":"s30",
+	    "res":"30",
+	    "years":[2008,2017],
+	    "conv_years":[2009,2016]
+	},
+	"pre":{"version":{"traj":"v4", "lookup":"v3"}},
+	"refine":{"version":"v9", "operator":"or", "years_nlcd":[2001,2006,2011]},
+	"core":{"route":"r2", "filter":"n8h", "rg":"8w", "mmu":"5"},
+	"note":"first iteration of changing the nlcd mask for abandonment-------option 2 where mtr=1"
+}

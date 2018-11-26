@@ -316,7 +316,7 @@ def unionTables():
 
 ######--- noncrop -----
 # create_NonCrop_byYear()
-create_NonCrop_byYear_cumulative()
+# create_NonCrop_byYear_cumulative()
 
 
 
@@ -327,6 +327,25 @@ create_NonCrop_byYear_cumulative()
 # gdbToPG('noncrop_c')
 #unionTables()
 
+import arcpy
+from arcpy import env
+from arcpy.sa import *
+
+# Check out the ArcGIS Spatial Analyst extension license
+arcpy.CheckOutExtension("Spatial")
+
+
+env.workspace = "D:\\projects\\intact_land\\intact\\refine\\test_areas\\mn_swift\\compare.gdb"
+in_raster1 = Raster('swift_clu_2015_noncrop_c_w_masks_raster_zero')
+in_raster2 = Raster('swift_nlcd_intact_modified_zero')
+outraster = 'D:\\projects\\intact_land\\intact\\refine\\test_areas\\mn_swift\\compare.gdb\\swift_clu_2015_noncrop_c_w_masks_raster_zero'
+
+# outCon2 = Con(IsNull(in_raster), 0, 1)
+# outCon2.save(outraster)
+
+
+outCombine = Combine([in_raster1, in_raster2])
+outCombine.save("comb")
 
 
 

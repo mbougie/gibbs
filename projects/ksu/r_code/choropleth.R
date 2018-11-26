@@ -1,0 +1,102 @@
+require(rgdal)
+require(ggplot2)
+
+# The input file geodatabase
+fgdb <- "D:\\projects\\ksu\\results\\ksu_results.gdb"
+
+# # List all feature classes in a file geodatabase
+# subset(ogrDrivers(), grepl("GDB", name))
+# fc_list <- ogrListLayers(fgdb)
+# print(fc_list)
+
+# Read the feature class
+fc <- readOGR(dsn=fgdb,layer="mlra_5070_dissolved")
+
+# p <- ggplot() +
+#   # municipality polygons
+#   geom_polygon(data = fc, aes(fill = rfs_acres_change, 
+#                                     x = long, 
+#                                     y = lat, 
+#                                     group = group)) +
+#   # municipality outline
+#   geom_path(data = fc, aes(x = long, 
+#                                  y = lat, 
+#                                  group = group), 
+#             color = "white", size = 0.1) +
+#   coord_equal() +
+#   # add the previously defined basic theme
+#   theme_map() +
+#   labs(x = NULL, 
+#        y = NULL, 
+#        title = "Switzerland's regional demographics", 
+#        subtitle = "Average age in Swiss municipalities, 2015", 
+#        caption = "Geometries: ThemaKart, BFS; Data: BFS, 2016")
+# p
+
+ggplot() +
+  geom_polygon(data=fc, aes(y=lat, x=long, group=group, fill = rfs_acres_change), colour = 'grey50', size = 0.25) + 
+  # geom_polygon(data=state_ss, aes(y=lat, x=long, group=group), fill = 'grey70', alpha=0, colour = 'white', size = 0.25)+
+  coord_map(project="polyconic") +
+  theme(plot.title = element_text(colour = "steelblue",  face = "bold.italic", family = "Helvetica", hjust = 0.5),
+        axis.text.x = element_blank(),
+        axis.title.x=element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.y=element_blank(),
+        axis.ticks = element_blank(),
+        panel.grid.major = element_blank())
+
+
+
+# library(ggplot2)
+# library(maps)
+# library(rgdal)# R wrapper around GDAL/OGR
+# library(sp)
+# require("RPostgreSQL")
+# library(plyr)
+# library(dplyr)
+# drv <- dbDriver("PostgreSQL")
+# 
+# con <- dbConnect(drv, dbname = "intact_lands",
+#                  host = "144.92.235.105", port = 5432,
+#                  user = "mbougie", password = "Mend0ta!")
+# 
+# 
+# 
+# ##########################  using supplied county dataset######################################   
+# state <- map_data("state") 
+# ##subset state dataset
+# state_ss <- subset(state, region=='montana' | region=='wyoming' | region == 'north dakota'| region=='south dakota' | region == 'minnesota' | region=='iowa' | region == 'nebraska')
+# 
+# ##create counties dataset
+# cnty <- map_data("county")
+# 
+# ##get the fips code
+# data(county.fips)
+# 
+# ## attach fips code to counties dataset
+# cnty2 <- cnty %>%
+#   mutate(polyname = paste(region,subregion,sep=",")) %>%
+#   left_join(county.fips, by="polyname")
+# 
+# ## query the data from postgreSQL 
+# yo <- dbGetQuery(con, "SELECT clu_2015_noncrop_c.atlas_stco, clu_2015_noncrop_c.percent_intact FROM clu_2015.clu_2015_noncrop_c;;")
+# 
+# ## merge cnty2 with yo
+# d = merge(cnty2, yo, sort = TRUE, by.x='fips', by.y='atlas_stco')
+# 
+# ## If I don't reorder the order of lat long it "tears" the polygons!
+# cnty_fnl<-d[order(d$order),]
+# 
+# 
+# ggplot() +
+#   geom_polygon(data=cnty_fnl, aes(y=lat, x=long, group=group, fill = percent_intact), colour = 'grey50', size = 0.25) + 
+#   geom_polygon(data=state_ss, aes(y=lat, x=long, group=group), fill = 'grey70', alpha=0, colour = 'white', size = 0.25)+
+#   coord_map(project="polyconic") +
+#   theme(plot.title = element_text(colour = "steelblue",  face = "bold.italic", family = "Helvetica", hjust = 0.5),
+#         axis.text.x = element_blank(),
+#         axis.title.x=element_blank(),
+#         axis.text.y = element_blank(),
+#         axis.title.y=element_blank(),
+#         axis.ticks = element_blank(),
+#         panel.grid.major = element_blank())
+

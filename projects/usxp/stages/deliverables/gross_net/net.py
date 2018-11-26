@@ -26,7 +26,7 @@ arcpy.CheckOutExtension("Spatial")
 def processingCluster(instance, inraster, outraster):
     #####  reclass  ####################################################
     ## Reclassify (in_raster, reclass_field, remap, {missing_values})
-    test = {}
+    blockstats_objects = {}
 
     for mtr, reclasslist in instance['reclass'].iteritems():
         reclass_raster = Reclassify(inraster, "Value", RemapValue(reclasslist), "NODATA")
@@ -39,14 +39,14 @@ def processingCluster(instance, inraster, outraster):
             outBlockStat = BlockStatistics(reclass_raster_setnull, nbr, "SUM", "DATA")
             print 'finished block stats.............'
 
-            test[mtr] = outBlockStat
+            blockstats_objects[mtr] = outBlockStat
 
-            print 'test', test
+            print 'blockstats_objects ', blockstats_objects 
 
 
-    print 'test', test
+    print 'test', blockstats_objects 
 
-    net_raster = Minus(test['mtr3'], test['mtr4'])
+    net_raster = Minus(blockstats_objects['mtr3'], blockstats_objects['mtr4'])
 
     net_raster.save(outraster)
 
@@ -91,7 +91,7 @@ def main(instance):
 
 
 
-instance = { 'scale':{'3km':100}, 'series':'s27', 'reclass':{'mtr3':[[3,1]], 'mtr4':[[4,1]]} }
+instance = { 'scale':{'3km':100}, 'series':'s35', 'reclass':{'mtr3':[[3,1]], 'mtr4':[[4,1]]} }
 main(instance)
 
 

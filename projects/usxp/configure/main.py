@@ -13,12 +13,13 @@ import general as gen
 
 
 sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\pre\\')
+sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\pre\\lookup_scripts')
 sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\refine')
 sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\core\\')
 sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\post\\yxc\\')
 sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\post\\cdl\\')
 sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\deliverables\\')
-sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\test\\')
+sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\qaqc\\')
 # sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\qaqc\\')
 # sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\temp\\')
 
@@ -27,30 +28,41 @@ sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\sta
 import create_containers as cc
 import create_instance as ci
 
-### import pre
+### import pre #######
 import pre
+import lookup_scripts_v4
 
 ###  import refinement scripts  ###
-# import parallel_mask_2007 as mask_2007
-# import parallel_mask_nlcd as mask_nlcd
+import mask_fn_yfc_61
+# import mask_fn_yfc_nlcd_mtr1
 
-# import parallel_masks_yfc as masks_yfc
-# import parallel_masks_ytc as masks_ytc
-# import parallel_masks_ytc_df as masks_ytc_df
+import mask_fp_2007
+# import mask_fp_yfc_potential
+import mask_fp_nlcd_yfc
+import mask_fp_nlcd_ytc
+import mask_fp_yfc
+import mask_fp_ytc
+# 
+### import core scripts ########## 
+import parallel_core as core
 
-
-
-# import parallel_core as core
-# import parallel_yxc as yxc
-# import parallel_cdl_ytc as cdl_ytc
-# import parallel_cdl as cdl
-# import parallel_cdl_year as cdl_year
-import add2pg_mtr
+### import post scripts ##########
+import parallel_yxc as yxc
+# # import parallel_cdl_ytc as cdl_ytc
+import parallel_cdl as cdl
+import parallel_cdl_fnc
+# # import parallel_cdl_year as cdl_year
+# # import add2pg_mtr
 import add2pg_yxc
-# import add2pg_cdl
-# import deliver
-# import qaqc_now as qaqc
-# import temp_rg as temp
+import add2pg_cdl
+# # import deliver
+# # import qaqc_now as qaqc
+# # import temp_rg as temp
+import parallel_rg_eric_v2 as eric_v2
+import zonal_yxc_cdl
+
+
+import qaqc
 
 
 
@@ -81,8 +93,13 @@ if __name__ == '__main__':
 			instance = data_kernel['global']['instance']
 			print 'instance---------', instance
 
-
+			####################################################################################################################################################
+			### set-up stage ###################################################################################################################################
+			####################################################################################################################################################
+			
 			### NOTE: need to have all gdb's made in pre and refine stages!  create_containers script ONLY create gdbs for the specific series
+			### NOTE: cannot have similar named gdb with current code of referencing gdb (sub-optimal code)
+			
 			##########  create the geodatabase structure  #######################
 			# cc.run(route,instance)
 
@@ -95,60 +112,99 @@ if __name__ == '__main__':
 			##========================================================================
 
 
+			#####################################################################################################################################################
+			### pre and refinement stages #######################################################################################################################
+			#####################################################################################################################################################
+			
+			###update current instance########################
+			# ci.run([key,route,instance],'add_yfc')
+			# data = gen.getCurrentInstance()
 
+			###ONLY run script to create new traj lookup#################
+			# lookup_scripts_v4.run(data)
 
-			##========  update the current instance  =================================
+			#___________________________________________________________________
+			#____false negative refinement______________________________________
+			#___________________________________________________________________
+			# mask_fn_yfc_nlcd_mtr1.run(data)
+			# mask_fn_yfc_61.run(data)
+       
+			#####create the add_yfc trajectories dataset############################
+			# pre.run(data)   #####NEED TO DO A QAQC ON THIS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+            #_____________________________________________________________________
+			#____false positve refinement________________________________________
+			#_____________________________________________________________________
+			# mask_fp_2007.run(data)
+			# mask_fp_nlcd_yfc.run(data)
+			# mask_fp_nlcd_ytc.run(data)
+			# mask_fp_yfc.run(data)
+			# mask_fp_ytc.run(data)
+
+			#####create the refined trajectories dataset############################
 			# ci.run([key,route,instance],'final')
 			data = gen.getCurrentInstance()
-			##========================================================================
-
-
-			#######  refinement scripts  ############################################
-			##______create the 3 masks___________________________________
-			# mask_2007.run(data)
-			# mask_nlcd.run(data)
 			
-			# masks_yfc.run(data)
-			# masks_ytc_df.run(data)
-			# masks_ytc.run(data)
-			# masks_ytc_df.run(data)
-
-			### create the refined trajectories dataset 
+			######################create the rfnd dataset###################################
 			# pre.run(data)
 
-			######  core script  ###################################################
+
+            #####################################################################################################################################################
+			###### core stage ###################################################################################################################################
+			#####################################################################################################################################################
 			# core.run(data)
-			add2pg_mtr.run(data)
+			# add2pg_mtr.run(data)
 
 
+            #####################################################################################################################################################
+			###### post stage ###################################################################################################################################
+			#####################################################################################################################################################
 
-			# masks_ytc_df.run(data)
-
-
-	
-			######  post script  ###################################################
+			###_______YTC________________________________________________
 			# yxc.run(data, 'ytc')
-			# add2pg_yxc.run(data, 'ytc')
-			
-			
-			# add2pg_cdl.run(data, 'ytc', 'bfc')
-
-			# cdl_ytc.run(data, 'ytc', 'fc')
+			# cdl.run(data, 'ytc', 'fc')
+			run(data, yxc_inraster, inraster, XMin, YMin, XMax, YMax, croplist_subset)
 			# cdl.run(data, 'ytc', 'bfc')
-			
 
+			# add2pg_yxc.run(data, 'ytc')
+			# add2pg_cdl.run(data, 'ytc', 'bfc')
 			# add2pg_cdl.run(data, 'ytc', 'fc')
 
+
+			###________YFC_______________________________________________
 			# yxc.run(data, 'yfc')
-			# add2pg_yxc.run(data, 'yfc')
 			# cdl.run(data, 'yfc', 'bfnc')
-			# # add2pg_cdl.run(data, 'yfc', 'bfnc')
 			# cdl.run(data, 'yfc', 'fnc')
+
+			# add2pg_yxc.run(data, 'yfc')
+			# add2pg_cdl.run(data, 'yfc', 'bfnc')
 			# add2pg_cdl.run(data, 'yfc', 'fnc')
+
+
+			# parallel_cdl_fnc.run(data, 'yfc', 'fnc')
 			
 
+            ###################################################################################################################################################
+			###### other ######################################################################################################################################
+			###################################################################################################################################################
+			# eric_v2.run(data)
 
 
+
+
+
+
+
+
+
+
+			# for yxc in ['ytc']:
+			# 	instance = {'series':'s35', 'yxc':[yxc], 'reclasslist':[[2009,1], [2010,1], [2011,1], [2012,1], [2013,1], [2014,1], [2015,1], [2016,1]], 'enumeration_unit':'states'}
+			# zonal_yxc_cdl.run()
+
+
+
+			
 
 			# deliver.run(data)
 
@@ -157,22 +213,19 @@ if __name__ == '__main__':
 			# dmlPGtable(data, yxc)
 
 
+			# gen.addGDBTable2postgres_recent(data['core']['path'], data['core']['filename'])
+			# gen.addRasterAttrib2postgres_recent(path='C:\\Users\\Bougie\\Desktop\\Gibbs\\data\usxp\\sa\\r2\\s35\\post\\ytc_s35.gdb\\s35_combine_state_ytc_fc', filename='s35_combine_state_ytc_fc', database='usxp', schema='combine')
+
+
+
+			######qaqc#######################################################################
+			# qaqc.run(data)
 
 
 
 
-			# ##################  test  ##############################################
-
-			# test_main.run(data, 'ytc', 'fc')
 
 
 
-
-
-
-
-			# 45572010
-			# 45571996
-			# 45572009
 
 

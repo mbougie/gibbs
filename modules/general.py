@@ -67,21 +67,28 @@ def defineGDBpath(args_list):
 
 
 def importCSVtoPG():
+    print pd.read_csv('D:\\projects\\nri\\NRI\\Raw_Data\\NRIdata\\nri12_cty_121115.csv', nrows=5)
 
-    df = pd.read_excel('C:\Users\Bougie\Downloads\s17_YTC_by_state.xlsx')
-    # df.columns = [c.lower() for c in df.columns] #postgres doesn't like capitals or spaces
-    df.columns = ['year_'+str(c) for c in df.columns]
+    # df = pd.read_csv('D:\\projects\\nri\\NRI\\Raw_Data\\NRIdata\\nri12_cty_121115.csv')
+
+
+    # # df.columns = [c.lower() for c in df.columns] #postgres doesn't like capitals or spaces
+    # # df.columns = ['year_'+str(c) for c in df.columns]
     from sqlalchemy import create_engine
-    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
+    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/nri')
 
-    df.to_sql("s17_ytc", engine, schema='counts_states')
-
-
-
-
-1295568820
-
-
+    # df.to_sql("try", engine, schema='control')
+    csv_file = 'D:\\projects\\nri\\NRI\\Raw_Data\\NRIdata\\nri12_cty_121115.csv'
+    chunksize = 100
+    i = 0
+    j = 1
+    for df in pd.read_csv(csv_file, chunksize=chunksize, iterator=True):
+          # df = df.rename(columns={c: c.replace(' ', '') for c in df.columns}) 
+          df.index += j
+          i+=1
+          print i
+          df.to_sql("nri12_cty_121115", engine, schema='control', if_exists='append')
+          j = df.index[-1] + 1
 
 
 
@@ -104,7 +111,14 @@ def commitPG(query):
 
 
 def getPixelConversion2Acres(res):
-    res_dict = {56:0.774922476, 30: 0.222395}
+    res_dict = {56:0.774922476, 30:0.222395}
+
+    return res_dict[res]
+
+
+
+def getPixelConversion2Hectares(res):
+    res_dict = {30:0.09}
 
     return res_dict[res]
 
@@ -149,6 +163,7 @@ def getAcres(pixel_count, resolution):
         acres = pixel_count*0.222395
         print acres
         return acres
+
 
 
 
@@ -829,3 +844,52 @@ def getTablesInSchema(schema):
     return rows
 
 
+
+
+
+
+def addRasterAttrib2postgres_recent(path, filename, database, schema):
+    print path
+    print filename
+    # set the engine.....
+    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/{}'.format(database))
+    
+    # Execute AddField twice for two new fields
+    fields = [f.name for f in arcpy.ListFields(path)]
+   
+    # converts a table to NumPy structured array.
+    arr = arcpy.da.TableToNumPyArray(path,fields)
+    print arr
+    
+    # convert numpy array to pandas dataframe
+    df = pd.DataFrame(data=arr)
+
+    df.columns = map(str.lower, df.columns)
+
+    print 'df-----------------------', df
+
+    # total=df['count'].sum()
+    
+    # # # use pandas method to import table into psotgres
+    df.to_sql(filename, engine, schema=schema, if_exists='replace')
+    
+    # #add trajectory field to table
+    addAcresField('counts_yxc', data['post'][yxc]['filename'], yxc, 30, total)
+
+
+
+def alterGeomSRID(db, schema, table, epsg):
+    print 'alterGeomSRID()....................................'
+    
+    conn = psycopg2.connect("dbname={} user='mbougie' host='144.92.235.105' password='Mend0ta!'".format(db))
+
+    query = 'ALTER TABLE {0}.{1} ALTER COLUMN wkb_geometry TYPE geometry(MultiPolygon,{2}) USING ST_SetSRID(wkb_geometry,{2});'.format(schema, table, epsg)
+
+    print 'query', query
+
+    #small wrapper function to commit a query
+    cur = conn.cursor()
+
+    cur.execute(query)
+
+    conn.commit()
