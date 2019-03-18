@@ -72,16 +72,13 @@ def addField(raster, value):
 
 
 
-
-
-
 def main(instance):
     inraster=Raster('D:\\projects\\usxp\\deliverables\\{0}\\{0}.gdb\\{0}_mtr'.format(instance['series']))
     print 'inraster', inraster
 
     # for key, reclasslist in instance['reclass'].iteritems():
     for scale in instance['scale'].keys():
-        outraster = 'D:\\projects\\usxp\\deliverables\\{0}\\maps\\gross_net\\net.gdb\\{0}_{1}_net'.format(instance['series'], scale)
+        outraster = 'D:\\projects\\usxp\\deliverables\\maps\\gross_net\\net.gdb\\{0}_{1}_net'.format(instance['series'], scale)
         print 'outraster', outraster
 
         processingCluster(instance, inraster, outraster)
@@ -91,7 +88,7 @@ def main(instance):
 
 
 
-instance = { 'scale':{'3km':100}, 'series':'s35', 'reclass':{'mtr3':[[3,1]], 'mtr4':[[4,1]]} }
+instance = { 'scale':{'6km':200}, 'series':'s35', 'reclass':{'mtr3':[[3,1]], 'mtr4':[[4,1]]} }
 main(instance)
 
 

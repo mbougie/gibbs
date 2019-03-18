@@ -216,11 +216,21 @@ def main(instance):
 		processingCluster(instance, inraster, outraster)
 
 
-instance = {'scale':{'3km':100}, 'series':'s26', 'reclass':{'mtr2':[[2,1]], 'mtr3':[[3,1]]} }
-main(instance)
 
 
 
+
+def getAcres(group_counts):
+    for key, value in group_counts.iteritems():
+        print key, gen.getAcres(pixel_count=value, resolution=30)
+
+
+
+##########  call functions  ######################################################################
+
+# instance = {'scale':{'3km':100}, 'series':'s26', 'reclass':{'mtr2':[[2,1]], 'mtr3':[[3,1]]} }
+# main(instance)
+# getAcres(group_counts = {'forest':514410000, 'grassland':1770500000, 'shrubland':538360000, 'wetland':404270000})
 
 
 

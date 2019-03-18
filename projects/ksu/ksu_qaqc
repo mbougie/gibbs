@@ -1,0 +1,40 @@
+import arcpy
+from arcpy import env
+from arcpy.sa import *
+import multiprocessing
+from sqlalchemy import create_engine
+import pandas as pd
+import psycopg2
+import os
+import glob
+import sys
+import time
+import logging
+from multiprocessing import Process, Queue, Pool, cpu_count, current_process, Manager
+sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\misc\\')
+# import general as gen
+import json
+
+
+#import extension
+arcpy.CheckOutExtension("Spatial")
+# arcpy.env.parallelProcessingFactor = "95%"
+arcpy.env.overwriteOutput = True
+arcpy.env.scratchWorkspace = "in_memory" 
+
+
+
+
+engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp_deliverables')
+
+chunksize = 100000
+results = pd.read_csv(filepath_or_buffer='D:\\projects\\ksu\\qaqc\\WI.csv', chunksize=chunksize)
+print results
+	
+# results = pd.read_sql_query(query, con=engine, chunksize=chunksize)
+for df in results:
+	print df
+	df.to_sql(name='rfs_intensification', con=engine, schema='synthesis', if_exists='append', chunksize=chunksize)
+
+
+

@@ -63,7 +63,7 @@ d = ggplot() +
   geom_polygon(data=state_ss, aes(y=lat, x=long, group=group), fill = 'grey70', alpha=0, colour = 'white', size = 0.9)+
   
   
-  scale_fill_brewer(breaks=c(1,2,3,4,5,6,7,8,9,10), name="CLU count", guide = guide_legend( keyheight = unit(2, units = "mm"), keywidth=unit(5, units = "mm"), label.position = "bottom", title.position = 'top', nrow=1) ) +
+  scale_fill_brewer(breaks=c(.5,1,2,4,8,16,32), name="CLU count", guide = guide_legend( keyheight = unit(2, units = "mm"), keywidth=unit(5, units = "mm"), label.position = "bottom", title.position = 'top', nrow=1) ) +
   
   
   # scale_fill_gradient2(midpoint = 3, name='percent')+

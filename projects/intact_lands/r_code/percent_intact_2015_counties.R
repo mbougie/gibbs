@@ -56,7 +56,7 @@ d = ggplot() +
   scale_fill_distiller(name="Percent", palette = "Greens", breaks = pretty_breaks(n = 5), trans = "reverse")+
   # scale_fill_continuous(name="percent", trans = "reverse") +
   geom_polygon(
-    data=state_ss,
+    data=state,
     aes(y=lat, x=long, group=group),
     fill='grey70',
     alpha=0,

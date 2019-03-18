@@ -6,6 +6,8 @@ from arcpy import env
 from arcpy.sa import *
 import glob
 import os, subprocess
+import fiona
+import geopandas
 from sqlalchemy import create_engine
 import pandas as pd
 import numpy as np
@@ -18,48 +20,58 @@ import fnmatch
 
 
 
-
-
 arcpy.CheckOutExtension("Spatial")
 arcpy.env.overwriteOutput = True
 # arcpy.env.scratchWorkspace = "in_memory" 
 
 
 
-def get(query):
-    ###sub-function for reclassRaster
-    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/lem')
-    print 'query:', query
-    df = pd.read_sql_query(query, con=engine)
-    print df
-    fulllist=[[0,0,"NODATA"]]
-    for index, row in df.iterrows():
-        templist=[]
-        templist.append(row['initial'])
-        templist.append(row['grouped'])
-        fulllist.append(templist)
-    print 'fulllist: ', fulllist
-    return fulllist
+try:
+    conn = psycopg2.connect("dbname='lem' user='mbougie' host='144.92.235.105' password='Mend0ta!'")
+except:
+    print "I am unable to connect to the database"
 
 
 
 
-def createZonalStats(gdb, in_zone_data, zone_field, in_value_raster, out_table, ignore_nodata, statistics_type):
-    print("createZonalStats().............")
+# def get(query):
+#     ###sub-function for reclassRaster
+#     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/lem')
+#     print 'query:', query
+#     df = pd.read_sql_query(query, con=engine)
+#     print df
+#     fulllist=[[0,0,"NODATA"]]
+#     for index, row in df.iterrows():
+#         templist=[]
+#         templist.append(row['initial'])
+#         templist.append(row['grouped'])
+#         fulllist.append(templist)
+#     print 'fulllist: ', fulllist
+#     return fulllist
+
+
+
+
+# def createZonalStats(in_zone_data, zone_field, in_value_raster, out_table, ignore_nodata, statistics_type):
+#     print("createZonalStats().............")
     
-    env.workspace = 'D:\\projects\\lem\\matt\\gdbases\\{}.gdb'.format(gdb)
+#     # env.workspace = 'D:\\projects\\lem\\matt\\gdbases\\{}.gdb'.format(gdb)
 
-    # Execute ZonalStatistics
-    ZonalStatisticsAsTable(in_zone_data, zone_field, in_value_raster, out_table, ignore_nodata, statistics_type)
+#     # out_table_path = 'D:\\projects\\lem\\matt\\gdbases\\{}.gdb\\{}'.format(gdb)
+
+#     # Execute ZonalStatistics
+#     ZonalStatisticsAsTable(in_zone_data, zone_field, in_value_raster, out_table, ignore_nodata, statistics_type)
 
 
-def findNeighbors(gdb, in_feature, out_table, in_fields):
+def findNeighbors(in_feature, out_table, in_fields):
     print("findNeighbors().............")
 
-    env.workspace = 'D:\\projects\\lem\\matt\\gdbases\\{}.gdb'.format(gdb)
+    # env.workspace = 'D:\\projects\\lem\\matt\\gdbases\\{}.gdb'.format(gdb)
 
     arcpy.PolygonNeighbors_analysis(in_features=in_feature, out_table=out_table, in_fields=in_fields, area_overlap='AREA_OVERLAP', both_sides='BOTH_SIDES', out_linear_units='FEET', out_area_units='ACRES')
 
+
+############# reclassify raster #####################################################
 
 
 def reclassRaster(inraster, outraster, query):
@@ -93,7 +105,7 @@ def addGDBTable2postgres(gdb, schema, table):
     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/lem')
     
     # # path to the table you want to import into postgres
-    input_table = 'D:\\projects\\lem\\matt\\gdbases\\{}.gdb\\{}'.format(gdb, table)
+    input_table = '{}.gdb\\{}'.format(gdb, table)
 
     # Execute AddField twice for two new fields
     fields = [f.name for f in arcpy.ListFields(input_table)]
@@ -124,7 +136,7 @@ def addGDBTable2postgres(gdb, schema, table):
 
 
 
-
+####what is this ????#############################
 def changeTableFormat(gdb, schema, in_table):
     print("changeTableFormat().............")
     # set the engine.....
@@ -183,9 +195,11 @@ def changeTableFormat(gdb, schema, in_table):
 # command = 'ogr2ogr -f "PostgreSQL" PG:"dbname=lem user=mbougie host=144.92.235.105 password=Mend0ta!" D:\\projects\\lem\\lem.gdb -nlt PROMOTE_TO_MULTI -nln blocks.us_blck_grp_2016_mainland_5070 us_blck_grp_2016_mainland_5070 -progress --config PG_USE_COPY YES'
 # epsg_102003 = 'PROJCS["USA_Contiguous_Albers_Equal_Area_Conic",GEOGCS["GCS_North_American_1983",DATUM["North_American_Datum_1983",SPHEROID["GRS_1980",6378137,298.257222101]],PRIMEM["Greenwich",0],UNIT["Degree",0.017453292519943295]],PROJECTION["Albers_Conic_Equal_Area"],PARAMETER["False_Easting",0],PARAMETER["False_Northing",0],PARAMETER["longitude_of_center",-96],PARAMETER["Standard_Parallel_1",29.5],PARAMETER["Standard_Parallel_2",45.5],PARAMETER["latitude_of_center",37.5],UNIT["Meter",1],AUTHORITY["EPSG","102003"]]'
 # epsg_102003 = '+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=37.5 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs '
-def convertFCtoPG(gdb, pgdb, schema, table, epsg):
-    command = 'ogr2ogr -f "PostgreSQL" PG:"dbname=lem user=mbougie host=144.92.235.105 password=Mend0ta!" D:\\projects\\lem\\matt\\gdbases\\{0}.gdb -nlt PROMOTE_TO_MULTI -nln {1}.{2} {2} -progress --config PG_USE_COPY YES'.format(gdb, schema, table)
 
+
+def convertFCtoPG(gdb, pgdb, schema, table, epsg):
+    command = 'ogr2ogr -f "PostgreSQL" PG:"dbname=lem user=mbougie host=144.92.235.105 password=Mend0ta!" {0} -nlt PROMOTE_TO_MULTI -nln {1}.{2} {2} -progress --config PG_USE_COPY YES'.format(gdb, schema, table)
+    
     os.system(command)
 
     gen.alterGeomSRID(pgdb, schema, table, epsg)
@@ -193,20 +207,21 @@ def convertFCtoPG(gdb, pgdb, schema, table, epsg):
 
 def convertPGtoFC(gdb, schema, table):
     # command = ["ogr2ogr.exe", "PostgreSQL", "PG:host=144.92.235.105 user=mbougie password=Mend0ta! dbname=lem", "D:\\projects\\lem\\lem.gdb", "-nlt", "PROMOTE_TO_MULTI", "-nln", "blocks.us_blck_grp_2016_mainland_5070", "us_blck_grp_2016_mainland_5070", "-progress", "--config", "PG_USE_COPY", "YES"]
-    command = 'ogr2ogr -f "FileGDB" -update D:\\projects\\lem\\matt\\gdbases\\{0}.gdb -progress PG:"dbname=lem user=mbougie host=144.92.235.105 password=Mend0ta!" -sql "SELECT * FROM {1}.{2}" -nln {2} -nlt MULTIPOLYGON'.format(gdb, schema, table)
+    command = 'ogr2ogr -f "FileGDB" -progress -update {0}.gdb PG:"dbname=lem user=mbougie host=144.92.235.105 password=Mend0ta!" -sql "SELECT * FROM {1}.{2}" -nln {2} -nlt MULTIPOLYGON'.format(gdb, schema, table)
+    print command
     os.system(command)
 
 
 def getNullPolygons(gdb, schema, in_table, out_table):
     # command = ["ogr2ogr.exe", "PostgreSQL", "PG:host=144.92.235.105 user=mbougie password=Mend0ta! dbname=lem", "D:\\projects\\lem\\lem.gdb", "-nlt", "PROMOTE_TO_MULTI", "-nln", "blocks.us_blck_grp_2016_mainland_5070", "us_blck_grp_2016_mainland_5070", "-progress", "--config", "PG_USE_COPY", "YES"]
-    command = 'ogr2ogr -f "FileGDB" -update D:\\projects\\lem\\matt\\gdbases\\{0}.gdb -progress PG:"dbname=lem user=mbougie host=144.92.235.105 password=Mend0ta!" -sql "SELECT a.geoid, majority, wkb_geometry AS geom FROM v1_wisc.block_group AS a JOIN {1}.{2} AS b USING(geoid) WHERE majority IN (11,21)" -nln {3} -nlt MULTIPOLYGON'.format(gdb, schema, in_table, out_table)
+    command = 'ogr2ogr -f "FileGDB" -update {0}.gdb -progress PG:"dbname=lem user=mbougie host=144.92.235.105 password=Mend0ta!" -sql "SELECT a.geoid, majority, wkb_geometry AS geom FROM v1_wisc.block_group AS a JOIN {1}.{2} AS b USING(geoid) WHERE majority IN (11,21)" -nln {3} -nlt MULTIPOLYGON'.format(gdb, schema, in_table, out_table)
     os.system(command)
 
 # "PG:\"host=144.92.235.105 user=mbougie password=Mend0ta! dbname=lem\""
 
 def convertPGtoJSON(version, db, schema, table):
     # command = ["ogr2ogr.exe", "PostgreSQL", "PG:host=144.92.235.105 user=mbougie password=Mend0ta! dbname=lem", "D:\\projects\\lem\\lem.gdb", "-nlt", "PROMOTE_TO_MULTI", "-nln", "blocks.us_blck_grp_2016_mainland_5070", "us_blck_grp_2016_mainland_5070", "-progress", "--config", "PG_USE_COPY", "YES"]
-    command = 'ogr2ogr -f "geojson" -progress D:\\projects\\lem\\matt\\deliverables\\{0}\\{3}.json PG:"dbname={1} user=mbougie host=144.92.235.105 password=Mend0ta!" -sql "SELECT * FROM {2}.{3}" -t_srs EPSG:4152'.format(version, db, schema, table) 
+    command = 'ogr2ogr -f "geojson" -progress D:\\projects\\lem\\deliverables\\json\\v2\\{3}.json PG:"dbname={1} user=mbougie host=144.92.235.105 password=Mend0ta!" -sql "SELECT * FROM {2}.{3}" -t_srs EPSG:4152'.format(version, db, schema, table) 
     os.system(command)
 
 
@@ -215,10 +230,134 @@ def convertPGtoJSON(version, db, schema, table):
 
 
 
+def main(version, levellist):
+    print 'main() function............................'
+    
+    for level in levellist:
+        
+        print('---------   {}   -----------------------'.format(level))
+        #### import the raw census feature class into postgres
+        convertFCtoPG(gdb='census_features.gdb', pgdb='lem', schema=version, table=level, epsg=102003)
+       
+        # ##### run the arcgis arcpy.PolygonNeighbors_analysis to get the neighbors of each feature in featureclass
+        # # findNeighbors(in_feature='D:\\projects\\lem\\matt\\gdbases\\census_features.gdb\\{0}'.format(level), out_table='D:\\projects\\lem\\matt\\gdbases\\{0}.gdb\\{1}_neighbors'.format(version,level), in_fields="geoid")
+        arcpy.PolygonNeighbors_analysis(in_features='census_features.gdb\\{0}'.format(level), out_table='{0}.gdb\\{1}_neighbors'.format(version,level), in_fields="geoid")
+        addGDBTable2postgres(gdb=version, schema=version, table="{}_neighbors".format(level))
+
+        # ####### create majority zonal stats with raw NWALT raster #####################################################
+        # # createZonalStats(in_zone_data='D:\\projects\\lem\\matt\\gdbases\\census_features.gdb\\{0}'.format(level), zone_field="geoid", in_value_raster="D:\\projects\\lem\\matt\\gdbases\\rasters.gdb\\nwalt", out_table='D:\\projects\\lem\\matt\\gdbases\\{0}.gdb\\{1}_zonal_maj_nwalt'.format(version,level), ignore_nodata="DATA", statistics_type="MAJORITY")
+        ZonalStatisticsAsTable(in_zone_data='census_features.gdb\\{0}'.format(level), zone_field="geoid", in_value_raster="rasters.gdb\\nwalt", out_table='{0}.gdb\\{1}_zonal_maj_nwalt'.format(version,level), ignore_nodata="DATA", statistics_type="MAJORITY")
+        addGDBTable2postgres(gdb=version, schema=version, table="{}_zonal_maj_nwalt".format(level))
+
+        # ####### create majority zonal stats with reclassed NWALT raster  #####################################################
+        # # createZonalStats(in_zone_data='D:\\projects\\lem\\matt\\gdbases\\census_features.gdb\\{0}'.format(level), zone_field="geoid", in_value_raster="D:\\projects\\lem\\matt\\gdbases\\rasters.gdb\\nwalt_rc", out_table='D:\\projects\\lem\\matt\\gdbases\\{0}.gdb\\{1}_zonal_maj_rc_nwalt'.format(version,level), ignore_nodata="DATA", statistics_type="MAJORITY")
+        ZonalStatisticsAsTable(in_zone_data='census_features.gdb\\{0}'.format(level), zone_field="geoid", in_value_raster="rasters.gdb\\nwalt_rc", out_table='{0}.gdb\\{1}_zonal_maj_rc_nwalt'.format(version,level), ignore_nodata="DATA", statistics_type="MAJORITY")
+        addGDBTable2postgres(gdb=version, schema=version, table="{}_zonal_maj_rc_nwalt".format(level))
+
+        # ###### create zonal stats with NWALT raster  #####################################################
+        # # createZonalStats(in_zone_data='D:\\projects\\lem\\matt\\gdbases\\census_features.gdb\\{0}'.format(level), zone_field="geoid", in_value_raster="D:\\projects\\lem\\matt\\gdbases\\rasters.gdb\\biomes_vegtype_conus_exp3_60m", out_table='D:\\projects\\lem\\matt\\gdbases\\{0}.gdb\\{1}_zonal_maj_biomes'.format(version,level), ignore_nodata="DATA", statistics_type="MAJORITY")
+        ZonalStatisticsAsTable(in_zone_data='census_features.gdb\\{0}'.format(level), zone_field="geoid", in_value_raster="rasters.gdb\\biomes_vegtype_conus_exp3_60m", out_table='{0}.gdb\\{1}_zonal_maj_biomes'.format(version,level), ignore_nodata="DATA", statistics_type="MAJORITY")
+        addGDBTable2postgres(gdb=version, schema=version, table="{}_zonal_maj_biomes".format(level))
+
+
+        ###execute .sql test file############################Still nedd to write!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        # executeSQLtext(schema=version, table='{}_v1_2_1_table'.format(level))
+
+
+
+def getDeliverables(version, levellist):
+    print 'deliverables() function............................'
+    
+    for level in levellist:
+        print('---------   {}   -----------------------'.format(level))
+
+        # convertPGtoFC(gdb=version, schema=version, table='{}_v2_table'.format(level))
+
+        convertPGtoJSON(version, 'lem', version, '{}_v2_table'.format(level))
+
+
+
+
+##############################################################################################
+###call the main function#####################################################################
+##############################################################################################
+
+###  define the working directory  ###########################################
+os.chdir('D:\\projects\\lem\\data\\gdbases')
+
+####  run the main function  ############################################
+# main('v2', ['block_group', 'block'])
+# main('v2', ['county', 'tract'])
+# main('v2', ['block_group'])
+# main('v1', ['block'])
+
+ 
+###  create the deliverables products: feature class and json dataset  ############################
+getDeliverables('v2', ['block_group', 'block'])
+# getDeliverables('v2', ['county', 'tract'])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+###### OLD CODE #############################################################
+
+
+
 
 #######BLOCK-GROUP#################################################
 ############### call functions ##############################
-# reclassRaster(inraster="D:\\projects\\lem\\matt\\gdbases\\rasters.gdb\\nwalt", outraster="D:\\projects\\lem\\matt\\gdbases\\rasters.gdb\\nwalt_rc", query="SELECT initial, grouped FROM nwalt_lookup WHERE grouped IS NOT NULL")
+
 # reclassRaster(inraster="D:\\projects\\lem\\matt\\gdbases\\rasters.gdb\\nwalt", outraster="D:\\projects\\lem\\matt\\gdbases\\rasters.gdb\\nwalt_11_21", query="SELECT initial, initial FROM nwalt_lookup WHERE initial IN (11,21)")
 # convertFCtoPG('v1', 'lem', 'v1', 'block_group', 102003)
 
@@ -247,8 +386,8 @@ def convertPGtoJSON(version, db, schema, table):
 
 
 
-#######BLOCK#################################################
-############### call functions ##############################
+# ######BLOCK#################################################
+# ############## call functions ##############################
 # reclassRaster(inraster="D:\\projects\\lem\\matt\\gdbases\\rasters.gdb\\nwalt", outraster="D:\\projects\\lem\\matt\\gdbases\\rasters.gdb\\nwalt_rc", query="SELECT initial, grouped FROM nwalt_lookup WHERE grouped IS NOT NULL")
 # reclassRaster(inraster="D:\\projects\\lem\\matt\\gdbases\\rasters.gdb\\nwalt", outraster="D:\\projects\\lem\\matt\\gdbases\\rasters.gdb\\nwalt_11_21", query="SELECT initial, initial FROM nwalt_lookup WHERE initial IN (11,21)")
 
@@ -281,8 +420,87 @@ def convertPGtoJSON(version, db, schema, table):
 
 
 
-def main():
-    print 'main() function............................'
+
+
+
+
+
+
+#####  V1_1 parameters (statefull) ####################################################################################
+# createZonalStats(gdb="v1_wisc", in_zone_data="block_group", zone_field="geoid", in_value_raster="D:\\projects\\lem\\matt\\gdbases\\rasters.gdb\\nwalt", out_table="block_group_zonal_maj_v1_1_1", ignore_nodata="DATA", statistics_type="MAJORITY")
+# addGDBTable2postgres(gdb="v1_wisc", schema="v1_wisc", table="block_group_zonal_maj_v1_1_1")
+# convertPGtoFC(gdb='v1_wisc', schema='v1_wisc', table='block_group_v1_1_2_no_neighbors_view')
+
+
+
+# createZonalStats(gdb="v1_wisc", in_zone_data="block", zone_field="geoid", in_value_raster="D:\\projects\\lem\\matt\\gdbases\\rasters.gdb\\nwalt_rc", out_table="block_zonal_maj_v1_1_1", ignore_nodata="DATA", statistics_type="MAJORITY")
+# addGDBTable2postgres(gdb="v1_wisc", schema="v1_wisc", table="block_zonal_maj_v1_1_1")
+# convertPGtoFC(gdb='v1_wisc', schema='v1_wisc', table='block_v1_2_1_no_neighbors_view')
+# findNeighbors(gdb='v1_wisc', in_feature='block', out_table='block_neighbors', in_fields="geoid")
+# addGDBTable2postgres(gdb="v1_wisc", schema="v1_wisc", table="block_neighbors")
+
+
+
+
+
+#####  V1_1 parameters (statefull) ####################################################################################
+# createZonalStats(gdb="v1_wisc", in_zone_data="block_group", zone_field="geoid", in_value_raster="D:\\projects\\lem\\matt\\gdbases\\rasters.gdb\\nwalt", out_table="block_group_zonal_maj_v1_1_1", ignore_nodata="DATA", statistics_type="MAJORITY")
+# addGDBTable2postgres(gdb="v1_wisc", schema="v1_wisc", table="block_group_zonal_maj_v1_1_1")
+# convertPGtoFC(gdb='v1_wisc', schema='v1_wisc', table='block_group_v1_1_2_no_neighbors_view')
+
+
+
+# createZonalStats(gdb="v1_wisc", in_zone_data="block", zone_field="geoid", in_value_raster="D:\\projects\\lem\\matt\\gdbases\\rasters.gdb\\nwalt_rc", out_table="block_zonal_maj_v1_1_1", ignore_nodata="DATA", statistics_type="MAJORITY")
+# addGDBTable2postgres(gdb="v1_wisc", schema="v1_wisc", table="block_zonal_maj_v1_1_1")
+# convertPGtoFC(gdb='v1_wisc', schema='v1_wisc', table='block_v1_2_1_no_neighbors_view')
+
+
+#####  V1_2_1 parameters (statefull) ####################################################################################
+###note using a hybrid approach with the v1_0 and v1_1_1 so only need to reference the stored query in postgres
+# convertPGtoFC(gdb='v1_wisc', schema='v1_wisc', table='block_group_v1_2_1')
+# convertPGtoJSON('v1', 'lem', 'v1_wisc', 'block_group_v1_2_1')
+
+# convertPGtoFC(gdb='v1_wisc', schema='v1_wisc', table='block_v1_2_1')
+# convertPGtoJSON('v1', 'lem', 'v1_wisc', 'block_v1_2_1')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# reclassRaster(inraster="D:\\projects\\lem\\matt\\gdbases\\rasters.gdb\\nwalt", outraster="D:\\projects\\lem\\matt\\gdbases\\rasters.gdb\\nwalt_rc", query="SELECT initial, grouped FROM nwalt_lookup WHERE grouped IS NOT NULL")
+
+
+
+
+
+
+
+
+
+
+
+##############################  archived code------erase eventially  #######################################################################
+
+# def main():
+    # print 'main() function............................'
     #####  V1_0 parameters (statefull) ####################################################################################
   
 
@@ -340,16 +558,16 @@ def main():
     #####  V1_2_1 parameters (statefull) ####################################################################################
     ###note using a hybrid approach with the v1_0 and v1_1_1 so only need to reference the stored query in postgres
     # convertPGtoFC(gdb='v1_wisc', schema='v1_wisc', table='block_group_v1_2_1')
-    convertPGtoJSON('v1', 'lem', 'v1_wisc', 'block_group_v1_2_1')
+    # convertPGtoJSON('v1', 'lem', 'v1_wisc', 'block_group_v1_2_1')
 
     # convertPGtoFC(gdb='v1_wisc', schema='v1_wisc', table='block_v1_2_1')
-    convertPGtoJSON('v1', 'lem', 'v1_wisc', 'block_v1_2_1')
+    # convertPGtoJSON('v1', 'lem', 'v1_wisc', 'block_v1_2_1')
 
 
 
+# spatial.states
 
-
-
+# ogr2ogr -f "FileGDB" -progress -update D:\projects\lem\matt\gdbases\v1_wisc.gdb -progress PG:"dbname=usxp user=mbougie host=144.92.235.105 password=Mend0ta!" -sql "SELECT * FROM spatial.states" -nln block_v1_2_1_table -nlt MULTIPOLYGON
 
 
 ###call the main function#####################################################################
@@ -358,8 +576,13 @@ def main():
 
 
 ##### export from postgres #####################################
-convertPGtoFC(gdb='v1_wisc_qaqc', schema='v1_wisc_qaqc', table='block_group_null')
+# print fiona.supported_drivers
+# convertPGtoFC(gdb='v1_wisc', schema='v1_wisc', table='block_v1_2_1_table')
 # convertPGtoJSON()
+
+
+# ogr2ogr -f "FileGDB" -progress D:\projects\lem\matt\gdbases\v1_wisc.gdb PG:"host=144.92.235.105 user=mbougie dbname=lem password=Mend0ta!" "v1_wisc.block_v1_2_1_table"
+
 
 
 

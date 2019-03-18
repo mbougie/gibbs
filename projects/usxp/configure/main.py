@@ -12,14 +12,19 @@ sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\modules\\')
 import general as gen
 
 
+
 sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\pre\\')
 sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\pre\\lookup_scripts')
 sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\refine')
 sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\core\\')
 sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\post\\yxc\\')
 sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\post\\cdl\\')
+
 sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\deliverables\\')
+sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\deliverables\\choropleths\\')
+
 sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\qaqc\\')
+
 # sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\qaqc\\')
 # sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\temp\\')
 
@@ -48,9 +53,10 @@ import parallel_core as core
 
 ### import post scripts ##########
 import parallel_yxc as yxc
-# # import parallel_cdl_ytc as cdl_ytc
 import parallel_cdl as cdl
+import parallel_cdl_fc_bfnc as cdl_fc_bfnc
 import parallel_cdl_fnc
+import replace_61_w_hard_crop
 # # import parallel_cdl_year as cdl_year
 # # import add2pg_mtr
 import add2pg_yxc
@@ -59,7 +65,8 @@ import add2pg_cdl
 # # import qaqc_now as qaqc
 # # import temp_rg as temp
 import parallel_rg_eric_v2 as eric_v2
-import zonal_yxc_cdl
+# import zonal_yxc_cdl
+import choropleth_current
 
 
 import qaqc
@@ -162,8 +169,7 @@ if __name__ == '__main__':
 
 			###_______YTC________________________________________________
 			# yxc.run(data, 'ytc')
-			# cdl.run(data, 'ytc', 'fc')
-			run(data, yxc_inraster, inraster, XMin, YMin, XMax, YMax, croplist_subset)
+			# cdl_fc_bfnc.run(data, 'ytc', 'fc')
 			# cdl.run(data, 'ytc', 'bfc')
 
 			# add2pg_yxc.run(data, 'ytc')
@@ -173,7 +179,7 @@ if __name__ == '__main__':
 
 			###________YFC_______________________________________________
 			# yxc.run(data, 'yfc')
-			# cdl.run(data, 'yfc', 'bfnc')
+			# cdl_fc_bfnc.run(data, 'yfc', 'bfnc')
 			# cdl.run(data, 'yfc', 'fnc')
 
 			# add2pg_yxc.run(data, 'yfc')
@@ -204,6 +210,12 @@ if __name__ == '__main__':
 
 
 
+			# for mtr in []:
+			instance = {'series':'s35', 'enumeration_unit':'counties'}
+			choropleth_current.run(instance, data)
+
+
+
 			
 
 			# deliver.run(data)
@@ -223,6 +235,14 @@ if __name__ == '__main__':
 
 
 
+
+
+
+			#### test #####################################################################
+			# (10, [-1696904.9999999981, 1104255.0000000019, -1037714.999999998, 1517925.0000000023]),
+			# yxc_inraster = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\temp\\tiles_ytc\\tile_10.tif'
+			# inraster = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\temp\\tiles_fc\\tile_10.tif'
+			# replace_61_w_hard_crop.run(data, yxc_inraster, inraster, -1696904.9999999981, 1104255.0000000019, -1037714.999999998, 1517925.0000000023)
 
 
 

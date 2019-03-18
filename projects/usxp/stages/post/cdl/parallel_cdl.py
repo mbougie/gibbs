@@ -15,6 +15,9 @@ sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\usxp\\misc\\')
 import general as gen
 import json
 
+sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\post\\cdl\\')
+import replace_61_w_hard_crop
+
 
 #import extension
 arcpy.CheckOutExtension("Spatial")
@@ -75,10 +78,10 @@ def execute_task(args):
 	## this is the base yxc dataset derived from trajectory (speckles)
 	raster_yxc = Reclassify(Raster(path_traj_rfnd), "Value", RemapRange(traj_list), "NODATA")
     
-    ## clean the speckles so only left with yxc where the mtr regions fullfilling mmu requirement are
-	raster_mask = Con((path_mtr == yxc_dict[yxc]) & (raster_yxc >= 2008), raster_yxc)
-    
-    ##delete object for memory
+	## clean the speckles so only left with yxc where the mtr regions fullfilling mmu requirement are
+	yxc_inraster = Con((path_mtr == yxc_dict[yxc]) & (raster_yxc >= 2008), raster_yxc)
+	raster_mask = yxc_inraster
+	##delete object for memory
 	raster_yxc = None
 
 	###get the cdl path object from current instance to loop through each of the cdl paths in the object
@@ -97,17 +100,22 @@ def execute_task(args):
         ## replace the yxc year value with the appropriate cdl value for that given year
 		raster_mask = Con(raster_mask, cdlpath, raster_mask, cond)
     
-    ####fill in the null values ####################################
-	filled_1 = Con(IsNull(raster_mask),FocalStatistics(raster_mask,NbrRectangle(3, 3, "CELL"),'MAJORITY'), raster_mask)
-	raster_mask=None
-	filled_2 = Con(IsNull(filled_1),FocalStatistics(filled_1,NbrRectangle(5, 5, "CELL"),'MAJORITY'), filled_1)
-	filled_1=None
-	filled_3 = Con(IsNull(filled_2),FocalStatistics(filled_2,NbrRectangle(10, 10, "CELL"),'MAJORITY'), filled_2)
-	filled_2=None
-	filled_4 = Con(IsNull(filled_3),FocalStatistics(filled_3,NbrRectangle(20, 20, "CELL"),'MAJORITY'), filled_3)
-	filled_3=None
-	final = SetNull(path_mtr, filled_4, "VALUE <> {}".format(str(yxc_dict[yxc])))
-	filled_4 = None
+
+	#####  new !!!!!!!!!!!!  if subtype is fc or bfnc replace 61 with hard crop !!!!  
+	raster_mask = replace_61_w_hard_crop.run(data, yxc_inraster, raster_mask, XMin, YMin, XMax, YMax)
+
+
+ #    ####fill in the null values ####################################
+	# filled_1 = Con(IsNull(raster_mask),FocalStatistics(raster_mask,NbrRectangle(3, 3, "CELL"),'MAJORITY'), raster_mask)
+	# raster_mask=None
+	# filled_2 = Con(IsNull(filled_1),FocalStatistics(filled_1,NbrRectangle(5, 5, "CELL"),'MAJORITY'), filled_1)
+	# filled_1=None
+	# filled_3 = Con(IsNull(filled_2),FocalStatistics(filled_2,NbrRectangle(10, 10, "CELL"),'MAJORITY'), filled_2)
+	# filled_2=None
+	# filled_4 = Con(IsNull(filled_3),FocalStatistics(filled_3,NbrRectangle(20, 20, "CELL"),'MAJORITY'), filled_3)
+	# filled_3=None
+	# final = SetNull(path_mtr, filled_4, "VALUE <> {}".format(str(yxc_dict[yxc])))
+	# filled_4 = None
 
 	outname = "tile_" + str(fc_count) +'.tif'
 
@@ -115,7 +123,9 @@ def execute_task(args):
 
 	arcpy.ClearEnvironment("extent")
 
-	final.save(outpath)
+	# final.save(outpath)
+	raster_mask.save(outpath)
+	raster_mask=None
 
 	outpath=None
 	final=None
@@ -187,7 +197,7 @@ def run(data, yxc, subtype):
 	pool.close()
 	pool.join
 
-	mosiacRasters(data, yxc, subtype)
+	# mosiacRasters(data, yxc, subtype)
 
 
 

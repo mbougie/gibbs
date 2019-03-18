@@ -19,7 +19,7 @@ con <- dbConnect(drv, dbname = "usxp",
                  user = "mbougie", password = "Mend0ta!")
 
 # df_1 <- dbGetQuery(con, "SELECT name, group_name, count, acres, round(perc::numeric,1) as perc, color FROM counts_cdl.s9_ytc_fc_fnl6 WHERE perc > 1.5  and name != 'Grassland/Pasture' or (name = 'Durum Wheat' and color IS NOT NULL) ")
-df <- dbGetQuery(con, "SELECT  b.group_name, b.name, sum(acres) as acres, sum(round(a.perc::numeric,1)) as perc, b.color FROM counts_cdl.s26_ytc30_2008to2017_mmu5_fc as a inner join misc.lookup_cdl as b using(value) GROUP BY b.group_name, b.name, b.color")
+df <- dbGetQuery(con, "SELECT  b.group_name, b.name, sum(acres) as acres, sum(round(a.perc::numeric,1)) as perc, b.color FROM counts_cdl.s35_ytc30_2008to2017_mmu5_fc as a inner join misc.lookup_cdl as b using(value) GROUP BY b.group_name, b.name, b.color")
 
 format_mil<-function(x){x/1000000}
 format_yo<-function(x){x*5}
@@ -59,5 +59,5 @@ ggplot(total, aes(x=group_name, y=acres, fill=name)) +
   geom_text(aes(label = paste0(perc,"%"), label=(acres)), position=position_dodge(width=0.5), hjust= -0.4, vjust= 0.3, size=3, fontface="bold.italic") +
 
   scale_fill_manual(values = jColors)+
-  scale_y_continuous(labels=format_mil, expand = c(0, 0), limits = c(0, 3000000)) 
+  scale_y_continuous(labels=format_mil, expand = c(0, 0), limits = c(0, 3300000)) 
 

@@ -1,0 +1,75 @@
+
+library(ggplot2)
+library(maps)
+library(rgdal)# R wrapper around GDAL/OGR
+library(sp)
+require("RPostgreSQL")
+library(plyr)
+library(dplyr)
+library(viridis)
+library(scales)
+library(rjson)
+# library(jsonlite)
+require(RColorBrewer)
+library(glue)
+
+source("C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\deliverables\\synthesis\\rcode\\graphics_map_new_mlra.R")
+
+
+
+
+drv <- dbDriver("PostgreSQL")
+
+# con <- dbConnect(drv, dbname = "usxp_deliverables",
+#                  host = "144.92.235.105", port = 5432,
+#                  user = "mbougie", password = "Mend0ta!")
+
+
+
+
+json_file <- "C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\deliverables\\synthesis\\json\\json_panels.json"
+json_data <- fromJSON(file=json_file)
+print('json_data')
+print(json_data)
+
+# query the data from postgreSQL
+# national_df <- dbGetQuery(con, "SELECT * 
+#                                 FROM synthesis_extensification.extensification_mlra_national 
+#                                 WHERE columnname IN ('perc_expand_rfs')")
+# national_df
+#  
+# data$extensification
+
+f = function() {
+
+  # index = as.numeric(x['index'])
+  # print(typeof(index))
+  filename = 'perc_expand_rfs'
+  print('filename')
+  print(filename)
+
+  
+
+  
+ 
+  
+  # createMap(con, filename, legendtitle, bin_breaks, legend_labels, legend_range, title, legend_position,  title_position_hjust, legend_label_vjust,legend_label_hjust)
+  createMap(con, filename, json_data)
+
+  dir = "C:/Users/Bougie/Desktop/temp/"
+
+
+  fileout=paste(dir,filename,".png", sep="")
+
+
+  ggsave(fileout, width = 20, height = 40, dpi = 800)
+  
+}
+
+f()
+
+# apply(national_df, 1, f)
+
+
+
+

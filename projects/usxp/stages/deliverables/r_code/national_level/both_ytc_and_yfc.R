@@ -95,7 +95,7 @@ formatAC<-function(x){x/1000000}
 
 ###query the data from postgreSQL
 # df <- dbGetQuery(con, "SELECT years,acres,series,yxc,series_order,series || ': ' || label_traj as label FROM counts_yxc.merged_series as a inner join series_meta.meta as b using(series)  where yxc = 'yfc' and series != 's21_seperate' ")
-df <- dbGetQuery(con, "SELECT years,acres,series,yxc,series_order FROM counts_yxc.merged_series WHERE series = 's27'")
+df <- dbGetQuery(con, "SELECT years,acres,series,yxc,series_order FROM counts_yxc.merged_series WHERE series = 's35' and yxc='ytc'")
 
 
 
@@ -106,13 +106,13 @@ df$series <- with(df, reorder(series, series_order))
 plot = ggplot(df, aes(x=years, y=acres, group=yxc, color=series, ordered = TRUE)) +
   # geom_line(size=0.40) +
   # geom_line( linetype="dashed") +
-  geom_line(size=0.80, aes(linetype=yxc, color='red')) +
+  geom_line(size=0.80, aes(linetype=yxc)) +
   # scale_linetype_manual(values=c("dashed"))+
   scale_y_continuous(labels=formatAC) +
   scale_x_continuous(breaks=c(2009,2010,2011,2012,2013,2014,2015,2016)) +
   labs(y="Acreage in Millions",x="Years")+
-  ggtitle('Conversion To Crop and Conversion From Crop by Year') + theme(plot.title = element_text(hjust = 0.5)) +
-  theme(aspect.ratio=0.5, legend.title=element_blank(), legend.position="bottom") ##this creates 1 to 1 aspect ratio so when export to pdf not stretched
+  ggtitle('Conversion to Crop by Year') + theme(plot.title = element_text(hjust = 0.5)) +
+  theme(aspect.ratio=0.5, legend.title=element_blank(), legend.position="none") ##this creates 1 to 1 aspect ratio so when export to pdf not stretched
   # scale_colour_manual(values = c("#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00", "#ff7f00"))
 
 plot

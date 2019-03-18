@@ -63,6 +63,7 @@ def addGDBTable2postgres(data, yxc, subtype):
     total=df['count'].sum()
     
     # # use pandas method to import table into psotgres
+    print 'replace table: {}.{} if exists otherwise create '.format('counts_cdl', data['post'][yxc][subtype]['filename'])
     df.to_sql(data['post'][yxc][subtype]['filename'], engine, schema='counts_cdl', if_exists='replace')
     
     #add trajectory field to table

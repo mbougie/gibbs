@@ -893,3 +893,127 @@ def alterGeomSRID(db, schema, table, epsg):
     cur.execute(query)
 
     conn.commit()
+
+
+
+
+
+
+
+def addGDBTable2postgres_histo_state(pgdb, currentobject):
+    print 'addGDBTable2postgres_histo..................................................'
+    print currentobject
+
+    ##set the engine.....
+    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/{}'.format(pgdb))
+
+    # Execute AddField twice for two new fields
+    fields = [f.name for f in arcpy.ListFields(currentobject)]
+
+    # converts a table to NumPy structured array.
+    arr = arcpy.da.TableToNumPyArray(currentobject,fields)
+    print arr
+
+
+    #### convert numpy array to pandas dataframe
+    df = pd.DataFrame(data=arr)
+    ### remove column
+    del df['OBJECTID']
+    print df
+
+    ##perform a psuedo pivot table
+    df=pd.melt(df, id_vars=["LABEL"],var_name="atlas_st", value_name="count")
+
+
+    df.columns = map(str.lower, df.columns)
+
+    print df
+    
+    #### format column in df #########################
+    ## strip character string off all cells in column
+    df['atlas_st'] = df['atlas_st'].map(lambda x: x.strip('atlas_'))
+    ## remove comma from year
+    df['value'] = df['label'].str.replace(',', '')
+
+    print df
+
+
+    print 'pixel conversion:', getPixelConversion2Acres(30)
+
+    ####add column 
+    df['acres'] = df['count']*getPixelConversion2Acres(30)
+
+    tablename = currentobject.split('\\')[-1]
+    print 'tablename', tablename
+
+    print df
+
+    df.to_sql(tablename, engine, schema='zonal_hist')
+
+    # MergeWithGeom(df, tablename, eu, eu_col)
+
+
+
+
+def addGDBTable2postgres_state(pgdb, currentobject):
+    print 'addGDBTable2postgres_histo..................................................'
+    print currentobject
+
+    ##set the engine.....
+    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/{}'.format(pgdb))
+
+    # Execute AddField twice for two new fields
+    fields = [f.name for f in arcpy.ListFields(currentobject)]
+
+    # converts a table to NumPy structured array.
+    arr = arcpy.da.TableToNumPyArray(currentobject,fields)
+    print arr
+
+
+    #### convert numpy array to pandas dataframe
+    df = pd.DataFrame(data=arr)
+    ### remove column
+    del df['OBJECTID']
+    print df
+
+    # ##perform a psuedo pivot table
+    # df=pd.melt(df, id_vars=["LABEL"],var_name="atlas_st", value_name="count")
+
+
+    df.columns = map(str.lower, df.columns)
+
+    print df
+    
+    # #### format column in df #########################
+    # ## strip character string off all cells in column
+    # df['atlas_st'] = df['atlas_st'].map(lambda x: x.strip('atlas_'))
+    # ## remove comma from year
+    # df['value'] = df['label'].str.replace(',', '')
+
+    # print df
+
+
+    # print 'pixel conversion:', getPixelConversion2Acres(30)
+
+    # ####add column 
+    # df['acres'] = df['count']*getPixelConversion2Acres(30)
+
+    tablename = currentobject.split('\\')[-1]
+    print 'tablename', tablename
+
+    print df
+
+    df.to_sql(tablename, engine, schema='synthesis_extensification')
+
+    # MergeWithGeom(df, tablename, eu, eu_col)
+
+
+
+
+
+
+# addGDBTable2postgres_histo_state(pgdb='usxp', currentobject='D:\\projects\\usxp\\deliverables\s35\\s35_ancillary.gdb\\s35_zonal_hist_table_mtr')
+
+
+# addGDBTable2postgres_state(pgdb='usxp_deliverables', currentobject='D:\projects\usxp\deliverables\maps\synthesis\synthesis_extensification.gdb\\mlra_county_regions_rc_expand_mtr3_xmillion_states')
+# addGDBTable2postgres_state(pgdb='usxp_deliverables', currentobject='D:\projects\usxp\deliverables\maps\synthesis\synthesis_extensification.gdb\\mlra_county_regions_rc_abandon_mtr4_xmillion_states')
