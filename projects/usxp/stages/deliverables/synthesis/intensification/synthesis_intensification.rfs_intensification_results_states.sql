@@ -1,4 +1,4 @@
-﻿create table synthesis_intensification.rfs_intensification_results_states as 
+﻿--create table synthesis_intensification.rfs_intensification_results_states as 
 
 SELECT 
 count(a.objectid) as objectid_count,

@@ -1,4 +1,4 @@
-﻿CREATE TABLE synthesis_extensification.agroibis_national_v1 as 
+﻿CREATE TABLE synthesis_extensification.agroibis_national_qaqc as 
 SELECT 
   --fips_modified.fips,
   --extensification_mlra.lrr_group,

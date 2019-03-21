@@ -1,4 +1,4 @@
-﻿CREATE TABLE synthesis_extensification.agroibis as 
+﻿CREATE TABLE synthesis_extensification.agroibis_counties as 
 SELECT 
   fips_modified.fips,
   extensification_mlra.lrr_group,

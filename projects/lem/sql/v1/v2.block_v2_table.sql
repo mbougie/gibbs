@@ -53,3 +53,10 @@
 
     ---join biomes dataset
     LEFT JOIN v2.block_zonal_maj_biomes as biomes ON main.geoid::text = biomes.geoid;
+
+
+
+
+
+
+
