@@ -1,6 +1,6 @@
 taskkill /f /im  python.exe
 
-
+taskkill /F /im "executable ogr2ogr" /T
 
 
 
@@ -17,9 +17,46 @@ WHERE
 
 
 
+#####delete wating queries##############################
+
+SELECT * FROM pg_stat_activity WHERE waiting = TRUE;
+
+SELECT pg_cancel_backend([pid]);
 
 
 
+
+#####analyze performanace ##############################
+EXPLAIN ANALYZE SELECT *
+FROM tenk1 t1, tenk2 t2
+WHERE t1.unique1 < 100 AND t1.unique2 = t2.unique2
+ORDER BY t1.fivethous;
+
+
+
+
+
+###### new #####################################
+
+SELECT pg_terminate_backend(pid)
+  FROM pg_stat_activity
+ WHERE datname = 'lem'
+
+
+
+
+
+####### new #######################################
+SELECT 
+    pg_terminate_backend(pid) 
+FROM 
+    pg_stat_activity 
+WHERE 
+    -- don't kill my own connection!
+    pid <> pg_backend_pid()
+    -- don't kill the connections to other databases
+    AND datname = 'database_name'
+    ;
 
 
 

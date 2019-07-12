@@ -17,6 +17,8 @@ sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\modules\\')
 import general as gen
 import json
 import fnmatch
+import io
+import StringIO
 
 
 
@@ -131,6 +133,64 @@ def addGDBTable2postgres(gdb, schema, table):
 
 
 
+def addGDBTable2postgres_io(gdb, schema, table):
+
+    print("addGDBTable2postgres().............")
+    # set the engine.....
+    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/lem')
+
+    # # path to the table you want to import into postgres
+    input_table = '{}.gdb\\{}'.format(gdb, table)
+
+    # Execute AddField twice for two new fields
+    fields = [f.name for f in arcpy.ListFields(input_table)]
+
+    print fields
+
+    # converts a table to NumPy structured array.
+    arr = arcpy.da.TableToNumPyArray(input_table,fields)
+    print arr
+
+
+    # # convert numpy array to pandas dataframe
+    df = pd.DataFrame(data=arr)
+
+    df.columns = map(str.lower, df.columns)
+    print 'df-----------------------', df
+
+
+    df.head(0).to_sql(table, engine, schema=schema, index=False)#truncates the table
+
+
+    print df
+    # df.fillna(0)
+    df = df.fillna(0)
+    print df
+
+
+
+    conn = engine.raw_connection()
+
+    cur = conn.cursor()
+
+    # output = io.BytesIO
+    output = StringIO.StringIO()
+
+    # df.to_csv(output, sep=',', header=False, index_col=0, null='')
+
+    df.to_csv(output, sep='\t', header=False, index=False, null=0)
+
+    output.seek(0)
+
+    contents = output.getvalue()
+
+    cur.copy_from(output, '{0}.{1}'.format(schema, table)) # null values become ''
+
+    conn.commit()
+
+
+
+
 
 
 
@@ -212,16 +272,24 @@ def convertPGtoFC(gdb, schema, table):
     os.system(command)
 
 
-def getNullPolygons(gdb, schema, in_table, out_table):
+def convertPGtoFC_test(gdb, schema, table, query):
     # command = ["ogr2ogr.exe", "PostgreSQL", "PG:host=144.92.235.105 user=mbougie password=Mend0ta! dbname=lem", "D:\\projects\\lem\\lem.gdb", "-nlt", "PROMOTE_TO_MULTI", "-nln", "blocks.us_blck_grp_2016_mainland_5070", "us_blck_grp_2016_mainland_5070", "-progress", "--config", "PG_USE_COPY", "YES"]
-    command = 'ogr2ogr -f "FileGDB" -update {0}.gdb -progress PG:"dbname=lem user=mbougie host=144.92.235.105 password=Mend0ta!" -sql "SELECT a.geoid, majority, wkb_geometry AS geom FROM v1_wisc.block_group AS a JOIN {1}.{2} AS b USING(geoid) WHERE majority IN (11,21)" -nln {3} -nlt MULTIPOLYGON'.format(gdb, schema, in_table, out_table)
+    command = 'ogr2ogr -f "FileGDB" -progress -update {0}.gdb PG:"dbname=lem user=mbougie host=144.92.235.105 password=Mend0ta!" -sql "" -nln {2} -nlt MULTIPOLYGON'.format(gdb, schema, table, query)
+    print command
     os.system(command)
+
+
+# def getNullPolygons(gdb, schema, in_table, out_table):
+#     # command = ["ogr2ogr.exe", "PostgreSQL", "PG:host=144.92.235.105 user=mbougie password=Mend0ta! dbname=lem", "D:\\projects\\lem\\lem.gdb", "-nlt", "PROMOTE_TO_MULTI", "-nln", "blocks.us_blck_grp_2016_mainland_5070", "us_blck_grp_2016_mainland_5070", "-progress", "--config", "PG_USE_COPY", "YES"]
+#     command = 'ogr2ogr -f "FileGDB" -update {0}.gdb -progress PG:"dbname=lem user=mbougie host=144.92.235.105 password=Mend0ta!" -sql "SELECT a.geoid, majority, wkb_geometry AS geom FROM v1_wisc.block_group AS a JOIN {1}.{2} AS b USING(geoid) WHERE majority IN (11,21)" -nln {3} -nlt MULTIPOLYGON'.format(gdb, schema, in_table, out_table)
+#     os.system(command)
 
 # "PG:\"host=144.92.235.105 user=mbougie password=Mend0ta! dbname=lem\""
 
 def convertPGtoJSON(version, db, schema, table):
     # command = ["ogr2ogr.exe", "PostgreSQL", "PG:host=144.92.235.105 user=mbougie password=Mend0ta! dbname=lem", "D:\\projects\\lem\\lem.gdb", "-nlt", "PROMOTE_TO_MULTI", "-nln", "blocks.us_blck_grp_2016_mainland_5070", "us_blck_grp_2016_mainland_5070", "-progress", "--config", "PG_USE_COPY", "YES"]
-    command = 'ogr2ogr -f "geojson" -progress D:\\projects\\lem\\deliverables\\json\\v2\\{3}.json PG:"dbname={1} user=mbougie host=144.92.235.105 password=Mend0ta!" -sql "SELECT * FROM {2}.{3}" -t_srs EPSG:4152'.format(version, db, schema, table) 
+    command = 'ogr2ogr -f "geojson" -progress I:\\d_drive\\projects\\lem\\data\\deliverables\\version\\v3\\{0}\\{3}.json PG:"dbname={1} user=mbougie host=144.92.235.105 password=Mend0ta!" -sql "SELECT * FROM {2}.{3}_final" -t_srs EPSG:4152'.format(version, db, schema, table) 
+    print 'command:', command
     os.system(command)
 
 
@@ -230,38 +298,68 @@ def convertPGtoJSON(version, db, schema, table):
 
 
 
-def main(version, levellist):
+def main(gdb, version, scale, levellist):
     print 'main() function............................'
     
     for level in levellist:
         
         print('---------   {}   -----------------------'.format(level))
         #### import the raw census feature class into postgres
-        convertFCtoPG(gdb='census_features.gdb', pgdb='lem', schema=version, table=level, epsg=102003)
+        # convertFCtoPG(gdb=gdb, pgdb='lem', schema=version, table=level, epsg=102003)
        
-        # ##### run the arcgis arcpy.PolygonNeighbors_analysis to get the neighbors of each feature in featureclass
-        # # findNeighbors(in_feature='D:\\projects\\lem\\matt\\gdbases\\census_features.gdb\\{0}'.format(level), out_table='D:\\projects\\lem\\matt\\gdbases\\{0}.gdb\\{1}_neighbors'.format(version,level), in_fields="geoid")
-        arcpy.PolygonNeighbors_analysis(in_features='census_features.gdb\\{0}'.format(level), out_table='{0}.gdb\\{1}_neighbors'.format(version,level), in_fields="geoid")
-        addGDBTable2postgres(gdb=version, schema=version, table="{}_neighbors".format(level))
+        ##### run the arcgis arcpy.PolygonNeighbors_analysis to get the neighbors of each feature in featureclass
+        # arcpy.PolygonNeighbors_analysis(in_features='{0}\\{1}'.format(gdb,level), out_table='{0}.gdb\\{1}_neighbors'.format(version,level), in_fields="geoid")
+        # addGDBTable2postgres_io(gdb=version, schema=version, table="{}_neighbors".format(level))
 
-        # ####### create majority zonal stats with raw NWALT raster #####################################################
-        # # createZonalStats(in_zone_data='D:\\projects\\lem\\matt\\gdbases\\census_features.gdb\\{0}'.format(level), zone_field="geoid", in_value_raster="D:\\projects\\lem\\matt\\gdbases\\rasters.gdb\\nwalt", out_table='D:\\projects\\lem\\matt\\gdbases\\{0}.gdb\\{1}_zonal_maj_nwalt'.format(version,level), ignore_nodata="DATA", statistics_type="MAJORITY")
-        ZonalStatisticsAsTable(in_zone_data='census_features.gdb\\{0}'.format(level), zone_field="geoid", in_value_raster="rasters.gdb\\nwalt", out_table='{0}.gdb\\{1}_zonal_maj_nwalt'.format(version,level), ignore_nodata="DATA", statistics_type="MAJORITY")
-        addGDBTable2postgres(gdb=version, schema=version, table="{}_zonal_maj_nwalt".format(level))
+        ####### create majority zonal stats with raw NWALT raster #####################################################
+        ZonalStatisticsAsTable(in_zone_data='{0}\\{1}'.format(gdb,level), zone_field="geoid", in_value_raster="rasters.gdb\\nwalt_{0}m".format(scale), out_table='{0}.gdb\\{2}_zonal_maj_nwalt_{1}m'.format(version, scale, level), ignore_nodata="DATA", statistics_type="MAJORITY")
+        addGDBTable2postgres_io(gdb=version, schema=version, table="{0}_zonal_maj_nwalt_{1}m".format(level, scale))
 
-        # ####### create majority zonal stats with reclassed NWALT raster  #####################################################
-        # # createZonalStats(in_zone_data='D:\\projects\\lem\\matt\\gdbases\\census_features.gdb\\{0}'.format(level), zone_field="geoid", in_value_raster="D:\\projects\\lem\\matt\\gdbases\\rasters.gdb\\nwalt_rc", out_table='D:\\projects\\lem\\matt\\gdbases\\{0}.gdb\\{1}_zonal_maj_rc_nwalt'.format(version,level), ignore_nodata="DATA", statistics_type="MAJORITY")
-        ZonalStatisticsAsTable(in_zone_data='census_features.gdb\\{0}'.format(level), zone_field="geoid", in_value_raster="rasters.gdb\\nwalt_rc", out_table='{0}.gdb\\{1}_zonal_maj_rc_nwalt'.format(version,level), ignore_nodata="DATA", statistics_type="MAJORITY")
-        addGDBTable2postgres(gdb=version, schema=version, table="{}_zonal_maj_rc_nwalt".format(level))
+        ####### create majority zonal stats with reclassed NWALT raster  #####################################################
+        ZonalStatisticsAsTable(in_zone_data='{0}\\{1}'.format(gdb,level), zone_field="geoid", in_value_raster="rasters.gdb\\nwalt_rc_{0}m".format(scale), out_table='{0}.gdb\\{2}_zonal_maj_nwalt_rc_{1}m'.format(version, scale, level), ignore_nodata="DATA", statistics_type="MAJORITY")
+        addGDBTable2postgres_io(gdb=version, schema=version, table="{0}_zonal_maj_nwalt_rc_{1}m".format(level, scale))
 
-        # ###### create zonal stats with NWALT raster  #####################################################
-        # # createZonalStats(in_zone_data='D:\\projects\\lem\\matt\\gdbases\\census_features.gdb\\{0}'.format(level), zone_field="geoid", in_value_raster="D:\\projects\\lem\\matt\\gdbases\\rasters.gdb\\biomes_vegtype_conus_exp3_60m", out_table='D:\\projects\\lem\\matt\\gdbases\\{0}.gdb\\{1}_zonal_maj_biomes'.format(version,level), ignore_nodata="DATA", statistics_type="MAJORITY")
-        ZonalStatisticsAsTable(in_zone_data='census_features.gdb\\{0}'.format(level), zone_field="geoid", in_value_raster="rasters.gdb\\biomes_vegtype_conus_exp3_60m", out_table='{0}.gdb\\{1}_zonal_maj_biomes'.format(version,level), ignore_nodata="DATA", statistics_type="MAJORITY")
-        addGDBTable2postgres(gdb=version, schema=version, table="{}_zonal_maj_biomes".format(level))
+        ###### create zonal stats with BIOMES raster  #####################################################
+        ZonalStatisticsAsTable(in_zone_data='{0}\\{1}'.format(gdb,level), zone_field="geoid", in_value_raster="rasters.gdb\\biomes_vegtype_conus_exp10_{}m".format(scale), out_table='{0}.gdb\\{2}_zonal_maj_biomes_{1}m'.format(version, scale, level), ignore_nodata="DATA", statistics_type="MAJORITY")
+        addGDBTable2postgres_io(gdb=version, schema=version, table="{0}_zonal_maj_biomes_{1}m".format(level, scale))
+
+
+
+        ####run refinement to fill polygons that need to be filled#####
+
+
 
 
         ###execute .sql test file############################Still nedd to write!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        # executeSQLtext(schema=version, table='{}_v1_2_1_table'.format(level))
+        # convertPGtoFC(gdb=version, schema=version, table='{0}_v3_main_refinement_view'.format(level))
+
+
+
+
+
+
+def refine(gdb, version, scale, levellist):
+    print 'refine() function............................'
+    
+    for level in levellist:
+        
+        print('---------   {}   -----------------------'.format(level))
+
+
+        #### convert the refine postgres view into a table
+        convertPGtoFC(gdb=version, schema=version, table='{0}_v3_main_replace'.format(level))
+
+        ############################################################
+
+        ####### create majority zonal stats with reclassed NWALT raster  #####################################################
+        ZonalStatisticsAsTable(in_zone_data='{0}\\{1}_v3_main_replace'.format(gdb, level), zone_field="geoid", in_value_raster="rasters.gdb\\nwalt_rc_{0}m".format(scale), out_table='{0}.gdb\\{2}_zonal_maj_nwalt_rc_{1}m'.format(version, scale, level), ignore_nodata="DATA", statistics_type="MAJORITY")
+        addGDBTable2postgres_io(gdb=version, schema=version, table="{0}_zonal_maj_nwalt_rc_{1}m".format(level, scale))
+
+        ###### create zonal stats with NWALT raster  #####################################################
+        ######note: only creating this dataset because some polygons might be too small for all rasters ---i.e. across the board for all zonal stats they are null
+        ZonalStatisticsAsTable(in_zone_data='{0}\\{1}_v3_main_replace'.format(gdb, level), zone_field="geoid", in_value_raster="rasters.gdb\\biomes_vegtype_conus_exp10_{}m".format(scale), out_table='{0}.gdb\\{2}_zonal_maj_biomes_{1}m'.format(version, scale, level), ignore_nodata="DATA", statistics_type="MAJORITY")
+        addGDBTable2postgres_io(gdb=version, schema=version, table="{0}_zonal_maj_biomes_{1}m".format(level, scale))
+
 
 
 
@@ -271,30 +369,58 @@ def getDeliverables(version, levellist):
     for level in levellist:
         print('---------   {}   -----------------------'.format(level))
 
-        # convertPGtoFC(gdb=version, schema=version, table='{}_v2_table'.format(level))
+        # convertPGtoFC(gdb=version, schema=version, table='{}_final'.format(level))
 
-        convertPGtoJSON(version, 'lem', version, '{}_v2_table'.format(level))
+        convertPGtoJSON(version, 'lem', version, level)
+
+
+
+
+
+
+
+
+
+def addIndexField():
+    #this is a sub function for addGDBTable2postgres()
+    cur = conn.cursor()
+
+    #DDL: add column to hold arrays
+    cur.execute('ALTER TABLE v3_2.block_v3_main ADD COLUMN index serial;');
+    
+    conn.commit()
+    print "Records created successfully";
+    conn.close()
+
+
 
 
 
 
 ##############################################################################################
-###call the main function#####################################################################
+###call function#####################################################################
 ##############################################################################################
 
+
+#####  prep functions ################################################################
+# arcpy.env.workspace = 'D:\\projects\\lem\\data\\gdbases\\rasters.gdb'
+# reclassRaster(inraster="nwalt", outraster="nwalt_rc", query="SELECT initial, grouped FROM public.nwalt_lookup WHERE grouped IS NOT NULL")
+
+
+
+########  MAIN functions ################################################################
 ###  define the working directory  ###########################################
-os.chdir('D:\\projects\\lem\\data\\gdbases')
+os.chdir('I:\\d_drive\\projects\\lem\\data\\gdbases')
 
 ####  run the main function  ############################################
-# main('v2', ['block_group', 'block'])
-# main('v2', ['county', 'tract'])
-# main('v2', ['block_group'])
-# main('v1', ['block'])
+# main(gdb='census_features_v2_2.gdb', version='v2_2', levellist=['county', 'tract', 'block_group', 'block'])
+# main(gdb='census_features_v3_2.gdb', version='v3_2', scale='60', levellist=['block'])
+# main(gdb='census_features_v3_2.gdb', version='v3_2', scale='60', levellist=['block_group'])
+# refine(gdb='v3_2.gdb', version='v3_2', scale='10', levellist=['block'])
 
  
 ###  create the deliverables products: feature class and json dataset  ############################
-getDeliverables('v2', ['block_group', 'block'])
-# getDeliverables('v2', ['county', 'tract'])
+getDeliverables('v3_2', ['block_group'])
 
 
 
@@ -308,6 +434,42 @@ getDeliverables('v2', ['block_group', 'block'])
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+############# sandbox #########################################
+
+# try:
+#     conn = psycopg2.connect("dbname='lem' user='mbougie' host='144.92.235.105' password='Mend0ta!'")
+# except:
+#     print "I am unable to connect to the database"
+
+
+
+
+
+# with open("C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\lem\\sql\\v1\\v2.block_group_v2_table.sql", 'r') as file:
+
+#     query = '''{}'''.format(file.read())
+
+#     cur = conn.cursor()
+#     cur.execute(query);
+
+
+
+# convertPGtoFC(gdb='v3_1.gdb', schema='v3_1', table='test_negihnbor_v5')
+
+
+# addIndexField()
+# convertPGtoFC(gdb='v3_2', schema='v3_2', table='block_mod_t1')
 
 
 

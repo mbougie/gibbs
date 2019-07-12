@@ -16,13 +16,13 @@ import general as gen
 import json
 # import general_deliverables as gen_dev
 
-
+###DESCRIPTION: get the majority value per block (categorical values)
 
 
 
 def processingCluster(instance, inraster, outraster):
 	######  block stats  ###############################################
-	##BlockStatistics (in_raster, {neighborhood}, {statistics_type}, {ignore_nodata})
+
 	blocksize=scale_dict[instance['scale']]
 	print 'blocksize:', blocksize
 

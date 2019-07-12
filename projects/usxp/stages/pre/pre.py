@@ -222,7 +222,7 @@ def addTrajArrayField(schema, tablename, fields):
 
 def createAddYFCTrajectory(data):
     print 'createAddYFCTrajectory(data)'
-    # filelist = [data['pre']['traj']['path'], data['refine']['mask_fn_yfc_61']['path'], data['refine']['mask_fn_yfc_nlcd_mtr1']['path']]
+    # Need to create this raster with the false conversion BEFORE can run the FP masks because the FP mask will refine these added pixels !!!!
     filelist = [data['pre']['traj']['path'], data['refine']['mask_fn_yfc_61']['path']]
     
     print 'filelist:', filelist
@@ -295,6 +295,7 @@ def run(data):
         addGDBTable2postgres(data, 'pre')
 
     elif data['global']['version']=='add_yfc':
+        ###need to add the false negative pixels to trajectory first and then perform FP mask on THIS dataset
         print '------running pre(add_yfc)--------'
         # createAddYFCTrajectory(data)
         gen.addGDBTable2postgres_recent(data['pre']['traj']['path'], data['pre']['traj']['filename'], 'usxp', 'qaqc_pre')

@@ -56,7 +56,7 @@ ggplot(total, aes(x=group_name, y=acres, fill=name)) +
   labs(y="Acreage in Millions")+
   coord_flip()+
   
-  geom_text(aes(label = paste0(perc,"%"), label=(acres)), position=position_dodge(width=0.5), hjust= -0.4, vjust= 0.3, size=3, fontface="bold.italic") +
+  geom_text(aes(label = paste0(perc,"%")), position=position_dodge(width=0.5), hjust= -0.4, vjust= 0.3, size=3, fontface="bold.italic") +
 
   scale_fill_manual(values = jColors)+
   scale_y_continuous(labels=format_mil, expand = c(0, 0), limits = c(0, 3300000)) 

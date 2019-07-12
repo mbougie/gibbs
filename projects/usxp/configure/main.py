@@ -64,7 +64,7 @@ import add2pg_cdl
 # # import deliver
 # # import qaqc_now as qaqc
 # # import temp_rg as temp
-import parallel_rg_eric_v2 as eric_v2
+#import parallel_rg_eric_v2 as eric_v2
 # import zonal_yxc_cdl
 import choropleth_current
 
@@ -151,6 +151,7 @@ if __name__ == '__main__':
 			#####create the refined trajectories dataset############################
 			# ci.run([key,route,instance],'final')
 			data = gen.getCurrentInstance()
+			print(data)
 			
 			######################create the rfnd dataset###################################
 			# pre.run(data)
@@ -211,8 +212,8 @@ if __name__ == '__main__':
 
 
 			# for mtr in []:
-			instance = {'series':'s35', 'enumeration_unit':'counties'}
-			choropleth_current.run(instance, data)
+			# instance = {'series':'s35', 'enumeration_unit':'counties'}
+			# choropleth_current.run(instance, data)
 
 
 
@@ -231,7 +232,7 @@ if __name__ == '__main__':
 
 
 			######qaqc#######################################################################
-			# qaqc.run(data)
+			qaqc.run(data)
 
 
 
@@ -243,6 +244,7 @@ if __name__ == '__main__':
 			# yxc_inraster = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\temp\\tiles_ytc\\tile_10.tif'
 			# inraster = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\temp\\tiles_fc\\tile_10.tif'
 			# replace_61_w_hard_crop.run(data, yxc_inraster, inraster, -1696904.9999999981, 1104255.0000000019, -1037714.999999998, 1517925.0000000023)
+
 
 
 

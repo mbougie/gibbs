@@ -164,36 +164,159 @@ def getAcres(pixel_count, resolution):
         print acres
         return acres
 
+def addGDBTable2postgres_table(gdb, pgdb, schema, table):
+    arcpy.env.workspace = gdb
+    # tables = arcpy.ListTables()
+    # for table in tables:
+    #     print(table)
+    fields = [f.name for f in arcpy.ListFields(table)]
+    print fields
+
+
+    arr = arcpy.da.TableToNumPyArray(table, fields)
+    print arr
 
 
 
-def addGDBTable2postgres(gdb_args,wc,pg_shema):
-    print 'running addGDBTable2postgres() function....'
-    ####description: adds tables in geodatabse to postgres
+def addGDBTable2postgres_raster(gdb, pgdb, schema, table):
+    print("addGDBTable2postgres().............")
     # set the engine.....
-    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp')
+    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/{0}'.format(pgdb))
 
-    arcpy.env.workspace = defineGDBpath(gdb_args)
+    currentobject = '{}//{}'.format(gdb,table)
+    # Execute AddField twice for two new fields
+    fields = [f.name for f in arcpy.ListFields(currentobject)]
 
-    for table in arcpy.ListTables(wc): 
-        print 'table: ', table
+    # converts a table to NumPy structured array.
+    arr = arcpy.da.TableToNumPyArray(currentobject,fields)
+    print arr
 
-        # Execute AddField twice for two new fields
-        fields = [f.name for f in arcpy.ListFields(table)]
-        
-        # converts a table to NumPy structured array.
-        arr = arcpy.da.TableToNumPyArray(table,fields)
-        print arr
-        
-        # convert numpy array to pandas dataframe
-        df = pd.DataFrame(data=arr)
+    # # convert numpy array to pandas dataframe
+    df = pd.DataFrame(data=arr)
 
-        print df
+    df.columns = map(str.lower, df.columns)
+    print 'df-----------------------', df
 
-        df.columns = map(str.lower, df.columns)
-        
-        # use pandas method to import table into psotgres
-        df.to_sql(table, engine, schema=pg_shema)
+    # df.to_sql(table, con=engine, schema=schema)
+
+
+
+def addGDBTable2postgres_fc(gdb, pgdb, schema, table):
+    print("addGDBTable2postgres().............")
+    # set the engine.....
+    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/{0}'.format(pgdb))
+
+    currentobject = '{}//{}'.format(gdb,table)
+    # Execute AddField twice for two new fields
+    fields = [f.name for f in arcpy.ListFields(currentobject)]
+
+    ###need to remove shape column because its a list and destroys the one dimensionality requirement
+    fields.remove('Shape')
+
+    print fields
+
+    # converts a table to NumPy structured array.
+    arr = arcpy.da.TableToNumPyArray(currentobject,fields)
+    print arr
+
+    # # convert numpy array to pandas dataframe
+    df = pd.DataFrame(data=arr)
+
+    df.columns = map(str.lower, df.columns)
+    print 'df-----------------------', df
+
+    df.to_sql(table, con=engine, schema=schema)
+
+
+
+
+
+
+def GDBTable2DF(pgdb, currentobject):
+    print 'addGDBTable2postgres_histo..................................................'
+    print currentobject
+
+    ##set the engine.....
+    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/{}'.format(pgdb))
+
+    # Execute AddField twice for two new fields
+    fields = [f.name for f in arcpy.ListFields(currentobject)]
+
+    # converts a table to NumPy structured array.
+    arr = arcpy.da.TableToNumPyArray(currentobject,fields)
+    print arr
+
+
+    #### convert numpy array to pandas dataframe
+    df = pd.DataFrame(data=arr)
+    ### remove column
+    del df['OBJECTID']
+    print df
+
+    # ##perform a psuedo pivot table
+    # df=pd.melt(df, id_vars=["LABEL"],var_name="atlas_st", value_name="count")
+
+
+    df.columns = map(str.lower, df.columns)
+
+    print df
+
+    return df
+
+# def addGDBTable2postgres_state(pgdb, currentobject):
+#     print 'addGDBTable2postgres_histo..................................................'
+#     print currentobject
+
+#     ##set the engine.....
+#     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/{}'.format(pgdb))
+
+#     # Execute AddField twice for two new fields
+#     fields = [f.name for f in arcpy.ListFields(currentobject)]
+
+#     # converts a table to NumPy structured array.
+#     arr = arcpy.da.TableToNumPyArray(currentobject,fields)
+#     print arr
+
+
+#     #### convert numpy array to pandas dataframe
+#     df = pd.DataFrame(data=arr)
+#     ### remove column
+#     del df['OBJECTID']
+#     print df
+
+#     # ##perform a psuedo pivot table
+#     # df=pd.melt(df, id_vars=["LABEL"],var_name="atlas_st", value_name="count")
+
+
+#     df.columns = map(str.lower, df.columns)
+
+#     print df
+    
+#     # #### format column in df #########################
+#     # ## strip character string off all cells in column
+#     # df['atlas_st'] = df['atlas_st'].map(lambda x: x.strip('atlas_'))
+#     # ## remove comma from year
+#     # df['value'] = df['label'].str.replace(',', '')
+
+#     # print df
+
+
+#     # print 'pixel conversion:', getPixelConversion2Acres(30)
+
+#     # ####add column 
+#     # df['acres'] = df['count']*getPixelConversion2Acres(30)
+
+#     tablename = currentobject.split('\\')[-1]
+#     print 'tablename', tablename
+
+#     print df
+
+#     df.to_sql(tablename, engine, schema='synthesis_extensification')
+
+#     # MergeWithGeom(df, tablename, eu, eu_col)
+
+
+
 
 
 
@@ -900,7 +1023,7 @@ def alterGeomSRID(db, schema, table, epsg):
 
 
 
-def addGDBTable2postgres_histo_state(pgdb, currentobject):
+def addGDBTable2postgres_histo_state(pgdb, schema, currentobject):
     print 'addGDBTable2postgres_histo..................................................'
     print currentobject
 
@@ -948,14 +1071,67 @@ def addGDBTable2postgres_histo_state(pgdb, currentobject):
 
     print df
 
-    df.to_sql(tablename, engine, schema='zonal_hist')
+    df.to_sql(tablename, engine, schema=schema)
+
+    # MergeWithGeom(df, tablename, eu, eu_col)
+
+
+
+def addGDBTable2postgres_histo_county(pgdb, schema, currentobject):
+    print 'addGDBTable2postgres_histo..................................................'
+    print currentobject
+
+    ##set the engine.....
+    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/{}'.format(pgdb))
+
+    # Execute AddField twice for two new fields
+    fields = [f.name for f in arcpy.ListFields(currentobject)]
+
+    # converts a table to NumPy structured array.
+    arr = arcpy.da.TableToNumPyArray(currentobject,fields)
+    print arr
+
+
+    #### convert numpy array to pandas dataframe
+    df = pd.DataFrame(data=arr)
+    ### remove column
+    del df['OBJECTID']
+    # print df
+
+    ##perform a psuedo pivot table
+    df=pd.melt(df, id_vars=["LABEL"],var_name="atlas_stco", value_name="count")
+
+    df.columns = map(str.lower, df.columns)
+
+    print df
+    
+    #### format column in df #########################
+    ## strip character string off all cells in column
+    df['atlas_stco'] = df['atlas_stco'].map(lambda x: x.strip('ATLAS_'))
+    ## remove comma from year
+    # df['value'] = df['label'].str.replace(',', '')
+
+    print df
+
+
+    print 'pixel conversion:', getPixelConversion2Acres(30)
+
+    ####add column 
+    df['acres'] = df['count']*getPixelConversion2Acres(30)
+
+    tablename = currentobject.split('\\')[-1]
+    print 'tablename', tablename
+
+    print df
+
+    df.to_sql(tablename, engine, schema=schema)
 
     # MergeWithGeom(df, tablename, eu, eu_col)
 
 
 
 
-def addGDBTable2postgres_state(pgdb, currentobject):
+def addGDBTable2postgres_state(pgdb, schema, currentobject):
     print 'addGDBTable2postgres_histo..................................................'
     print currentobject
 
@@ -1003,7 +1179,7 @@ def addGDBTable2postgres_state(pgdb, currentobject):
 
     print df
 
-    df.to_sql(tablename, engine, schema='synthesis_extensification')
+    df.to_sql(tablename, engine, schema=schema)
 
     # MergeWithGeom(df, tablename, eu, eu_col)
 
@@ -1011,9 +1187,62 @@ def addGDBTable2postgres_state(pgdb, currentobject):
 
 
 
+def convertPGtoFC(gdb, pgdb, schema, table):
+    # command = ["ogr2ogr.exe", "PostgreSQL", "PG:host=144.92.235.105 user=mbougie password=Mend0ta! dbname=lem", "D:\\projects\\lem\\lem.gdb", "-nlt", "PROMOTE_TO_MULTI", "-nln", "blocks.us_blck_grp_2016_mainland_5070", "us_blck_grp_2016_mainland_5070", "-progress", "--config", "PG_USE_COPY", "YES"]
+    command = 'ogr2ogr -a_srs EPSG:5070 -f "FileGDB" -progress -update {0} PG:"dbname={1} user=mbougie host=144.92.235.105 password=Mend0ta!" -sql "SELECT * FROM {2}.{3}" -nln {3} -nlt MULTIPOLYGON'.format(gdb, pgdb, schema, table)
+    print command
+    os.system(command)
 
-# addGDBTable2postgres_histo_state(pgdb='usxp', currentobject='D:\\projects\\usxp\\deliverables\s35\\s35_ancillary.gdb\\s35_zonal_hist_table_mtr')
 
 
-# addGDBTable2postgres_state(pgdb='usxp_deliverables', currentobject='D:\projects\usxp\deliverables\maps\synthesis\synthesis_extensification.gdb\\mlra_county_regions_rc_expand_mtr3_xmillion_states')
-# addGDBTable2postgres_state(pgdb='usxp_deliverables', currentobject='D:\projects\usxp\deliverables\maps\synthesis\synthesis_extensification.gdb\\mlra_county_regions_rc_abandon_mtr4_xmillion_states')
+
+
+# def convertFCtoPG(gdb, pgdb, schema, table, epsg):
+#     command = 'ogr2ogr -f "PostgreSQL" PG:"dbname={1} user=mbougie host=144.92.235.105 password=Mend0ta!" {0} -nlt PROMOTE_TO_MULTI -nln {2}.{2} {3} -progress --config PG_USE_COPY YES'.format(gdb, pgdb, schema, table)
+    
+#     os.system(command)
+
+    # alterGeomSRID(pgdb, schema, table, epsg)
+
+
+
+def convertFCtoPG(gdb, pgdb, schema, table, epsg):
+    command = 'ogr2ogr -t_srs EPSG:102003 -f "PostgreSQL" PG:"dbname={1} user=mbougie host=144.92.235.105 password=Mend0ta!" {0} -nln {2}.{3} {3} -progress -nlt MULTIPOLYGON --config PG_USE_COPY YES'.format(gdb, pgdb, schema, table)
+    
+    os.system(command)
+
+    alterGeomSRID(pgdb, schema, table, epsg)
+
+
+def null2value(in_raster, true_value, false_value):
+    reclass = Con(IsNull(in_raster), true_value, false_value)
+    return reclass
+
+
+
+def createReclassifyList(pgdb, query):
+    ###sub-function for reclassRaster
+    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/{}'.format(pgdb))
+    print 'query:', query
+    df = pd.read_sql_query(query, con=engine)
+    print df
+    # fulllist=[[0,0,"NODATA"]]
+    fulllist=[]
+    for index, row in df.iterrows():
+        templist=[]
+        templist.append(row[0])
+        templist.append(row[1])
+        fulllist.append(templist)
+    print 'fulllist: ', fulllist
+    return fulllist
+
+
+
+def addValue2Field(fc, field, value):
+    cur = arcpy.UpdateCursor(fc)
+
+    for row in cur:
+
+        row.setValue(field, value)
+
+        cur.updateRow(row)

@@ -151,7 +151,7 @@ def importCSVtoPG():
 def createmilkweedTable():
 	cur = conn.cursor()
 
-	query = '''CREATE TABLE main.milkweed as 
+	query = '''CREATE TABLE main.nri_main as 
 			SELECT 
 			  counties.objectid,
 			  counties.atlas_st, 
@@ -212,18 +212,22 @@ def grossExpansion(list_years, psu):
 
 	i = 0
 	while i < (len(list_years)-1):
-
+					###add column expansion_[year] to table
 		query = ''' ALTER TABLE main.milkweed ADD COLUMN expansion_{1} integer;
-		UPDATE main.milkweed
-		SET expansion_{1}=subquery.sum*({2})
-		FROM (SELECT 
-		  nri12_cty_121115_core.fips, 
-		  sum(nri12_cty_121115_core.xfact) as sum
-		FROM 
-		  main.nri12_cty_121115_core
-		WHERE broad{0} NOT IN (1,2) AND broad{1} IN (1,2)
-		GROUP BY fips) AS subquery
-		WHERE milkweed.atlas_stco=subquery.fips;'''.format(list_years[i], list_years[i+1], psu)
+					
+					####add values to expansion_[year] column
+					UPDATE main.milkweed
+					###for each year of expansion (expansion_year)
+					SET expansion_{1}=subquery.sum*({2})
+					
+					FROM (SELECT 
+					  nri12_cty_121115_core.fips, 
+					  sum(nri12_cty_121115_core.xfact) as sum
+					FROM 
+					  main.nri12_cty_121115_core
+					WHERE broad{0} NOT IN (1,2) AND broad{1} IN (1,2)
+					GROUP BY fips) AS subquery
+					WHERE milkweed.atlas_stco=subquery.fips;'''.format(list_years[i], list_years[i+1], psu)
 
 		print query
 

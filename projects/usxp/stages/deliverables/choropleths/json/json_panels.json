@@ -1,0 +1,36 @@
+{
+  "nass": {
+      "legend_title": "Census of Agriculture 2007-2017"
+  },
+  
+  "nri": {
+      "legend_title": "National Resources Inventory 2007-2012"
+  },
+  
+  "nlcd": {
+      "legend_title": "National Land Cover Database 2008-2016"
+  },
+  
+  "usxp": {
+      "legend_title": "Cropland Data Layer (this study) 2008-2016"
+  }
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -16,6 +16,12 @@ import general as gen
 import json
 # import general_deliverables as gen_dev
 
+
+
+##DESCRIPTION: create net raster from subtracting mtr4 object from mtr3 object
+
+
+
 # Check out the ArcGIS Spatial Analyst extension license
 arcpy.CheckOutExtension("Spatial")
 
@@ -24,28 +30,38 @@ arcpy.CheckOutExtension("Spatial")
 
 
 def processingCluster(instance, inraster, outraster):
-    #####  reclass  ####################################################
-    ## Reclassify (in_raster, reclass_field, remap, {missing_values})
+    ###Steps:
+    ###1) reclass mtr value to 1  --- so can use the sum agregation fparameter in bloack stats
+    ###2) set the null values to 0
+    ###3) apply block stats to add all the 1 values within a block
+    ###4) append this blockstat object to blockstats_objects dictionary to perform minus function to create net_raster
+
+
+    ##create a empty dictionary to hold each gross object (abandonment and expansion) in order to derive net raster
     blockstats_objects = {}
 
     for mtr, reclasslist in instance['reclass'].iteritems():
+        ##reclass each mtr object as 1
         reclass_raster = Reclassify(inraster, "Value", RemapValue(reclasslist), "NODATA")
         print 'finished reclass_raster.............'
+        ##reclass each null to zero
         reclass_raster_setnull = Con(IsNull(reclass_raster), 0, reclass_raster)
         print 'reclass_raster_setnull.............'
         for key, value in instance['scale'].iteritems():
 
             nbr = NbrRectangle(value, value, "CELL")
+            ###sum all the values within the block
             outBlockStat = BlockStatistics(reclass_raster_setnull, nbr, "SUM", "DATA")
             print 'finished block stats.............'
-
+            ###add processed object to the blockstats_objects
             blockstats_objects[mtr] = outBlockStat
 
             print 'blockstats_objects ', blockstats_objects 
 
 
-    print 'test', blockstats_objects 
+    print 'blockstats_objects completed---', blockstats_objects 
 
+    ##derive net from the 2 objects stored in blockstats_objects
     net_raster = Minus(blockstats_objects['mtr3'], blockstats_objects['mtr4'])
 
     net_raster.save(outraster)
@@ -73,6 +89,7 @@ def addField(raster, value):
 
 
 def main(instance):
+
     inraster=Raster('D:\\projects\\usxp\\deliverables\\{0}\\{0}.gdb\\{0}_mtr'.format(instance['series']))
     print 'inraster', inraster
 

@@ -1,0 +1,17 @@
+﻿-----intensification_agroibis.rfs_intensification_results_national
+
+SELECT 
+  sum(rfs_intensification_results_counties.kg_change_rot_cc_pyield) kg_change_rot_cc_pyield, 
+  sum(rfs_intensification_results_counties.kg_change_rot_cc_nleach) kg_change_rot_cc_nleach, 
+  sum(rfs_intensification_results_counties.ton_change_rot_cc_sedyield) ton_change_rot_cc_sedyield,
+  sum(rfs_intensification_results_counties.kg_change_rot_oo_pyield) kg_change_rot_oo_pyield, 
+  sum(rfs_intensification_results_counties.kg_change_rot_oo_nleach) kg_change_rot_oo_nleach, 
+  sum(rfs_intensification_results_counties.ton_change_rot_oo_sedyield) ton_change_rot_oo_sedyield, 
+  sum(rfs_intensification_results_counties.kg_change_rot_co_pyield) kg_change_rot_co_pyield, 
+  sum(rfs_intensification_results_counties.kg_change_rot_co_nleach) kg_change_rot_co_nleach, 
+  sum(rfs_intensification_results_counties.ton_change_rot_co_sedyield) ton_change_rot_co_sedyield, 
+  sum(rfs_intensification_results_counties.kg_change_total_pyield) kg_change_total_pyield, 
+  sum(rfs_intensification_results_counties.kg_change_total_nleach) kg_change_total_nleach, 
+  sum(rfs_intensification_results_counties.ton_change_total_sedyield) ton_change_total_sedyield
+FROM 
+  intensification_agroibis.rfs_intensification_results_counties;

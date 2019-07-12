@@ -116,7 +116,7 @@ def addGDBTable2postgres_histo(currentobject, eu, eu_col):
     print 'lkl', gen.getPixelConversion2Acres(30)
 
     ####add column 
-    df['acres'] = df['count']*0.22227
+    df['acres'] = df['count']*gen.getPixelConversion2Acres(30)
 
     tablename = currentobject.split('\\')[-1]
     print 'tablename', tablename

@@ -46,19 +46,18 @@ def createReclassifyList(query):
 
 
 
-def aggregateFct(in_raster, tablename, cellsize):
-	arcpy.env.workspace = 'D:\\projects\\usxp\\deliverables\\maps\\{0}\\{0}.gdb'.format(tablename)
+def aggregateFct(in_raster, tablename, cellsize, agg_type, bs_label):
+	arcpy.env.workspace = 'D:\\projects\\usxp\\series\\s35\\maps\\{0}\\{0}.gdb'.format(tablename)
 	
-	out_agg = Aggregate(in_raster=in_raster, cell_factor=cellsize, aggregation_type="MEAN", extent_handling="TRUNCATE", ignore_nodata="DATA")
+	out_agg = Aggregate(in_raster=in_raster, cell_factor=cellsize, aggregation_type=agg_type, extent_handling="TRUNCATE", ignore_nodata="DATA")
 
-	output_raster = "{}_bs3km".format(tablename)
+	output_raster = "{}_{}_{}".format(tablename, bs_label, agg_type)
 
 	out_agg.save(output_raster)
-	gen.buildPyramids(output_raster)
+	# gen.buildPyramids(output_raster)
 
 
 	
-
 
 
 
@@ -76,12 +75,16 @@ def run(query):
 	reclass_list = createReclassifyList(query)
 	in_raster = 'G:\\data\\r2\\s35\\core\\core_s35.gdb\\s35_mtr3_4_id'
 
+	patchsize_raster='D:\\projects\\usxp\\series\\s35\\maps\\patchsize\\patchsize.gdb\\s35_patchsize'
 
-	raster_reclassed = Reclassify(Raster(in_raster), "Value", RemapRange(reclass_list), "NODATA")
-	raster_reclassed.save('D:\\projects\\usxp\\deliverables\\maps\\patchsize\\patchsize.gdb\\s35_patchsize')
+
+	# ####reclass s35_mtr3_4_id with id value to count value ---see sql in parameter of run function
+	# raster_reclassed = Reclassify(Raster(in_raster), "Value", RemapRange(reclass_list), "NODATA")
+	# ##create a raw unblocked raster from reclassing id to count 
+	# raster_reclassed.save('D:\\projects\\usxp\\deliverables\\maps\\patchsize\\patchsize.gdb\\s35_patchsize')
 
 	### setblockstats
-	aggregateFct(in_raster, 'patchsize', 100)
+	aggregateFct(in_raster=patchsize_raster, tablename='patchsize', cellsize=500, agg_type="mean", bs_label="bs15km")
 
 
 
@@ -92,3 +95,7 @@ if __name__ == '__main__':
 
 
 
+
+
+###########################################################
+###note:   
