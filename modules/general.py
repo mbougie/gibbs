@@ -65,30 +65,30 @@ def defineGDBpath(args_list):
 
             
 
+##### either update or remove this function ###################################
+# def importCSVtoPG():
+#     print pd.read_csv('D:\\projects\\nri\\NRI\\Raw_Data\\NRIdata\\nri12_cty_121115.csv', nrows=5)
 
-def importCSVtoPG():
-    print pd.read_csv('D:\\projects\\nri\\NRI\\Raw_Data\\NRIdata\\nri12_cty_121115.csv', nrows=5)
-
-    # df = pd.read_csv('D:\\projects\\nri\\NRI\\Raw_Data\\NRIdata\\nri12_cty_121115.csv')
+#     # df = pd.read_csv('D:\\projects\\nri\\NRI\\Raw_Data\\NRIdata\\nri12_cty_121115.csv')
 
 
-    # # df.columns = [c.lower() for c in df.columns] #postgres doesn't like capitals or spaces
-    # # df.columns = ['year_'+str(c) for c in df.columns]
-    from sqlalchemy import create_engine
-    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/nri')
+#     # # df.columns = [c.lower() for c in df.columns] #postgres doesn't like capitals or spaces
+#     # # df.columns = ['year_'+str(c) for c in df.columns]
+#     from sqlalchemy import create_engine
+#     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/nri')
 
-    # df.to_sql("try", engine, schema='control')
-    csv_file = 'D:\\projects\\nri\\NRI\\Raw_Data\\NRIdata\\nri12_cty_121115.csv'
-    chunksize = 100
-    i = 0
-    j = 1
-    for df in pd.read_csv(csv_file, chunksize=chunksize, iterator=True):
-          # df = df.rename(columns={c: c.replace(' ', '') for c in df.columns}) 
-          df.index += j
-          i+=1
-          print i
-          df.to_sql("nri12_cty_121115", engine, schema='control', if_exists='append')
-          j = df.index[-1] + 1
+#     # df.to_sql("try", engine, schema='control')
+#     csv_file = 'D:\\projects\\nri\\NRI\\Raw_Data\\NRIdata\\nri12_cty_121115.csv'
+#     chunksize = 100
+#     i = 0
+#     j = 1
+#     for df in pd.read_csv(csv_file, chunksize=chunksize, iterator=True):
+#           # df = df.rename(columns={c: c.replace(' ', '') for c in df.columns}) 
+#           df.index += j
+#           i+=1
+#           print i
+#           df.to_sql("nri12_cty_121115", engine, schema='control', if_exists='append')
+#           j = df.index[-1] + 1
 
 
 
@@ -178,17 +178,18 @@ def addGDBTable2postgres_table(gdb, pgdb, schema, table):
 
 
 
-def addGDBTable2postgres_raster(gdb, pgdb, schema, table):
+def addGDBTable2postgres_raster(gdb, pgdb, schema, intable, outtable):
+    arcpy.env.workspace = gdb
     print("addGDBTable2postgres().............")
     # set the engine.....
     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/{0}'.format(pgdb))
 
-    currentobject = '{}//{}'.format(gdb,table)
+    currentobject = '{}//{}'.format(gdb,intable)
     # Execute AddField twice for two new fields
-    fields = [f.name for f in arcpy.ListFields(currentobject)]
+    fields = [f.name for f in arcpy.ListFields(intable)]
 
     # converts a table to NumPy structured array.
-    arr = arcpy.da.TableToNumPyArray(currentobject,fields)
+    arr = arcpy.da.TableToNumPyArray(intable,fields)
     print arr
 
     # # convert numpy array to pandas dataframe
@@ -197,7 +198,7 @@ def addGDBTable2postgres_raster(gdb, pgdb, schema, table):
     df.columns = map(str.lower, df.columns)
     print 'df-----------------------', df
 
-    # df.to_sql(table, con=engine, schema=schema)
+    df.to_sql(outtable, con=engine, schema=schema)
 
 
 
@@ -1001,12 +1002,12 @@ def addRasterAttrib2postgres_recent(path, filename, database, schema):
 
 
 
-def alterGeomSRID(db, schema, table, epsg):
+def alterGeomSRID(pgdb, schema, table, geomtype, epsg):
     print 'alterGeomSRID()....................................'
     
-    conn = psycopg2.connect("dbname={} user='mbougie' host='144.92.235.105' password='Mend0ta!'".format(db))
+    conn = psycopg2.connect("dbname={} user='mbougie' host='144.92.235.105' password='Mend0ta!'".format(pgdb))
 
-    query = 'ALTER TABLE {0}.{1} ALTER COLUMN wkb_geometry TYPE geometry(MultiPolygon,{2}) USING ST_SetSRID(wkb_geometry,{2});'.format(schema, table, epsg)
+    query = 'ALTER TABLE {0}.{1} ALTER COLUMN wkb_geometry TYPE geometry({3},{2}) USING ST_SetSRID(wkb_geometry,{2});'.format(schema, table, epsg, geomtype)
 
     print 'query', query
 
@@ -1023,18 +1024,18 @@ def alterGeomSRID(db, schema, table, epsg):
 
 
 
-def addGDBTable2postgres_histo_state(pgdb, schema, currentobject):
-    print 'addGDBTable2postgres_histo..................................................'
-    print currentobject
+def addGDBTable2postgres_histo_states(gdb, pgdb, schema, table):
+    arcpy.env.workspace = gdb
+    print("addGDBTable2postgres().............")
 
     ##set the engine.....
     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/{}'.format(pgdb))
 
     # Execute AddField twice for two new fields
-    fields = [f.name for f in arcpy.ListFields(currentobject)]
+    fields = [f.name for f in arcpy.ListFields(table)]
 
     # converts a table to NumPy structured array.
-    arr = arcpy.da.TableToNumPyArray(currentobject,fields)
+    arr = arcpy.da.TableToNumPyArray(table,fields)
     print arr
 
 
@@ -1066,7 +1067,7 @@ def addGDBTable2postgres_histo_state(pgdb, schema, currentobject):
     ####add column 
     df['acres'] = df['count']*getPixelConversion2Acres(30)
 
-    tablename = currentobject.split('\\')[-1]
+    tablename = table.split('\\')[-1]
     print 'tablename', tablename
 
     print df
@@ -1077,18 +1078,18 @@ def addGDBTable2postgres_histo_state(pgdb, schema, currentobject):
 
 
 
-def addGDBTable2postgres_histo_county(pgdb, schema, currentobject):
-    print 'addGDBTable2postgres_histo..................................................'
-    print currentobject
+def addGDBTable2postgres_histo_counties(gdb, pgdb, schema, table):
+    arcpy.env.workspace = gdb
+    print("addGDBTable2postgres().............")
 
     ##set the engine.....
     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/{}'.format(pgdb))
 
     # Execute AddField twice for two new fields
-    fields = [f.name for f in arcpy.ListFields(currentobject)]
+    fields = [f.name for f in arcpy.ListFields(table)]
 
     # converts a table to NumPy structured array.
-    arr = arcpy.da.TableToNumPyArray(currentobject,fields)
+    arr = arcpy.da.TableToNumPyArray(table,fields)
     print arr
 
 
@@ -1119,7 +1120,7 @@ def addGDBTable2postgres_histo_county(pgdb, schema, currentobject):
     ####add column 
     df['acres'] = df['count']*getPixelConversion2Acres(30)
 
-    tablename = currentobject.split('\\')[-1]
+    tablename = table.split('\\')[-1]
     print 'tablename', tablename
 
     print df
@@ -1206,12 +1207,12 @@ def convertPGtoFC(gdb, pgdb, schema, table):
 
 
 
-def convertFCtoPG(gdb, pgdb, schema, table, epsg):
+def convertFCtoPG(gdb, pgdb, schema, table, geomtype, epsg):
     command = 'ogr2ogr -t_srs EPSG:102003 -f "PostgreSQL" PG:"dbname={1} user=mbougie host=144.92.235.105 password=Mend0ta!" {0} -nln {2}.{3} {3} -progress -nlt MULTIPOLYGON --config PG_USE_COPY YES'.format(gdb, pgdb, schema, table)
     
     os.system(command)
 
-    alterGeomSRID(pgdb, schema, table, epsg)
+    alterGeomSRID(pgdb, schema, table, geomtype, epsg)
 
 
 def null2value(in_raster, true_value, false_value):
@@ -1246,3 +1247,24 @@ def addValue2Field(fc, field, value):
         row.setValue(field, value)
 
         cur.updateRow(row)
+
+
+
+
+
+def postgres_ddl(pgdb, sql):
+
+    try:
+        conn = psycopg2.connect("dbname= {} user='mbougie' host='144.92.235.105' password='Mend0ta!'".format(pgdb))
+    except:
+        print "I am unable to connect to the database"
+
+    cur = conn.cursor()
+    cur.execute(sql)
+
+    ###commit to the database
+    conn.commit() # <--- makes sure the change is shown in the database
+    
+    ###close things
+    conn.close()
+    cur.close()

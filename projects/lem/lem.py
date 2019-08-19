@@ -257,12 +257,12 @@ def changeTableFormat(gdb, schema, in_table):
 # epsg_102003 = '+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=37.5 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs '
 
 
-def convertFCtoPG(gdb, pgdb, schema, table, epsg):
+def convertFCtoPG(gdb, pgdb, schema, geomtype, table, epsg):
     command = 'ogr2ogr -f "PostgreSQL" PG:"dbname=lem user=mbougie host=144.92.235.105 password=Mend0ta!" {0} -nlt PROMOTE_TO_MULTI -nln {1}.{2} {2} -progress --config PG_USE_COPY YES'.format(gdb, schema, table)
     
     os.system(command)
 
-    gen.alterGeomSRID(pgdb, schema, table, epsg)
+    gen.alterGeomSRID(pgdb, schema, table, geomtype, epsg)
 
 
 def convertPGtoFC(gdb, schema, table):
@@ -305,11 +305,11 @@ def main(gdb, version, scale, levellist):
         
         print('---------   {}   -----------------------'.format(level))
         #### import the raw census feature class into postgres
-        # convertFCtoPG(gdb=gdb, pgdb='lem', schema=version, table=level, epsg=102003)
+        convertFCtoPG(gdb=gdb, pgdb='lem', schema=version, table=level, geomtype='MULTIPOLYGON', epsg=102003)
        
         ##### run the arcgis arcpy.PolygonNeighbors_analysis to get the neighbors of each feature in featureclass
-        # arcpy.PolygonNeighbors_analysis(in_features='{0}\\{1}'.format(gdb,level), out_table='{0}.gdb\\{1}_neighbors'.format(version,level), in_fields="geoid")
-        # addGDBTable2postgres_io(gdb=version, schema=version, table="{}_neighbors".format(level))
+        arcpy.PolygonNeighbors_analysis(in_features='{0}\\{1}'.format(gdb,level), out_table='{0}.gdb\\{1}_neighbors'.format(version,level), in_fields="geoid")
+        addGDBTable2postgres_io(gdb=version, schema=version, table="{}_neighbors".format(level))
 
         ####### create majority zonal stats with raw NWALT raster #####################################################
         ZonalStatisticsAsTable(in_zone_data='{0}\\{1}'.format(gdb,level), zone_field="geoid", in_value_raster="rasters.gdb\\nwalt_{0}m".format(scale), out_table='{0}.gdb\\{2}_zonal_maj_nwalt_{1}m'.format(version, scale, level), ignore_nodata="DATA", statistics_type="MAJORITY")
@@ -369,7 +369,7 @@ def getDeliverables(version, levellist):
     for level in levellist:
         print('---------   {}   -----------------------'.format(level))
 
-        # convertPGtoFC(gdb=version, schema=version, table='{}_final'.format(level))
+        # convertPGtoFC(gdb=version, schema=version, table='{}_final_t3'.format(level))
 
         convertPGtoJSON(version, 'lem', version, level)
 
@@ -414,13 +414,24 @@ os.chdir('I:\\d_drive\\projects\\lem\\data\\gdbases')
 
 ####  run the main function  ############################################
 # main(gdb='census_features_v2_2.gdb', version='v2_2', levellist=['county', 'tract', 'block_group', 'block'])
-# main(gdb='census_features_v3_2.gdb', version='v3_2', scale='60', levellist=['block'])
+
+
+# main(gdb='census_features_v3_2.gdb', version='v3_2', scale='60', levellist=['tract'])
 # main(gdb='census_features_v3_2.gdb', version='v3_2', scale='60', levellist=['block_group'])
+
+
 # refine(gdb='v3_2.gdb', version='v3_2', scale='10', levellist=['block'])
 
  
 ###  create the deliverables products: feature class and json dataset  ############################
-getDeliverables('v3_2', ['block_group'])
+# getDeliverables('v3_2', ['county'])
+# getDeliverables('v3_2', ['tract'])
+# getDeliverables('v3_2', ['block_group'])
+
+
+
+
+gen.convertFCtoPG(gdb='I:\\d_drive\\projects\\usxp\\series\\s35\\deliverables\\habitat_impacts\\waterfowl\\data\\waterfowl.gdb', pgdb='usxp_deliverables', schema='waterfowl', geomtype='MULTIPOLYGON', table='tstorm_4326_dissolved', epsg=4326)
 
 
 
@@ -435,6 +446,35 @@ getDeliverables('v3_2', ['block_group'])
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# def convertPGtoFC(gdb, schema, table):
+#     # command = ["ogr2ogr.exe", "PostgreSQL", "PG:host=144.92.235.105 user=mbougie password=Mend0ta! dbname=lem", "D:\\projects\\lem\\lem.gdb", "-nlt", "PROMOTE_TO_MULTI", "-nln", "blocks.us_blck_grp_2016_mainland_5070", "us_blck_grp_2016_mainland_5070", "-progress", "--config", "PG_USE_COPY", "YES"]
+#     command = 'ogr2ogr -f "FileGDB" -progress -update {0}.gdb PG:"dbname=ksu_v4 user=mbougie host=144.92.235.105 password=Mend0ta!" -sql "SELECT * FROM {1}.{2}" -nln {2} -nlt POINT'.format(gdb, schema, table)
+#     print command
+#     os.system(command)
+
+
+
+# convertPGtoFC(gdb='I:\\temp\\rda_unique_id_attributes', schema='merged', table='rda_unique_id_attributes')
 
 
 

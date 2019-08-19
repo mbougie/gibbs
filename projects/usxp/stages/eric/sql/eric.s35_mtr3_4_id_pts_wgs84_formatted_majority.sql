@@ -1,5 +1,6 @@
-﻿create table eric.s35_mtr3_4_id_pts_wgs84_formatted_majority as 
+﻿create table eric.s35_mtr3_4_id_pts_wgs84_formatted_majority_test as 
 --NOTE using the featureclass that was already transformed and then imported in postgres --as long as this MATCHES the geomtery I already gave them then all good
+--Query returned successfully: 543926 rows affected, 40898 ms execution time.
 SELECT 
   merged_table.id as gridcode, 
   st_x((ST_Dump(wkb_geometry)).geom) as lon,

@@ -5,21 +5,21 @@ library(rgdal)# R wrapper around GDAL/OGR
 library(sp)
 require("RPostgreSQL")
 library(plyr)
-library(dplyr)
+# library(dplyr)
 library(viridis)
 library(scales)
 library(rjson)
 # library(jsonlite)
 require(RColorBrewer)
 library(glue)
-library(ggpubr)
+# library(ggpubr)
 library(cowplot)
 
 rootpath = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\deliverables\\choropleths'
 
 #####link to the other two scripts
 source(paste(rootpath, 'rcode\\choropleths_maps.R', sep='\\'))
-source(paste(rootpath, 'rcode\\graphics_dummy_legend.R', sep='\\'))
+# source(paste(rootpath, 'json\\graphics_dummy_legend.R', sep='\\'))
 
 json_file = paste(rootpath, 'json\\json_panels.json', sep='\\')
 jsondata <- fromJSON(file=json_file)

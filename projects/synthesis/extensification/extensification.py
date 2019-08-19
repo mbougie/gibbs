@@ -44,10 +44,31 @@ def importCSV(csv, pgdb, schema, table):
 
 
 
+# def dissolveGeometries():
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def convertPGtoFC(gdb, pgdb, schema, table, geom_type, epsg):
-    command = 'ogr2ogr -f "FileGDB" -t_srs EPSG:{5} -progress -update {0} PG:"dbname={1} user=mbougie host=144.92.235.105 password=Mend0ta!" -sql "SELECT * FROM {2}.{3}" -nln {3} -nlt {4}'.format(gdb, pgdb, schema, table, geom_type, epsg)
-    
-    os.system(command)
+	command = 'ogr2ogr -f "FileGDB" -t_srs EPSG:{5} -progress -update {0} PG:"dbname={1} user=mbougie host=144.92.235.105 password=Mend0ta!" -sql "SELECT * FROM {2}.{3}" -nln {3} -nlt {4}'.format(gdb, pgdb, schema, table, geom_type, epsg)
+
+	os.system(command)
 
 
 
@@ -59,43 +80,40 @@ def convertFCtoPG(gdb, pgdb, schema, table, out_table, epsg):
     # gen.alterGeomSRID(pgdb, schema, table, epsg)
 
 
-def addGDBTable2postgres_histo(currentobject):
-    print 'addGDBTable2postgres_histo..................................................'
-    print currentobject
+def addGDBTable2postgres_histo(gdb, pgdb, schema, table):
+	print 'addGDBTable2postgres_histo..................................................'
+	# Set the workspace environment to local file geodatabase
+	arcpy.env.workspace = gdb
 
-    ##set the engine.....
-    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/usxp_deliverables')
+	##set the engine.....
+	engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/{}'.format(pgdb))
 
-    # Execute AddField twice for two new fields
-    fields = [f.name for f in arcpy.ListFields(currentobject)]
+	# Execute AddField twice for two new fields
+	fields = [f.name for f in arcpy.ListFields(table)]
 
-    # converts a table to NumPy structured array.
-    arr = arcpy.da.TableToNumPyArray(currentobject,fields)
-    print arr
+	# converts a table to NumPy structured array.
+	arr = arcpy.da.TableToNumPyArray(table,fields)
+	print arr
 
+	#### convert numpy array to pandas dataframe
+	df = pd.DataFrame(data=arr)
+	### remove column
+	del df['OBJECTID']
 
-    #### convert numpy array to pandas dataframe
-    df = pd.DataFrame(data=arr)
-    ### remove column
-    del df['OBJECTID']
+	# ##perform a psuedo pivot table
+	# df=pd.melt(df, id_vars=["LABEL"],var_name="atlas_st", value_name="count")
+	df=pd.melt(df, id_vars=["LABEL"], value_name="count")
 
-    # ##perform a psuedo pivot table
-    # df=pd.melt(df, id_vars=["LABEL"],var_name="atlas_st", value_name="count")
-    df=pd.melt(df, id_vars=["LABEL"], value_name="count")
+	df.columns = map(str.lower, df.columns)
 
-    df.columns = map(str.lower, df.columns)
+	# ####add column 
+	df['acres'] = df['count']*gen.getPixelConversion2Acres(30)
 
-    # ####add column 
-    df['acres'] = df['count']*gen.getPixelConversion2Acres(30)
+	tablename = table.split('\\')[-1]
+	print 'tablename', tablename
 
-    tablename = currentobject.split('\\')[-1]
-    print 'tablename', tablename
+	df.to_sql(tablename, engine, schema=schema)
 
-    # print df
-
-    df.to_sql(tablename, engine, schema='synthesis_extensification')
-
-    # MergeWithGeom(df, tablename, eu, eu_col)
 
 
 def createReclassifyList(columnlist):
@@ -291,10 +309,56 @@ def mergeAcrTablesDF(wc):
 ###### call functions ##################################################################
 #################################################################################################
 os. chdir("I:\\d_drive\\projects\\synthesis\\s35\\extensification\\csv")
-#### preliminary steps ---- import Eric's and Nathan's csv datasets into postgres ########################################
-# importCSV(csv='C:\\Users\\Bougie\\Box\\NWF-RFS project\\Shared Data\\AgroIBIS_results\\Extensification\\20190505\\countyStats02.csv', pgdb='synthesis', schema='extensification_agroibis', table='agroibis_20190505')
-importCSV(csv='extensification_county_regions.csv', pgdb='synthesis', schema='extensification_mlra', table='extensification_county_regions')
-importCSV(csv='extensification_regions.csv', pgdb='synthesis', schema='extensification_mlra', table='extensification_regions')
+
+
+##**********************************************************************************************************************************
+##----- extensification_mlra -------------------------------------------------------------------------------------------------------
+##**********************************************************************************************************************************
+
+#### preliminary steps ---- import Nathan's csv datasets into postgres ########################################
+# importCSV(csv='extensification_county_regions.csv', pgdb='synthesis', schema='extensification_mlra', table='extensification_county_regions')
+# importCSV(csv='extensification_regions.csv', pgdb='synthesis', schema='extensification_mlra', table='extensification_regions')
+
+####-----create extensification_mlra_mtr_counts-----##############################
+# convertPGtoFC(gdb='I:\\d_drive\\projects\\synthesis\\s35\\extensification\\extensification.gdb', pgdb='synthesis', schema='extensification_mlra', table='counties_5070_lrrgroup_dissolved', geom_type='MultiPolygon', epsg='5070')
+### in the gui create use zonal_histogram to to get the mtr counts (1-5) in each zone (i.e. lrr_group)
+# addGDBTable2postgres_histo(gdb='I:\\d_drive\\projects\\synthesis\\s35\\extensification\\extensification.gdb', pgdb='synthesis', schema='extensification_mlra', table='extensification_mlra_mtr_counts')
+
+
+
+##**********************************************************************************************************************************
+##----- extensification_carbon -----------------------------------------------------------------------------------------------------
+##**********************************************************************************************************************************
+#### preliminary steps ---- import Eric's csv datasets into postgres ########################################
+importCSV(csv='agroibis\\20190701\\countyStats02.csv', pgdb='synthesis', schema='extensification_agroibis', table='countyStats02_20190701')
+
+
+
+
+##**********************************************************************************************************************************
+##----- extensification_agroibis ---------------------------------------------------------------------------------------------------
+##**********************************************************************************************************************************
+#### preliminary steps ---- import Eric's csv datasets into postgres ########################################
+importCSV(csv='agroibis\\20190701\\countyStats02.csv', pgdb='synthesis', schema='extensification_agroibis', table='countyStats02_20190701')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+##### go through code below!!!!!!!!!!!!!!!!!!!!
+
+
 
 
 
@@ -303,9 +367,6 @@ importCSV(csv='extensification_regions.csv', pgdb='synthesis', schema='extensifi
 # convertPGtoFC(gdb='D:\\projects\\synthesis\\s35\\extensification\\extensification.gdb', pgdb='synthesis', schema='extensification_agroibis', table='agroibis_counties', geom_type='MultiPolygon', epsg='4326')
 # convertPGtoFC(gdb='D:\\projects\\usxp\\deliverables\\maps\\synthesis\\synthesis.gdb', pgdb='usxp_deliverables', schema='synthesis', table='counties_5070_lrrgroup', geom_type='MultiPolygon')
 # convertPGtoFC(gdb='D:\\projects\\synthesis\\s35\\extensification\\extensification.gdb', pgdb='usxp_deliverables', schema='synthesis_extensification', table='extensification_mlra', geom_type='MultiPolygon', epsg='4326')
-
-
-
 
 
 # convertFCtoPG(gdb='D:\\projects\\usxp\\deliverables\\maps\\synthesis\\synthesis.gdb', pgdb='usxp_deliverables', schema='synthesis', table='counties_5070_lrrgroup_dissolved', out_table='counties_5070_lrrgroup_dissolved', epsg=5070)

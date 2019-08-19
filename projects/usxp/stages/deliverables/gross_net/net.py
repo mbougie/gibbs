@@ -49,14 +49,23 @@ def processingCluster(instance, inraster, outraster):
         print 'reclass_raster_setnull.............'
         for key, value in instance['scale'].iteritems():
 
-            nbr = NbrRectangle(value, value, "CELL")
-            ###sum all the values within the block
-            outBlockStat = BlockStatistics(reclass_raster_setnull, nbr, "SUM", "DATA")
-            print 'finished block stats.............'
-            ###add processed object to the blockstats_objects
-            blockstats_objects[mtr] = outBlockStat
+            print 'gg'
 
-            print 'blockstats_objects ', blockstats_objects 
+            # nbr = NbrRectangle(value, value, "CELL")
+            # ###sum all the values within the block
+            # outBlockStat = BlockStatistics(reclass_raster_setnull, nbr, "SUM", "DATA")
+            # print 'finished block stats.............'
+            # ###add processed object to the blockstats_objects
+            # blockstats_objects[mtr] = outBlockStat
+
+            # print 'blockstats_objects ', blockstats_objects 
+
+            # Execute Aggregate
+            outAggreg = Aggregate(in_raster=reclass_raster_setnull, cell_factor=value, aggregation_type="SUM", extent_handling="EXPAND", ignore_nodata="DATA")
+
+            blockstats_objects[mtr] = outAggreg
+
+            # print 'blockstats_objects ', blockstats_objects 
 
 
     print 'blockstats_objects completed---', blockstats_objects 
@@ -78,24 +87,24 @@ def processingCluster(instance, inraster, outraster):
 def addField(raster, value):
     normalizer = value*value
     ##AddField_management (in_table, field_name, field_type, {field_precision}, {field_scale}, {field_length}, {field_alias}, {field_is_nullable}, {field_is_required}, {field_domain})
-    arcpy.AddField_management(in_table=raster, field_name='percent', field_type='FLOAT')
+    arcpy.AddField_management(in_table=raster, field_name='percent', field_type='INTEGER')
 
     cur = arcpy.UpdateCursor(raster)
 
     for row in cur:
-        row.setValue('percent', ((float(row.getValue('Value'))/normalizer)*100))
+        row.setValue('percent', round((float(row.getValue('Value'))/normalizer)*100))
         cur.updateRow(row)
 
 
 
 def main(instance):
 
-    inraster=Raster('D:\\projects\\usxp\\deliverables\\{0}\\{0}.gdb\\{0}_mtr'.format(instance['series']))
+    inraster=Raster('I:\\d_drive\\projects\\usxp\\series\\{0}\\{0}.gdb\\{0}_mtr'.format(instance['series']))
     print 'inraster', inraster
 
     # for key, reclasslist in instance['reclass'].iteritems():
     for scale in instance['scale'].keys():
-        outraster = 'D:\\projects\\usxp\\deliverables\\maps\\gross_net\\net.gdb\\{0}_{1}_net'.format(instance['series'], scale)
+        outraster = 'I:\\d_drive\\projects\\usxp\\series\\s35\\deliverables\\gross_net\\{0}_{1}agg_net.tif'.format(instance['series'], scale)
         print 'outraster', outraster
 
         processingCluster(instance, inraster, outraster)
@@ -105,7 +114,7 @@ def main(instance):
 
 
 
-instance = { 'scale':{'6km':200}, 'series':'s35', 'reclass':{'mtr3':[[3,1]], 'mtr4':[[4,1]]} }
+instance = { 'scale':{'3km':100}, 'series':'s35', 'reclass':{'mtr3':[[3,1]], 'mtr4':[[4,1]]} }
 main(instance)
 
 

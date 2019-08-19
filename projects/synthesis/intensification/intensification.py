@@ -102,21 +102,25 @@ def inportCSV_t2():
 
 
 
-convertFCtoPG(gdb='D:\\projects\\synthesis\\s35\\intensification\\v_3\\synthesis_intensification.gdb', pgdb='synthesis', schema='intensification_agroibis', table='rfs_intensification_v3_agroibis', out_table='rfs_intensification_v3_agroibis')
-convertFCtoPG(gdb='D:\\data\\mlra\\mlra.gdb', pgdb='usxp_deliverables', schema='spatial', table='mlra_5070_dissolved', out_table='mlra_5070_dissolved')
-convertFCtoPG(gdb='D:\\projects\\usxp\\deliverables\\maps\\synthesis\\intensification\\nathan\\maps_created_for_nathan\\nathan_maps.gdb', pgdb='usxp_deliverables', schema='synthesis_intensification', table='nathan_mlra', out_table='nathan_mlra')
+# convertFCtoPG(gdb='D:\\projects\\synthesis\\s35\\intensification\\v_3\\synthesis_intensification.gdb', pgdb='synthesis', schema='intensification_agroibis', table='rfs_intensification_v3_agroibis', out_table='rfs_intensification_v3_agroibis')
+# convertFCtoPG(gdb='D:\\data\\mlra\\mlra.gdb', pgdb='usxp_deliverables', schema='spatial', table='mlra_5070_dissolved', out_table='mlra_5070_dissolved')
+# convertFCtoPG(gdb='D:\\projects\\usxp\\deliverables\\maps\\synthesis\\intensification\\nathan\\maps_created_for_nathan\\nathan_maps.gdb', pgdb='usxp_deliverables', schema='synthesis_intensification', table='nathan_mlra', out_table='nathan_mlra')
 
-convertPGtoFC(gdb='D:\\projects\\synthesis\\s35\\intensification\\v_3\\synthesis_intensification.gdb', pgdb='synthesis', schema='intensification_agroibis', table='rfs_intensification_results_counties', geom_type='MultiPolygon')
-convertPGtoFC(gdb='D:\\projects\\usxp\\deliverables\\maps\\synthesis\\synthesis_extensification.gdb', pgdb='usxp_deliverables', schema='synthesis_extensification', table='agroibis', geom_type='MultiPolygon')
-convertPGtoFC(gdb='D:\\projects\\usxp\\deliverables\\maps\\synthesis\\synthesis_extensification.gdb', pgdb='usxp_deliverables', schema='synthesis_extensification', table='carbon_rfs_counties_v2', geom_type='MultiPolygon')
-convertPGtoFC(gdb='D:\\projects\\usxp\\deliverables\\maps\\synthesis\\synthesis.gdb', pgdb='usxp_deliverables', schema='synthesis_intensification', table='nathan_mlra', geom_type='MultiPolygon')
-inportCSV_t2()
+# convertPGtoFC(gdb='D:\\projects\\synthesis\\s35\\intensification\\v_3\\synthesis_intensification.gdb', pgdb='synthesis', schema='intensification_agroibis', table='rfs_intensification_results_counties', geom_type='MultiPolygon')
+# convertPGtoFC(gdb='D:\\projects\\usxp\\deliverables\\maps\\synthesis\\synthesis_extensification.gdb', pgdb='usxp_deliverables', schema='synthesis_extensification', table='agroibis', geom_type='MultiPolygon')
+# convertPGtoFC(gdb='D:\\projects\\usxp\\deliverables\\maps\\synthesis\\synthesis_extensification.gdb', pgdb='usxp_deliverables', schema='synthesis_extensification', table='carbon_rfs_counties_v2', geom_type='MultiPolygon')
+# convertPGtoFC(gdb='D:\\projects\\usxp\\deliverables\\maps\\synthesis\\synthesis.gdb', pgdb='usxp_deliverables', schema='synthesis_intensification', table='nathan_mlra', geom_type='MultiPolygon')
+# inportCSV_t2()
 
-importCSV(csv='D:\\projects\\usxp\\deliverables\\maps\\synthesis\\intensification\\seth\\rfs_intensification_n2o.csv', schema='synthesis_intensification', table='rfs_intensification_n2o')
-importCSV(csv='D:\\projects\\usxp\\deliverables\\maps\\synthesis\\intensification\\nathan\\maps_created_for_nathan\\rfs_corn_impact_mlra.csv', schema='synthesis_intensification', table='rfs_corn_impact_mlra')
-
-
+# importCSV(csv='D:\\projects\\usxp\\deliverables\\maps\\synthesis\\intensification\\seth\\rfs_intensification_n2o.csv', schema='synthesis_intensification', table='rfs_intensification_n2o')
+# importCSV(csv='D:\\projects\\usxp\\deliverables\\maps\\synthesis\\intensification\\nathan\\maps_created_for_nathan\\rfs_corn_impact_mlra.csv', schema='synthesis_intensification', table='rfs_corn_impact_mlra')
 
 
-convertFCtoPG(gdb='D:\\projects\\synthesis\\s35\\intensification\\v_3\\synthesis_intensification.gdb', pgdb='synthesis', schema='intensification_agroibis', table='rfs_intensification_v3_agroibis', out_table='rfs_intensification_v3_agroibis')
+
+
+# convertFCtoPG(gdb='D:\\projects\\synthesis\\s35\\intensification\\v_3\\synthesis_intensification.gdb', pgdb='synthesis', schema='intensification_agroibis', table='rfs_intensification_v3_agroibis', out_table='rfs_intensification_v3_agroibis')
+
+
+
+
 

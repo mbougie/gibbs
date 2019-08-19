@@ -1,0 +1,249 @@
+
+
+######################## main #####################################################################
+library(ggplot2)
+library(maps)
+library(rgdal)# R wrapper around GDAL/OGR
+library(sp)
+require("RPostgreSQL")
+library(postGIStools)
+library(plyr)
+# library(dplyr)
+library(viridis)
+library(scales)
+library(rjson)
+# library(jsonlite)
+require(RColorBrewer)
+library(glue)
+# library(ggpubr)
+library(cowplot)
+
+
+
+
+user <- "mbougie"
+host <- '144.92.235.105'
+port <- '5432'
+password <- 'Mend0ta!'
+
+### Make the connection to database ######################################################################
+con <- dbConnect(PostgreSQL(), dbname = 'intactland', user = user, host = host, port=port, password = password)
+
+## Expansion:attach df to specific object in json #####################################################
+states = get_postgis_query(con, "SELECT * FROM spatial.states WHERE st_abbrev IN ('IA','MN','ND','SD','NE','WY','MT')",
+                           geom_name = "geom")
+
+
+###------------------------------------------------------
+###--------this is the SDSU comparison dataset-----------
+###------------------------------------------------------
+query_compare_sdsu = "SELECT 
+                      yo.perc,
+                      yo.geom
+                      FROM
+                      
+                      
+                      (SELECT
+                      ROUND(((overlap.acres/total.acres) * 100)::numeric,0)::integer as perc,
+                      ST_Transform(counties.wkb_geometry,4326) as geom
+                      --counties.wkb_geometry as geom
+                      
+                      FROM
+                      (SELECT 
+                      atlas_stco,
+                      sum(acres) as acres
+                      FROM 
+                      intact_compare.intact_compare_region_refined_hist_counties 
+                      WHERE label IN ('1','3','5','7')
+                      GROUP BY atlas_stco) as overlap
+                      
+                      
+                      INNER JOIN 
+                      
+                      
+                      (SELECT 
+                      atlas_stco,
+                      sum(acres) as acres
+                      FROM 
+                      intact_compare.intact_compare_region_refined_hist_counties 
+                      GROUP BY atlas_stco) as total
+                      
+                      USING(atlas_stco)
+                      
+                      INNER JOIN
+                      
+                      spatial.pete_counties as counties
+                      
+                      USING(atlas_stco)) as yo"
+
+
+###########################################################################################
+#####get the dataframes###################################################################
+###########################################################################################
+
+### Expansion:attach df to specific object in json #####################################################
+mapa <- get_postgis_query(con,
+                        ### SDSU ##############
+                        query_compare_sdsu,
+                        geom_name = "geom")
+
+
+
+#### bring in state shapefile for context in map ##################################
+# counties.df <- readOGR(dsn = "I:\\e_drive\\data\\usxp\\ancillary\\vector\\sf", layer = "states_wgs84")
+### Expansion:attach df to specific object in json #####################################################
+counties.df <- get_postgis_query(con, 
+                                "SELECT 
+                                ST_Transform(counties_102003.wkb_geometry,4326) as geom
+                                ----counties_102003.wkb_geometry as geom
+                                FROM 
+                                spatial.counties_102003
+                                
+                                ----SDSU--------------
+                                WHERE st_abbrev IN ('SD') 
+                                ",
+                                geom_name = "geom")
+
+
+###########################################################################################
+#####modify dataframe###################################################################
+###########################################################################################
+
+
+#fortify() creates zany attributes so need to reattach the values from intial dataframe
+mapa.df <- fortify(mapa)
+
+#creates a numeric index for each row in dataframe
+mapa@data$id <- rownames(mapa@data)
+
+#merge the attributes of mapa@data to the fortified dataframe with id column
+mapa.df <- join(mapa.df, mapa@data, by="id")
+
+
+####SDSU##########################
+mapa.df$fill <- cut(mapa.df$perc,  breaks= c(88,90,92,94,96,98))
+
+table(mapa.df$perc)
+table(mapa.df$fill)
+###########################################################################################
+#####visualize dataframe###################################################################
+###########################################################################################
+d = ggplot() +
+
+  ### county grey background ###########
+geom_polygon(
+  data=counties.df,
+  aes(y=lat, x=long, group=group),
+  fill='#cccccc'
+) +  
+  
+  
+### counties choropleth map ###########
+geom_polygon(
+  data=mapa.df,
+  ###Aesthetic tells ggplot which variables are being mapped to the x axis, y axis,
+  ###(and often other attributes of the graph, such as the color fill).
+  ###Intuitively, the aesthetic can be thought of as what you are graphing.
+  
+  ###y-axis of graph referencing lat column
+  ###x-axis of graph referencing long column
+  ###group tells ggplot that the data has explicit groups
+  ###fill color of features referencing fill column. Fill color is initially arbitrary (changing the color of fill will be addressed later in code)
+  aes(y=lat, x=long, group=group, fill = fill),
+  colour = '#cccccc',
+  size = 0.5
+) +
+  
+### county boundary strokes ###########
+geom_polygon(
+  data=counties.df,
+  aes(y=lat, x=long, group=group),
+  alpha=0,
+  colour='white',
+  size=1.0
+) + 
+  
+
+  
+#### define projection of ggplot object #######
+# Equal scale cartesian coordinates 
+# coord_equal() +
+#### did not reproject the actual data just defined the projection of the map
+coord_map(project="polyconic") +
+  
+# coord_map("albers", lat0=30, lat1=40) + 
+
+
+#### add title to map #######
+### SDSU ##############
+labs(title = 'Intact compare SDSU',
+     caption = '         90         92          94         96         98') + 
+
+
+### create a discrete scale. These functions allow you to specify your own set of mappings from levels in the data to aesthetic values.
+  # blues = c('#dbe4f0', '#6f93c3', '#446ca2', '#2d486c', '#172436')
+scale_fill_manual(values = c('#edf2f7','#dbe4f0', '#b0c4de', '#6f93c3', '#446ca2'),
+  # scale_fill_manual(values = brewer.pal(7, 'GnBu')[3:7],
+              
+                  
+                  ###SDSU
+                  labels = "",
+                  
+                  #Legend type guide shows key (i.e., geoms) mapped onto values.
+                  guide = guide_legend( title='overlap/total',
+                                        title.theme = element_text(
+                                          size = 25,
+                                          color = "#4e4d47",
+                                          vjust=0.0,
+                                          angle = 0
+                                        ),
+                                        # legend bin dimensions
+                                        keyheight = unit(3, units = "mm"),
+                                        keywidth = unit(15, units = "mm"),
+                                        
+                                        #legend elements position
+                                        label.position = "bottom",
+                                        title.position = 'top',
+                                        
+                                        #The desired number of rows of legends.
+                                        nrow=1
+                                        
+                  )
+) + 
+
+  
+  
+  
+
+
+  
+  theme(
+    #### nulled attributes ##################
+    axis.text.x = element_blank(),
+    axis.title.x=element_blank(),
+    axis.text.y = element_blank(),
+    axis.title.y=element_blank(),
+    axis.ticks = element_blank(),
+    axis.line = element_blank(),
+    
+    panel.background = element_rect(fill = NA, color = NA),
+    panel.grid.major = element_blank(),
+    
+    plot.background = element_rect(fill = NA, color = NA),
+    plot.margin = unit(c(0, 0, 0, 0), "cm"),
+    
+    #### modified attributes ########################
+    # text = element_text(color = "#4e4d47", size=25, hjust=-20),   ##these are the legend numeric values
+    legend.text = element_text(color='white', size=0),
+    legend.position = c(0.05, 0.07), #### legend position
+    plot.title = element_text(size= 25, vjust=-5.0, hjust=0.5, color = "#4e4d47"), ###title size/position/color
+    plot.caption = element_text(size= 15, vjust=11, hjust=0.09, color = "#4e4d47") ###title size/position/color
+   
+  ) 
+
+d
+### SDSU ##############
+ggsave('D:\\intactland\\graphics\\compare\\compare_sdsu.png', width = 11, height=8.5, dpi = 500)
+
+
+

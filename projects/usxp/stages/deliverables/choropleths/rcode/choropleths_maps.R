@@ -3,19 +3,19 @@ library(maps)
 library(rgdal)# R wrapper around GDAL/OGR
 library(sp)
 library(plyr)
-library(dplyr)
+# library(dplyr)
 library(viridis)
 library(scales)
 require(RColorBrewer)
 library(glue)
-library(ggpubr)
+# library(ggpubr)
 library(cowplot)
 library(RPostgreSQL)
 library(postGIStools)
 
 
 
-root = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\temp\\R_ggplot2_map_demo_2019_06_07\\R_ggplot2_map_demo_2019_06_07\\'
+# root = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\temp\\R_ggplot2_map_demo_2019_06_07\\R_ggplot2_map_demo_2019_06_07\\'
 
 
 custom_pallete = c('#faea05', '#f2bd0f', '#e8951a', '#d46d2c')
@@ -56,7 +56,7 @@ createMap <- function(obj){
   
   
   #### bring in state shapefile for context in map ##################################
-  state.df <- readOGR(dsn = "C:\\Users\\Bougie\\Desktop\\Gibbs\\data\\usxp\\ancillary\\vector\\sf", layer = "states_wgs84")
+  state.df <- readOGR(dsn = "I:\\e_drive\\data\\usxp\\ancillary\\vector\\sf", layer = "states_wgs84")
   
   
   
