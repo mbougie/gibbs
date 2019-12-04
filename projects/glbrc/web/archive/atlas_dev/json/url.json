@@ -1,0 +1,14 @@
+url_obj = {
+	"lsl": {"url":"https://storage.googleapis.com/www.mattbougie.com/marginal_lsl_orange/{z}/{x}/{y}",
+			"label":"Low capability land",
+			"hex":"blue"
+		  },
+    "ral": {"url":"https://storage.googleapis.com/www.mattbougie.com/s35_abandonment_final/{z}/{x}/{y}",
+			"label":"Recently abandoned land",
+			"hex":"red"
+		  },
+    "hal": {"url":"https://storage.googleapis.com/www.mattbougie.com/marginal_ral_blue/{z}/{x}/{y}",
+			"label":"Formerly irrigated land",
+			"hex":"green"
+		  }
+}

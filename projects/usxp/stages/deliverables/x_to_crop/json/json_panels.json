@@ -1,0 +1,37 @@
+{
+  "grassland": {
+      "legend_title": "Census of Agriculture 2007-2017",
+      "palette": ["#f8ffd7","#d9f18f","#abda2e"]
+  },
+  
+  "forest": {
+      "palette": ["#e8fff5","#9fc7ac","#30703b"]
+  },
+  
+  "shrubland": {
+      "palette": ["#fdebeb","#d39591","#971201"]
+  },
+  
+  "wetland": {
+      "palette": ["#e1e0fe","#8c9ed8","#1b3b9f"]
+  }
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -37,14 +37,14 @@ password <- 'Mend0ta!'
 
 
 con_nass <- dbConnect(PostgreSQL(), dbname = 'nass', user = user, host = host, port=port, password = password)
-nass <- get_postgis_query(con_nass, "SELECT atlas_stco, perc_conv_county as perc, st_transform(geom,4152) as geom FROM ag_census.ag_census_expansion WHERE perc_conv_county > 0.5",
+nass <- get_postgis_query(con_nass, "SELECT atlas_stco, perc_conv_county as perc, geom FROM ag_census.ag_census_expansion WHERE perc_conv_county > 0.5",
                           geom_name = "geom")
 ###attach df to specific object in json
 jsondata$nass$df <- nass
 
 
 con_nri <- dbConnect(PostgreSQL(), dbname = 'nri', user = user, host = host, port=port, password = password)
-nri <- get_postgis_query(con_nri, "SELECT atlas_stco, perc_expansion as perc, st_transform(geom,4152) as geom FROM main.nri INNER JOIN spatial.counties USING(atlas_stco) WHERE perc_expansion > 0.5",
+nri <- get_postgis_query(con_nri, "SELECT atlas_stco, perc_expansion as perc, geom FROM main.nri INNER JOIN spatial.counties USING(atlas_stco) WHERE perc_expansion > 0.5",
                           geom_name = "geom")
 ###attach df to specific object in json
 jsondata$nri$df <- nri
@@ -55,7 +55,7 @@ con_usxp_deliverables <- dbConnect(PostgreSQL(), dbname = 'usxp_deliverables', u
 nlcd <- get_postgis_query(con_usxp_deliverables, "SELECT
                                                      combine_nlcd08_16_histo.atlas_stco,
                                                      (combine_nlcd08_16_histo.acres/counties.acres_calc)*100 as perc,
-                                                     st_transform(counties.geom,4152) as geom
+                                                     geom
                                                    FROM
                                                      choropleths.combine_nlcd08_16_histo INNER JOIN
                                                      spatial.counties
@@ -68,7 +68,7 @@ nlcd <- get_postgis_query(con_usxp_deliverables, "SELECT
 jsondata$nlcd$df <- nlcd
 
 
-usxp <- get_postgis_query(con_usxp_deliverables, "SELECT atlas_stco, perc_conv_county as perc, st_transform(geom,4152) as geom FROM choropleths.s35_perc_conv_county WHERE perc_conv_county > 0.5",
+usxp <- get_postgis_query(con_usxp_deliverables, "SELECT atlas_stco, perc_conv_county as perc, geom FROM choropleths.s35_perc_conv_county WHERE perc_conv_county > 0.5",
                           geom_name = "geom")
 
 ###attach df to specific object in json
@@ -111,8 +111,8 @@ list_exp <- getggplotObject(list(jsondata$usxp, jsondata$nri))
 list_aban <- getggplotObject(list(jsondata$nlcd, jsondata$nass))
 
 ###create panel image ######################
-dir = "D:\\projects\\usxp\\series\\s35\\maps\\choropleths\\maps\\png\\"
-fileout=paste(dir,"extensification_panel_1",".png", sep="")
+dir = "I:\\d_drive\\projects\\usxp\\series\\s35\\deliverables\\choropleths\\deliverables\\"
+fileout=paste(dir,"test",".png", sep="")
 
 # legend1 <- get_legend(createDummy('acres') + theme(legend.position="bottom", legend.justification="center"))
 # legend2 <- get_legend(createDummy('awa') + theme(legend.position="bottom", legend.justification="center"))
@@ -120,8 +120,9 @@ fileout=paste(dir,"extensification_panel_1",".png", sep="")
 col1 = plot_grid(plotlist = list_exp, ncol = 1, nrow = 2, align = 'vh')
 col2 = plot_grid(plotlist = list_aban, ncol = 1, nrow = 2, align = 'vh')
 
-plot_grid(col1,col2, ncol = 2, rel_heights = c(1, .1))
-ggsave(fileout, width = 30, height = 25, dpi = 800)
+# plot_grid(col1,col2, ncol = 2, rel_heights = c(1, .1))
+plot_grid(col1,col2, ncol = 2)
+ggsave(fileout, width = 34, height = 25, dpi = 500)
 
 
 

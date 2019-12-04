@@ -12,7 +12,10 @@ library(glue)
 library(cowplot)
 library(RPostgreSQL)
 library(postGIStools)
-
+library(grid)
+library(scales)
+library(viridis)  # better colors for everyone
+library(ggthemes) # theme_map()
 
 
 # root = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\temp\\R_ggplot2_map_demo_2019_06_07\\R_ggplot2_map_demo_2019_06_07\\'
@@ -50,13 +53,13 @@ createMap <- function(obj){
   ##Use cut() function to divides a numeric vector into different ranges
   ##note: each bin must: 1)contain a value and 2)no records in dataframe can be null
   mapa.df$fill = cut(mapa.df$perc, breaks= c(0, 0.5, 2.5, 5, 7.5, 100))
-  
+  print (table(mapa.df$fill))
   
   
   
   
   #### bring in state shapefile for context in map ##################################
-  state.df <- readOGR(dsn = "I:\\e_drive\\data\\usxp\\ancillary\\vector\\sf", layer = "states_wgs84")
+  state.df <- readOGR(dsn = "H:\\new_data_8_18_19\\e_drive\\data\\general\\sf", layer = "states")
   
   
   
@@ -87,7 +90,7 @@ createMap <- function(obj){
   geom_polygon(
     data=state.df,
     aes(y=lat, x=long, group=group),
-    fill='#cccccc'
+    fill='#7e7e7e'
   ) +
     
     
@@ -118,12 +121,12 @@ createMap <- function(obj){
     size=0.5
   ) + 
     
-    #### define projection of ggplot object #######
-  #### did not reproject the actual data just defined the projection of the map
-  coord_map(project="polyconic") + 
+    # Equal scale cartesian coordinates
+    ####NOTE: besure to set clip to off or the grob annotation is clipped by the dimensions of the panel
+    coord_equal(clip = 'off') +
     
     #### add title to map #######
-  labs(title = obj$legend_title) +
+  labs(title = obj$legend_title) + 
     
     
     
@@ -146,28 +149,30 @@ createMap <- function(obj){
       text = element_text(color = "#4e4d47", size=30),   ##these are the legend numeric values
       plot.title = element_text(size= 35, vjust=-12.0, hjust=0.20, color = "#4e4d47"),
       plot.caption = element_text(size= 18, color = "blue"),
-      legend.position = c(0.12, -0.01)
+      legend.position = c(0.12, 0.1)
+      
     ) +
     
+
     
     
     ### create a discrete scale. These functions allow you to specify your own set of mappings from levels in the data to aesthetic values.
     # scale_fill_manual(values = brewer.pal(5, 'YlOrBr')[1:5], ##reference colorbrewer list of hex values
     scale_fill_manual(values = custom_pallete,       
                       ###legend labels
-                      labels = c("0.5", "2.5", "5", "7.5", ">7.5"),
+                      labels = "",
                       
                       #Legend type guide shows key (i.e., geoms) mapped onto values.
-                      guide = guide_legend( title='Percent Expansion',
+                      guide = guide_legend( title='',
                                             title.theme = element_text(
-                                              size = 32,
+                                              size = 0,
                                               color = "#4e4d47",
                                               vjust=0.0,
                                               angle = 0
                                             ),
                                             # legend bin dimensions
-                                            keyheight = unit(3, units = "mm"),
-                                            keywidth = unit(20, units = "mm"),
+                                            keyheight = unit(0.025, units = "npc"),
+                                            keywidth = unit(0.20, units = "npc"),
                                             
                                             #legend elements position
                                             label.position = "bottom",
@@ -175,11 +180,45 @@ createMap <- function(obj){
                                             
                                             #The desired number of rows of legends.
                                             nrow=1
+
                                             
                       )
     )
+  
+  ####add anotation to the map #####################################
+  
+  getggplotObject <- function(cnt, multiplier, slots, labels){
+    
+    ###declare the empty list that will hold all the ggplot objects
+    ggplot_object_list <- list()
+    
+    # cnt = 0.015
+    # multiplier = 0.040
+    limit = cnt + (multiplier * slots)
+    
+    print(limit)
+    
+    i = 1
+    # labels <- c("20%","40%","60%","80%",">80%")
+    while (cnt < limit) {
+      print(cnt)
+      ggplot_object = annotation_custom(grobTree(textGrob(labels[i], x=cnt, y= -0.20, rot = 0,gp=gpar(col="#4e4d47", fontsize=45, fontface="bold"))))
+      ggplot_object_list <- append(ggplot_object_list, list(ggplot_object))
+      cnt = cnt + multiplier
+      i = i + 1
+    }
+    return(ggplot_object_list)
+    
+  }
 
-return(d)
+  legend_title = annotation_custom(grobTree(textGrob("Percent Expansion",  x=0.47, y= -0.05, rot = 0,gp=gpar(col="#4e4d47", fontsize=45, fontface="bold"))))
+  legendlabels_abandon <- getggplotObject(cnt = 0.24, multiplier = 0.125, slots = 4, labels = c("0.5","2.5","5.0","7.5"))
+
+  #### add annotation to map object ###################################################
+  # d + legendlabels_abandon + 
+  yo <- d + legendlabels_abandon + legend_title
+
+return(yo)
 
 } 
 

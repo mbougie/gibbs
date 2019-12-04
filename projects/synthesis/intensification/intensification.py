@@ -11,10 +11,14 @@ import glob
 import sys
 import time
 import logging
+import json
 from multiprocessing import Process, Queue, Pool, cpu_count, current_process, Manager
+
+
 sys.path.append('C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\modules\\')
 import general as gen
-import json
+import import_pandas_io as pandas_io
+
 
 
 #import extension
@@ -74,19 +78,19 @@ def importCSV(csv, schema, table):
 
 
 
-def inportCSV_t2():
+def inportCSV_t2(file, schema, table):
 
 
-	conn = psycopg2.connect("host=144.92.235.105 dbname=usxp_deliverables user=mbougie password=Mend0ta!")
+	conn = psycopg2.connect("host=144.92.235.105 dbname=synthesis user=mbougie password=Mend0ta!")
 	cur = conn.cursor()
 	# with open('D:\\projects\\usxp\\deliverables\\maps\\synthesis\\intensification\\seth\\rfs_intensification_n2o.csv', 'r') as f:
 
 	# 	# Notice that we don't need the `csv` module.
 	# 	next(f)  # Skip the header row.
 	# 	cur.copy_from(f, table='synthesis_intensification.rfs_intensification_n2o', sep=',')
-	f = open('D:\\projects\\usxp\\deliverables\\maps\\synthesis\\intensification\\seth\\rfs_intensification_n2o.csv', 'r')
+	f = open(file, 'r')
 
-	cur.copy_from(f, 'synthesis_intensification.rfs_intensification_n2o', sep=',')
+	cur.copy_from(f, '{0}.{1}'.format(schema, table), sep=',')
 
 	f.close()
 
@@ -97,9 +101,8 @@ def inportCSV_t2():
 #################################################################################################
 
 ###steps#######
-
-
-
+#### import rfs_intensification.csv dataset into postgres.  This dataset has the attached values to the point dataset I sent KSU
+pandas_io.pandasCSV_io(pgdb='synthesis', file='H:\\new_data_8_18_19\\d_drive\\synthesis\\s35\\intensification\\schemas\\ksu\\rfs_intensification.csv', schema='intensification_ksu', table='rfs_intensification')
 
 
 # convertFCtoPG(gdb='D:\\projects\\synthesis\\s35\\intensification\\v_3\\synthesis_intensification.gdb', pgdb='synthesis', schema='intensification_agroibis', table='rfs_intensification_v3_agroibis', out_table='rfs_intensification_v3_agroibis')
@@ -112,7 +115,7 @@ def inportCSV_t2():
 # convertPGtoFC(gdb='D:\\projects\\usxp\\deliverables\\maps\\synthesis\\synthesis.gdb', pgdb='usxp_deliverables', schema='synthesis_intensification', table='nathan_mlra', geom_type='MultiPolygon')
 # inportCSV_t2()
 
-# importCSV(csv='D:\\projects\\usxp\\deliverables\\maps\\synthesis\\intensification\\seth\\rfs_intensification_n2o.csv', schema='synthesis_intensification', table='rfs_intensification_n2o')
+
 # importCSV(csv='D:\\projects\\usxp\\deliverables\\maps\\synthesis\\intensification\\nathan\\maps_created_for_nathan\\rfs_corn_impact_mlra.csv', schema='synthesis_intensification', table='rfs_corn_impact_mlra')
 
 

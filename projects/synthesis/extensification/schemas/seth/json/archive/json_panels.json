@@ -1,0 +1,134 @@
+{   "mlra": {
+        "ratio_expand_rfs_mlra": {
+            "dataset":"ratio_expand_rfs_mlra",
+            "title": "a.) Cropland expansion due to RFS",
+            "legend_range": [2,3,4,5,6],
+            "bin_breaks": [-0.002, 0, 0.002, 0.004, 0.008, 0.01],
+            "legend_labels": ["-0.2", "0.2", "0.4", "0.8", "1"],
+            "legend_title": "% of regional area"
+        },
+
+        "ratio_abandon_rfs_mlra": {
+            "dataset":"ratio_abandon_rfs_mlra",
+            "title": "b.) Reduction in abandonment due to RFS",
+            "legend_range": [3,4,5,6,7],
+            "bin_breaks": [-0.004, -0.002, 0, 0.002, 0.004, 0.008],
+            "legend_labels": ["-0.4", "-0.2", "0.2", "0.4", "0.8"],
+            "legend_title": "% of regional area"
+        }
+    },
+    "carbon": {
+        "e_gigagrams_co2e": {
+            "dataset":"e_gigagrams_co2e",
+            "title": "c.) Carbon emission from cropland expansion",
+            "legend_range": [1,2,3,4,5,6,7,8],
+            "bin_breaks": [-1000000, -200, -100, 0, 100, 200, 400, 800, 1000000],
+            "legend_labels": ["<-200", "-200", "-100", "100", "200", "400", "800", ">800"],
+            "legend_title": "tonnes of CO2e (in thousands)"
+        },
+
+        "s_gigagrams_co2e": {
+            "dataset":"s_gigagrams_co2e",
+            "title": "d.) Carbon emissions from reduced abandonment",
+            "legend_range": [1,2,3,4,5,6,7,8,9],
+            "bin_breaks": [-1000000, -800, -400, -200, -100, 0, 100, 200, 400, 800, 1000000],
+            "legend_labels": ["<-800","-400","-200", "-200", "-100", "100", "200", "400", "800", ">800"],
+            "legend_title": "tonnes of CO2e (in thousands)"
+        }
+    },
+    "agroibis": {
+
+        "TPrunoff_ext": {
+            "dataset":"ext_diff_TPrunoff_fips_summary",
+            "lookup":"TPrunoff",
+            "title": "Phosphorus run-off from cropland expansion",
+            "legend_range": [1,2,3,4,5,6,7,8,9,10],
+            "bin_breaks": [-1000000000, -800,-400,-200,-100, 0, 100, 200, 400, 800, 1000000000],
+            "legend_title": "kg per county"
+        },
+        "TPrunoff_abd": {
+            "dataset":"abd_diff_TPrunoff_fips_summary",
+            "lookup":"TPrunoff",
+            "title": "Phosphorus run-off from reduced abandonment",
+            "legend_range": [1,2,3,4,5,6,7,8,9],
+            "bin_breaks": [-800,-400,-200,-100, 0, 100, 200, 400, 800, 1000000000],
+            "legend_title": "kg per county"
+        },
+
+
+
+        "NLeach_ext": {
+            "dataset":"ext_diff_Nleach_fips_summarys",
+            "title": "d.)Nitrogen leaching from cropland expansion",
+            "lookup":"NLeach",
+            "legend_range": [1,2,3,4,5,6,7,8],
+            "bin_breaks": [-0.1, -0.01, -0.001, 0, 0.001, 0.01, 0.1, 1],
+            "legend_title": "metric tonne per county"
+            },
+        "NLeach_abd": {
+            "dataset":"abd_diff_Nleach_fips_summary",
+            "title": "d.)Nitrogen leaching from reduced abandonment",
+            "lookup":"NLeach",
+            "legend_range": [1,2,3,4,5,6,7,8,9],
+            "bin_breaks": [-1, -0.1, -0.01, -0.001, 0, 0.001, 0.01, 0.1, 1],
+            "legend_title": "metric tonne per county"
+            },
+
+
+
+        "SEDrunoff_ext": {
+            "dataset":"ext_diff_SEDrunoff_fips_summary",
+            "title": "e.)Sediment erosion from cropland expansion",
+            "lookup":"SEDrunoff",
+            "legend_range": [1,2,3,4,5,6,7,8,9],
+            "bin_breaks": [-800,-400,-200,-100, 0, 100, 200, 400, 800, 1000000000],
+            "legend_labels": ["-800", "-400", "-200", "-100", "100", "200", "400", "800", ">800"],
+            "legend_title": "tons per county"
+        },
+        "SEDrunoff_abd": {
+            "dataset":"abd_diff_SEDrunoff_fips_summary",
+            "title": "f.)Sediment erosion from reduced abandonment",
+            "lookup":"SEDrunoff",
+            "legend_range": [1,2,3,4,5,6,7],
+            "bin_breaks": [-100, -50, 0, 50, 100, 200, 400, 100000000],
+            "legend_labels": ["-100", "-50", "50", "100", "200", "400", ">400"],
+            "legend_title": "tons per county"
+        },
+
+
+
+
+        "Irrig_ext": {
+            "dataset":"et_exp_imp_rfs_gal",
+            "title": "e.) Water use (ET) impacts of cropland expansion",
+            "legend_range": [1,2,3,4,5,6,7,8],
+            "bin_breaks": [-1000000, -20, -10, 0, 10, 20, 40, 80, 1000000],
+            "legend_labels": ["<-20", "-20", "-10", "10", "20", "40", "80", ">80"],
+            "legend_title": "millions of gallons"
+        },
+        "Irrig_abd": {
+            "dataset":"et_aban_imp_rfs_gal",
+            "title": "f.) Water use (ET) impacts of reduced abandonment",
+            "legend_range": [2,3,4,5,6,7,8,9,10],
+            "bin_breaks": [-1000000, -80, -40, -20, -10, 0, 10, 20, 40, 1000000],
+            "legend_labels": ["<-80", "-80", "-40", "-20", "-10", "10", "20", "40", ">40"],
+            "legend_title": "millions of gallons"
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

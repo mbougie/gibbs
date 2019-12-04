@@ -1,116 +1,119 @@
-# library(ggplot2)
-# library(maps)
-# library(rgdal)# R wrapper around GDAL/OGR
-# library(sp)
-# library(plyr)
-# # library(dplyr)
-# library(viridis)
-# library(scales)
-# require(RColorBrewer)
-# library(glue)
-# # library(ggpubr)
-# library(cowplot)
-# library(RPostgreSQL)
-# library(postGIStools)
+library(ggplot2)
+library(maps)
+library(rgdal)# R wrapper around GDAL/OGR
+library(sp)
+library(plyr)
+# library(dplyr)
+library(viridis)
+library(scales)
+require(RColorBrewer)
+library(glue)
+# library(ggpubr)
+library(cowplot)
+library(RPostgreSQL)
+library(postGIStools)
 # 
 # 
 # 
-# library(rasterVis)
-# 
-# library(grid)
-# library(scales)
-# library(viridis)  # better colors for everyone
-# library(ggthemes) # theme_map()
-# 
-# user <- "mbougie"
-# host <- '144.92.235.105'
-# port <- '5432'
-# password <- 'Mend0ta!'
-# 
-# ### Make the connection to database ######################################################################
-# con_synthesis <- dbConnect(PostgreSQL(), dbname = 'usxp_deliverables', user = user, host = host, port=port, password = password)
-# 
-# 
-# 
-# 
-# # ### Expansion:attach df to specific object in json #####################################################
-# # bb = get_postgis_query(con_synthesis, "SELECT ST_Intersection(states.geom, bb.geom) as geom 
-# #                        FROM (SELECT st_transform(ST_MakeEnvelope(-111.144047, 36.585669, -79.748903, 48.760751, 4326),5070)as geom) as bb, spatial.states 
-# #                        WHERE ST_Intersects(states.geom, bb.geom) ",
-# #                            geom_name = "geom")
-# # 
-# # bb.df <- fortify(bb)
-# fgdb = 'I:\\d_drive\\projects\\usxp\\series\\s35\\deliverables\\habitat_impacts\\milkweed\\data\\milkweed.gdb'
-# mapa <- readOGR(dsn=fgdb,layer="milkweed_bs3km_region")
-# 
-# crs_wgs84 = CRS('+init=EPSG:4326')
-# mapa <- spTransform(mapa, crs_wgs84)
-# 
-# #fortify() creates zany attributes so need to reattach the values from intial dataframe
-# mapa.df <- fortify(mapa)
-# 
-# #creates a numeric index for each row in dataframe
-# mapa@data$id <- rownames(mapa@data)
-# 
-# #merge the attributes of mapa@data to the fortified dataframe with id column
-# mapa.df <- join(mapa.df, mapa@data, by="id")
-# 
-# ### Expansion:attach df to specific object in json #####################################################
-# states = get_postgis_query(con_synthesis, "SELECT st_transform(geom,4326) as geom FROM spatial.states WHERE st_abbrev
-#                                            IN ('IL','IN','IA','KS','KY','MI','MN','MO','NE','ND','OH','SD','WI')",
-#                                                 geom_name = "geom")
-# 
-# states.df <- fortify(states)
-# 
-# ### Expansion:attach df to specific object in json #####################################################
-# states_large = get_postgis_query(con_synthesis, "SELECT st_transform(geom,4326) as geom FROM spatial.states",
-#                            geom_name = "geom")
-# 
-# states_large.df <- fortify(states_large)
+library(rasterVis)
 
-# setwd('I:\\d_drive\\projects\\usxp\\series\\s35\\deliverables\\habitat_impacts\\milkweed\\data\\tiffs')
-# r = raster('milkweed_bs3km_region.tif')
-# 
-# # ###repoject to wgs84
-# # crs_wgs84 = CRS('+init=EPSG:4326')
-# # r <- projectRaster(r, crs=crs_wgs84)
-# 
-# ### convert the raster to SPDF
-# r_spdf <- as(r, "SpatialPixelsDataFrame")
-# 
-# 
-# 
-# ###make the SPDF to a regular dataframe
-# r_df <- as.data.frame(r_spdf)
-# 
-# ###remove all records with zero in it
-# row_sub = apply(r_df, 1, function(row) all(row !=0 ))
-# r_df <- r_df[row_sub,]
-# 
-# ####add columns to the dataframe
-# colnames(r_df) <- c("value", "x", "y")
-# 
-# #### round value column
-# r_df$value_round <-  r_df$value/100
-# r_df$value_round<-round(r_df$value_round)
-# 
-# ##remove all rows with zero in it
-# ###left side of the common is the row index and right side of the column is column index
-# r_df = r_df[r_df$value_round != 0,]
-# 
-# ####create new fill column with cut values
-# r_df$fill = cut(r_df$value_round, breaks= c(3, 11105, 36153, 76964, 150124, 485515))
-# 
-# 
-# 
-# # new df retaining only rows where value_round does not equal 0
-# ##indexing rows with a cond
-# ##### r_df_new = r_df[r_df$value_round != 0 |&,]
-# 
-# 
-# #### stats
-# ## get the counts per bin
-# table(r_df$fill)
+library(grid)
+library(scales)
+library(viridis)  # better colors for everyone
+library(ggthemes) # theme_map()
+
+user <- "mbougie"
+host <- '144.92.235.105'
+port <- '5432'
+password <- 'Mend0ta!'
+
+### Make the connection to database ######################################################################
+con_synthesis <- dbConnect(PostgreSQL(), dbname = 'usxp_deliverables', user = user, host = host, port=port, password = password)
+
+
+
+
+# ### Expansion:attach df to specific object in json #####################################################
+bb = get_postgis_query(con_synthesis, "SELECT ST_Intersection(states.geom, bb.geom) as geom
+                       FROM (SELECT st_transform(ST_MakeEnvelope(-111.144047, 36.585669, -79.748903, 48.760751, 4326),5070)as geom) as bb, spatial.states
+                       WHERE ST_Intersects(states.geom, bb.geom) ",
+                           geom_name = "geom")
+
+bb.df <- fortify(bb)
+
+
+
+fgdb = 'I:\\d_drive\\projects\\usxp\\series\\s35\\deliverables\\habitat_impacts\\milkweed\\data\\milkweed.gdb'
+mapa <- readOGR(dsn=fgdb,layer="milkweed_bs3km_region")
+
+crs_wgs84 = CRS('+init=EPSG:4326')
+mapa <- spTransform(mapa, crs_wgs84)
+
+#fortify() creates zany attributes so need to reattach the values from intial dataframe
+mapa.df <- fortify(mapa)
+
+#creates a numeric index for each row in dataframe
+mapa@data$id <- rownames(mapa@data)
+
+#merge the attributes of mapa@data to the fortified dataframe with id column
+mapa.df <- join(mapa.df, mapa@data, by="id")
+
+### Expansion:attach df to specific object in json #####################################################
+states = get_postgis_query(con_synthesis, "SELECT st_transform(geom,4326) as geom FROM spatial.states WHERE st_abbrev
+                                           IN ('IL','IN','IA','KS','KY','MI','MN','MO','NE','ND','OH','SD','WI')",
+                                                geom_name = "geom")
+
+states.df <- fortify(states)
+
+### Expansion:attach df to specific object in json #####################################################
+states_large = get_postgis_query(con_synthesis, "SELECT st_transform(geom,4326) as geom FROM spatial.states",
+                           geom_name = "geom")
+
+states_large.df <- fortify(states_large)
+
+setwd('I:\\d_drive\\projects\\usxp\\series\\s35\\deliverables\\habitat_impacts\\milkweed\\data\\tiffs')
+r = raster('milkweed_bs3km_region.tif')
+
+# ###repoject to wgs84
+# crs_wgs84 = CRS('+init=EPSG:4326')
+# r <- projectRaster(r, crs=crs_wgs84)
+
+### convert the raster to SPDF
+r_spdf <- as(r, "SpatialPixelsDataFrame")
+
+
+
+###make the SPDF to a regular dataframe
+r_df <- as.data.frame(r_spdf)
+
+###remove all records with zero in it
+row_sub = apply(r_df, 1, function(row) all(row !=0 ))
+r_df <- r_df[row_sub,]
+
+####add columns to the dataframe
+colnames(r_df) <- c("value", "x", "y")
+
+#### round value column
+r_df$value_round <-  r_df$value/100
+r_df$value_round<-round(r_df$value_round)
+
+##remove all rows with zero in it
+###left side of the common is the row index and right side of the column is column index
+r_df = r_df[r_df$value_round != 0,]
+
+####create new fill column with cut values
+r_df$fill = cut(r_df$value_round, breaks= c(3, 11105, 36153, 76964, 150124, 485515))
+
+
+
+# new df retaining only rows where value_round does not equal 0
+##indexing rows with a cond
+##### r_df_new = r_df[r_df$value_round != 0 |&,]
+
+
+#### stats
+## get the counts per bin
+table(r_df$fill)
 
 
 
@@ -137,12 +140,12 @@ geom_polygon(
   colour='white',
   size=1
 ) +
-  ### state boundary background ###########
-  geom_polygon(
-  data=states.df,
-  aes(x=long,y=lat,group=group),
-  # fill='#D0D0D0') +
-  fill='#808080') +
+#   ### state boundary background ###########
+#   geom_polygon(
+#   data=states.df,
+#   aes(x=long,y=lat,group=group),
+#   # fill='#D0D0D0') +
+#   fill='#808080') +
 
 geom_polygon(
   data=mapa.df,
@@ -150,14 +153,14 @@ geom_polygon(
   # fill='#D0D0D0') +
   fill=mapa.df$gridcode) +
 
-  ### state boundary strokes ###########
-geom_polygon(
-  data=states.df,
-  aes(y=lat, x=long, group=group),
-  alpha=0,
-  colour='white',
-  size=1
-) +
+#   ### state boundary strokes ###########
+# geom_polygon(
+#   data=states.df,
+#   aes(y=lat, x=long, group=group),
+#   alpha=0,
+#   colour='white',
+#   size=1
+# ) +
 
 
   # Equal scale cartesian coordinates 

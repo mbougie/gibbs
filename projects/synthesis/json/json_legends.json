@@ -61,6 +61,13 @@
             "legend_label_vjust":4,
             "legend_label_hjust":-1.0
             },
+            "phos": {
+            "title": "Phosphorus run-off from changes in other-other (CC) area",
+            "lookup":"phos",
+            "legend_range": [1,2,3,4,5,6,7,8,9,10],
+            "bin_breaks": [-10000000,-2000, -1000, -500, -250, 0, 250, 500, 1000, 2000, 10000000],
+            "legend_title": "m3 per county"
+            },
             "nleach": {
             "legend_title": "Kg per county (in thousands)",
             "legend_range": [1,2,3,4,5,6,7,8,9,10],

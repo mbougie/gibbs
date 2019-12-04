@@ -127,7 +127,7 @@ def addGDBTable2postgres_table(gdb, pgdb, schema, table):
 gdb='I:\\d_drive\\projects\\usxp\\series\\s35\\deliverables\\habitat_impacts\\nlcd_intact\\nlcd_intact_t2.gdb'
 pgdb='usxp_deliverables'
 schema='nlcd_intact'
-table='combine_intact_visualization_raw_b_hist'
+table='combine_intact_visualization_raw_b_hist_yo'
 
 
 

@@ -1,0 +1,357 @@
+{ 
+    "agroibis": {
+
+
+        "AET_ext": {
+            "dataset": "ext_diff_AET_fips_summary",
+            "title": "Water use (ET) impacts of cropland expansion",
+            "lookup":"AET",
+            "legend_range": [1,2,3,4,5,6,7,8,9],
+            "bin_breaks": [-1e7, -1e6, -1e5, -1e4, 0, 1e4, 1e5, 1e6, 1e7],
+            "legend_title": "m3 per county"
+        },
+        "AET_abd": {
+            "dataset": "abd_diff_AET_fips_summary",
+            "title": "Water use (ET) impacts of reduced abandonment",
+            "lookup":"AET",
+            "legend_range": [1,2,3,4,5,6,7,8],
+            "bin_breaks": [-1e7, -1e5, -1e4, 0, 1e4, 1e5, 1e6, 1e7],
+            "legend_title": "m3 per county"
+        },
+        "AET_net": {
+            "dataset": "net_diff_AET_fips_summary",
+            "title": "Water use (ET) impacts",
+            "lookup":"AET",
+            "legend_range": [2,3,4,5,6,7,8,9],
+            "bin_breaks": [-1e7, -1e6, -1e5, -1e4, 0, 1e4, 1e5, 1e6, 1e7],
+            "legend_title": "m3 per county"
+        },
+
+
+
+
+        "Irrig_ext": {
+            "dataset": "ext_diff_Irrig_fips_summary",
+            "title": "ext_diff_Irrig_fips_summary",
+            "lookup":"Irrig",
+            "legend_range": [1,2,3,4,5,6,7,8,9],
+            "bin_breaks": [-1e300,-1e4, -1e3, -1e2, 0, 1e2, 1e3, 1e4, 1e5, 1e300],
+            "legend_title": "m3 per county"
+        },
+        "Irrig_abd": {
+            "dataset": "abd_diff_Irrig_fips_summary",
+            "title": "abd_diff_Irrig_fips_summary",
+            "lookup":"Irrig",
+            "legend_range": [1,2,3,4,5,6,7,8,9],
+            "bin_breaks": [-1e300,-1e4, -1e3, -1e2, 0, 1e2, 1e3, 1e4, 1e5, 1e300],
+            "legend_title": "m3 per county"
+        },
+        "Irrig_net": {
+            "dataset": "need dataset still!!!",
+            "title": "abd_diff_Irrig_fips_summary---------",
+            "lookup":"Irrig",
+            "legend_range": [2,3,4,5,6,7,8,9],
+            "bin_breaks": [-1e300, -1e4, -1e3, -1e2, 0, 1e2, 1e3, 1e4, 1e5],
+            "legend_title": "m3 per county"
+        },
+
+
+
+
+
+        "NLeach_ext": {
+            "dataset": "ext_diff_Nleach_fips_summary",
+            "title": "d.)Nitrogen leaching from cropland expansion",
+            "lookup":"NLeach",
+            "legend_range": [1,2,3,4,5,6,7,8],
+            "bin_breaks": [-1e2, -10, -1, 0, 1, 10, 1e2, 1e3],
+            "legend_title": "Mg per county"
+        },
+        "NLeach_abd": {
+            "dataset": "abd_diff_Nleach_fips_summary",
+            "title": "d.)Nitrogen leaching from reduced abandonment",
+            "lookup":"NLeach",
+            "legend_range": [2,3,4,5,6,7,8,9],
+            "bin_breaks": [-1e3, -1e2, -10, -1, 0, 1, 10, 1e300],
+            "legend_title": "Mg per county"
+        },
+        "NLeach_net": {
+            "dataset": "net_diff_Nleach_fips_summary",
+            "title": "d.)Nitrogen leaching",
+            "lookup":"NLeach",
+            "legend_range": [2,3,4,5,6,7,8,9],
+            "bin_breaks": [-1e3, -1e2, -10, -1, 0, 1, 10, 1e2, 1e3],
+            "legend_title": "Mg per county"
+        },
+
+
+
+
+
+        "SEDrunoff_ext": {
+            "dataset": "ext_diff_SEDrunoff_fips_summary",
+            "title": "e.)Sediment erosion from cropland expansion",
+            "lookup":"SEDrunoff",
+            "legend_range": [1,2,3,4,5,6,7,8,9],
+            "bin_breaks": [-800,-400,-200,-1e2, 0, 1e2, 200, 400, 800, 1e300],
+            "legend_labels": ["-800", "-400", "-200", "-1e2", "1e2", "200", "400", "800", ">800"],
+            "legend_title": "Mg per county"
+        },
+        "SEDrunoff_abd": {
+            "dataset": "abd_diff_SEDrunoff_fips_summary",
+            "title": "f.)Sediment erosion from reduced abandonment",
+            "lookup":"SEDrunoff",
+            "legend_range": [1,2,3,4,5,6,7,8],
+            "bin_breaks": [-200, -1e2, -50, 0, 50, 1e2, 200, 400, 1e300],
+            "legend_labels": ["-1e2", "-50", "50", "1e2", "200", "400", ">400"],
+            "legend_title": "Mg per county"
+        },
+         "SEDrunoff_net": {
+            "dataset": "net_diff_SEDrunoff_fips_summary",
+            "title": "f.)Sediment erosion",
+            "lookup":"SEDrunoff",
+            "legend_range": [1,2,3,4,5,6,7,8,9,10],
+            "bin_breaks": [-1e300, -800, -400, -200, -1e2, 0, 1e2, 200, 400, 800, 1e300],
+            "legend_labels": ["<-800", "-800", "-400", "-200", "-1e2", "1e2", "200", "400", "800", ">800"],
+            "legend_title": "Mg per county"
+        },       
+
+
+
+
+        "TPrunoff_ext": {
+            "dataset": "ext_diff_TPrunoff_fips_summary",
+            "lookup":"TPrunoff",
+            "title": "Phosphorus run-off from cropland expansion",
+            "legend_range": [1,2,3,4,5,6,7,8,9],
+            "bin_breaks": [-1e300, -1e3, -1e2, -10, 0, 10, 1e2, 1e3, 1e4, 1e300],
+            "legend_title": "kg per county"
+        },
+        "TPrunoff_abd": {
+            "dataset": "abd_diff_TPrunoff_fips_summary",
+            "lookup":"TPrunoff",
+            "title": "Phosphorus run-off from reduced abandonment",
+            "legend_range": [2,3,4,5,6,7,8],
+            "bin_breaks": [-1e300, -1e2, -10, 0, 10, 1e2, 1e3, 1e300],
+            "legend_title": "kg per county"
+        },
+        "TPrunoff_net": {
+            "dataset": "net_diff_TPrunoff_fips_summary",
+            "lookup":"TPrunoff",
+            "title": "Phosphorus run-off",
+            "legend_range": [2,3,4,5,6,7,8,9],
+            "bin_breaks": [-1e4, -1e3, -1e2, -10, 0, 10, 1e2, 1e3, 1e4],
+            "legend_title": "kg per county"
+        }
+
+
+
+
+    },
+
+
+    "carbon": {
+        "carbon_ext": {
+            "dataset":"ext_diff_carbon_fips_summary",
+            "lookup":"carbon",
+            "title": "c.) Carbon emission from cropland expansion",
+            "legend_range": [1,2,3,4,5,6,7,8,9],
+            "bin_breaks": [-1e300, -1e2, -10, -5, 0, 5, 10, 1e2, 1e3, 1e300],
+            "legend_title": "Gg of CO2e per county"
+        },
+
+        "carbon_abd": {
+            "dataset":"abd_diff_carbon_fips_summary",
+            "lookup":"carbon",
+            "title": "d.) Carbon emissions from reduced abandonment",
+            "legend_range": [1,2,3,4,5,6,7,8,9],
+            "bin_breaks": [-1e3, -1e2, -10, -5, 0, 5, 10, 1e2, 1e300],
+            "legend_title": "Gg of CO2e per county"
+        },
+        "carbon_net": {
+            "dataset":"net_diff_carbon_fips_summary",
+            "lookup":"carbon",
+            "title": "d.) Carbon emissions",
+            "legend_range": [1,2,3,4,5,6,7,8,9],
+            "bin_breaks": [-1e3, -1e2, -10, -5, 0, 5, 10, 1e2, 1e300],
+            "legend_title": "Gg of CO2e per county"
+        }
+    },
+
+
+
+
+    "area": {
+        "area_region_ext": {
+            "dataset":"'ext_acres_fips_summary'",
+            "lookup":"area",
+            "type":"region",
+            "title": "a.) Cropland expansion due to RFS",
+            "legend_range": [2,3,4,5,6],
+            "bin_breaks": [-0.25, 0, 0.25, 0.5, 1.0, 2.0],
+            "legend_title": "% of regional area"
+        },
+
+        "area_region_abd": {
+            "dataset":"abd_acres_fips_summary",
+            "lookup":"area",
+            "type":"region",
+            "title": "b.) Reduction in abandonment due to RFS",
+            "legend_range": [2,3,4,5,6,7],
+            "bin_breaks": [-0.2, -0.1, 0, 0.1, 0.2, 0.4, 0.6],
+            "legend_title": "% of regional area"
+        },
+
+        "area_county_ext": {
+            "dataset":"ext_acres_fips_summary",
+            "lookup":"area",
+            "type":"county",
+            "title": "a.) Cropland expansion due to RFS",
+            "legend_range": [2,3,4,5,6,7,8],
+            "bin_breaks": [-1e4, -1e3, -1e2, 0, 1e2, 1e3, 1e4, 1e5],
+            "legend_title": "hectares per county"
+        },
+
+        "area_county_abd": {
+            "dataset":"abd_acres_fips_summary",
+            "lookup":"area",
+            "type":"county",
+            "title": "b.) Reduction in abandonment due to RFS",
+            "legend_range": [2,3,4,5,6,7,8],
+            "bin_breaks": [-1e4, -1e3, -1e2, 0, 1e2, 1e3, 1e4, 1e300],
+            "legend_title": "hectares per county"
+        },
+        "area_county_net": {
+            "dataset":"net_acres_fips_summary",
+            "lookup":"area",
+            "type":"county",
+            "title": "b.) net_acres_fips_summary",
+            "legend_range": [2,3,4,5,6,7,8],
+            "bin_breaks": [-1e4, -1e3, -1e2, 0, 1e2, 1e3, 1e4, 1e5],
+            "legend_title": "hectares per county"
+        }
+    },
+
+
+    "ghg": {
+
+        "ghg_v2": {
+            "dataset":"",
+            "lookup":"",
+            "title": "ghg",
+            "legend_range": [2,3,4,5,6,7,8,9],
+            "bin_breaks": [-1e1, -1e0, -1e-1, -1e-2, 0, 1e-2, 1e-1, 1e0, 1e1],
+            "legend_title": "Tg per county"
+        },
+        "ghg_ext": {
+            "dataset":"ghg_ext",
+            "lookup":"",
+            "title": "ghg",
+            "legend_range": [2,3,4,5,6,7,8],
+            "bin_breaks": [-1e3, -1e2, -10, 0, 10, 1e2, 1e3, 1e4],
+            "legend_title": "Gg per county"
+        },
+        "ghg_abd": {
+            "dataset":"ghg_abd",
+            "lookup":"",
+            "title": "ghg",
+            "legend_range": [2,3,4,5,6,7,8],
+            "bin_breaks": [-1e3, -1e2, -10, 0, 10, 1e2, 1e3, 1e4],
+            "legend_title": "Gg per county"
+        },
+        "ghg_net": {
+            "dataset":"ghg_net",
+            "lookup":"",
+            "title": "ghg",
+            "legend_range": [2,3,4,5,6,7,8,9],
+            "bin_breaks": [-1e4, -1e3, -1e2, -10, 0, 10, 1e2, 1e3, 1e4],
+            "legend_title": "Gg per county"
+        }
+    },
+
+
+
+
+
+    "napp": {
+
+        "napp_ext": {
+            "dataset":"ext_diff_napp_fips_summary",
+            "lookup":"napp",
+            "title": "c.) ext_diff_napp_fips_summary",
+            "legend_range": [1,2,3,4,5,6,7,8],
+            "bin_breaks": [-1e3, -1e2, -10, 0, 10, 1e2, 1e3, 1e6],
+            "legend_title": "Mg per county"
+        },
+
+        "napp_abd": {
+            "dataset":"abd_diff_napp_fips_summary",
+            "lookup":"napp",
+            "title": "c.) abd_diff_napp_fips_summary",
+            "legend_range": [1,2,3,4,5,6,7,8,9],
+            "bin_breaks": [-1e3, -1e2, -10, -5, 0, 5, 10, 1e2, 1e300],
+            "legend_title": "Mg per county"
+        },
+        "napp_net": {
+            "dataset":"net_diff_napp_fips_summary",
+            "lookup":"napp",
+            "title": "c.) net_diff_napp_fips_summary",
+            "legend_range": [1,2,3,4,5,6,7,8,9],
+            "bin_breaks": [-1e3, -1e2, -10, -5, 0, 5, 10, 1e2, 1e300],
+            "legend_title": "Mg per county"
+        }
+    },
+
+
+
+
+
+
+    "n2o": {
+
+        "n2o_ext": {
+            "dataset":"ext_diff_n2o_fips_summary",
+            "lookup":"n2o",
+            "title": "c.) ext_diff_n2o_fips_summary",
+            "legend_range": [1,2,3,4,5,6,7,8],
+            "bin_breaks": [-1e4, -1e3, -1e2, 0, 1e2, 1e3, 1e4, 1e6],
+            "legend_title": "Mg of CO2e per county"
+        },
+
+        "n2o_abd": {
+            "dataset":"abd_diff_n2o_fips_summary",
+            "lookup":"n2o",
+            "title": "d.) abd_diff_n2o_fips_summary",
+            "legend_range": [1,2,3,4,5,6,7,8,9],
+            "bin_breaks": [-1e4, -1e3, -1e2, -10, 0, 10, 1e2, 1e3, 1e4],
+            "legend_title": "Mg of CO2e per county"
+        },
+        "n2o_net": {
+            "dataset":"net_diff_n2o_fips_summary",
+            "lookup":"n2o",
+            "title": "d.) net_diff_n2o_fips_summary",
+            "legend_range": [1,2,3,4,5,6,7,8,9],
+            "bin_breaks": [-1e4, -1e3, -1e2, -10, 0, 10, 1e2, 1e3, 1e4],
+            "legend_title": "Mg of CO2e per county"
+        }
+    }
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

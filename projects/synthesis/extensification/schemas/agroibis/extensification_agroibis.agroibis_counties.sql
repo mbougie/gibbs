@@ -9,7 +9,8 @@ dataset is derived from:
 
 CREATE TABLE extensification_agroibis.agroibis_counties as 
 SELECT 
-  fips_modified.fips,
+  "countyStats02_20190701"."FIPS" as fips,
+  fips_modified.fips as fips_text,
   extensification_mlra.lrr_group,
 
   
@@ -98,8 +99,8 @@ INNER JOIN spatial.counties
 ON fips_modified.fips = counties.atlas_stco
 
 --used as an interface table(mlra regions and counties)between synthesis.extensification_mlra lrr_groups and the fips values of synthesis.extensification_"countyStats02_20190701"_control 
-INNER JOIN extensification_mlra.extensification_county_regions
+INNER JOIN extensification_ksu.extensification_county_regions
 ON "countyStats02_20190701"."FIPS"=extensification_county_regions.fips
 
-INNER JOIN extensification_mlra.extensification_mlra
+INNER JOIN extensification_ksu.extensification_mlra
 ON extensification_county_regions.lrr_group=extensification_mlra.lrr_group

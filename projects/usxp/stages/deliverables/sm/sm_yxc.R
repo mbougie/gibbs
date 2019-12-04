@@ -65,21 +65,22 @@ print(s35_yfc$state)
 
 
 plotResult<-ggplot(NULL, aes(x=year, group=state)) +
-  geom_line(data = s35_ytc, aes(y=acres,color="tomato2"),alpha=0.8)+
-  geom_line(data = s35_yfc, aes(y=acres,color="turquoise"),alpha=0.8)+
+  geom_line(data = s35_ytc, aes(y=acres,color="tomato2"))+
+  geom_line(data = s35_yfc, aes(y=acres,color="turquoise"))+
   scale_y_continuous(
     labels=formatAC,
-    "Expansion(acres in mil)", 
-    sec.axis = sec_axis(~ . * 1.20, name = "Abandonment(acres in mil)", labels=formatAC)
+    "Expansion (Millions of acres)", 
+    sec.axis = sec_axis(~ . * 1, name = "Abandonment (Millions of acres)", labels=formatAC)
   )+
   scale_x_continuous(breaks=c(2008,2009,2010,2011,2012,2013,2014,2015,2016,2017))+
-  labs(y="Expansion(acres in mil)",x="Years",color="none",caption="NOTE: CONUS conversion values were divided by 10 to maintain scale consistency.")+
+  labs(x="Years",color="none",caption="")+
   facet_wrap(~ state) +
-  ggtitle("Comparison Between Cropland Expansion and Abandonment 2008-2016")+
-  theme(strip.text.x = element_text(size = 7, margin = margin(1,0,1,0, "mm")),
+  ggtitle("")+
+  theme(strip.text.x = element_text(size = 10, margin = margin(1,0,1,0, "mm")),
         axis.ticks = element_blank(),
-        axis.text.x = element_text(size=6,angle=90),
-        axis.text.y = element_text(size=6,vjust=0),
+        axis.text.x = element_text(size=8, angle=90, margin = margin(t = 5, r = 0, b = 5, l = 0)),
+        axis.text.y.left = element_text(size=8,vjust=0, margin = margin(t = 0, r = 5, b = 0, l = 5)),
+        axis.text.y.right = element_text(size=8,vjust=0, margin = margin(t = 0, r = 5, b = 0, l = 5)),
         axis.title.y=element_text(color="tomato"),
         axis.title.y.right=element_text(color="turquoise"),
         panel.grid.minor.x=element_blank(),
@@ -90,7 +91,7 @@ plotResult<-ggplot(NULL, aes(x=year, group=state)) +
   )
 
 plotResult
-# ###create panel image ######################
+###create panel image ######################
 dir = "C:\\Users\\Bougie\\Desktop\\temp\\"
 fileout=paste(dir,"s35_yxc_sm",".png", sep="")
 ggsave(fileout, width = 20, height = 20, dpi = 800)

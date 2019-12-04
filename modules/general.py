@@ -1132,18 +1132,18 @@ def addGDBTable2postgres_histo_counties(gdb, pgdb, schema, table):
 
 
 
-def addGDBTable2postgres_state(pgdb, schema, currentobject):
-    print 'addGDBTable2postgres_histo..................................................'
-    print currentobject
+def addGDBTable2postgres_state(gdb, pgdb, schema, table):
+    arcpy.env.workspace = gdb
+    print("addGDBTable2postgres().............")
 
     ##set the engine.....
     engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/{}'.format(pgdb))
 
     # Execute AddField twice for two new fields
-    fields = [f.name for f in arcpy.ListFields(currentobject)]
+    fields = [f.name for f in arcpy.ListFields(table)]
 
     # converts a table to NumPy structured array.
-    arr = arcpy.da.TableToNumPyArray(currentobject,fields)
+    arr = arcpy.da.TableToNumPyArray(table,fields)
     print arr
 
 
@@ -1154,35 +1154,26 @@ def addGDBTable2postgres_state(pgdb, schema, currentobject):
     print df
 
     # ##perform a psuedo pivot table
-    # df=pd.melt(df, id_vars=["LABEL"],var_name="atlas_st", value_name="count")
+    df=pd.melt(df, id_vars=["LABEL"],var_name="atlas_st", value_name="count")
 
 
     df.columns = map(str.lower, df.columns)
 
     print df
     
-    # #### format column in df #########################
-    # ## strip character string off all cells in column
-    # df['atlas_st'] = df['atlas_st'].map(lambda x: x.strip('atlas_'))
-    # ## remove comma from year
-    # df['value'] = df['label'].str.replace(',', '')
-
-    # print df
+    #### format column in df #########################
+    ## strip character string off all cells in column
+    df['atlas_st'] = df['atlas_st'].map(lambda x: x.strip('atlas_'))
+    ## remove comma from year
+    df['value'] = df['label'].str.replace(',', '')
 
 
-    # print 'pixel conversion:', getPixelConversion2Acres(30)
-
-    # ####add column 
-    # df['acres'] = df['count']*getPixelConversion2Acres(30)
-
-    tablename = currentobject.split('\\')[-1]
-    print 'tablename', tablename
+    print 'table', table
 
     print df
 
-    df.to_sql(tablename, engine, schema=schema)
+    df.to_sql(table, engine, schema=schema)
 
-    # MergeWithGeom(df, tablename, eu, eu_col)
 
 
 
@@ -1268,3 +1259,32 @@ def postgres_ddl(pgdb, sql):
     ###close things
     conn.close()
     cur.close()
+
+
+
+
+
+
+def reclassAndAggregate(in_raster, out_raster, remaplist, cell_factor):
+
+    outReclass = Reclassify(in_raster = in_raster, reclass_field = 'Value', remap=RemapValue(remaplist), missing_values='NODATA')
+    print 'finished reclassing raster.............'
+
+    outAggregate = Aggregate(in_raster=outReclass, cell_factor=cell_factor, aggregation_type="SUM", extent_handling="EXPAND", ignore_nodata="DATA")
+    print 'finished Aggregate.............'
+    outAggregate.save(out_raster)
+
+
+
+
+
+
+def importCSVtoPG(pgdb, csv_path, table, schema):
+    engine = create_engine('postgresql://mbougie:Mend0ta!@144.92.235.105:5432/{}'.format(pgdb))
+
+    df = pd.read_csv(csv_path) 
+
+    print df
+
+    df.to_sql(table, engine, schema=schema)
+

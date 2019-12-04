@@ -15,10 +15,7 @@ library(gridExtra) #load Grid
 
 
 
-createDummy <- function(filename){
-  
-  json_file <- "C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\usxp\\stages\\deliverables\\synthesis\\json\\json_legends.json"
-  data <- fromJSON(file=json_file)
+createDummy <- function(obj){
   
   breaks = data$intensification$map[[filename]]$bin_breaks
   legend_labels = data$intensification$map[[filename]]$legend_labels
@@ -78,5 +75,6 @@ createDummy <- function(filename){
   return(d)
 }
 
-# createDummy('awa')
+
+
 

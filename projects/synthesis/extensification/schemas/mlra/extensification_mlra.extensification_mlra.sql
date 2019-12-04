@@ -1,4 +1,4 @@
-﻿CREATE TABLE extensification_mlra.extensification_mlra_t2 as 
+﻿CREATE TABLE extensification_ksu.extensification_mlra_t2 as 
 
 SELECT
   --counties_5070_lrrgroup_dissolved.objectid as unique_id, 
@@ -24,22 +24,23 @@ SELECT
   
   
 FROM 
-  extensification_mlra.extensification_price_response 
+  extensification_ksu.extensification_price_response 
 INNER JOIN
-  extensification_mlra.counties_5070_lrrgroup_dissolved
+  extensification_ksu.counties_5070_lrrgroup_dissolved
 ON 
   counties_5070_lrrgroup_dissolved.lrr_group = extensification_price_response.region
 
 
 INNER JOIN
 ---make temp tables from histgrams to get the values of mtr per lrr_group
---- total acres of USXP expansion per MLRA region
+
+--- total acres of USXP expansion (mtr 3) per MLRA region
 (SELECT
 label as mtr3,
 variable as lrr_group,
 acres as mtr3_acres
 FROM
-extensification_mlra.extensification_mlra_mtr_counts
+extensification_ksu.extensification_mlra_mtr_counts
 WHERE label='3') as hist_mtr3
 
 ON counties_5070_lrrgroup_dissolved.lrr_group = hist_mtr3.lrr_group
@@ -47,13 +48,13 @@ ON counties_5070_lrrgroup_dissolved.lrr_group = hist_mtr3.lrr_group
 
 
 INNER JOIN
-----total acres of USXP abandonment per MLRA region
+----total acres of USXP abandonment (mtr 4) per MLRA region
 (SELECT
 label as mtr4,
 variable as lrr_group,
 acres as mtr4_acres
 FROM
-extensification_mlra.extensification_mlra_mtr_counts
+extensification_ksu.extensification_mlra_mtr_counts
 WHERE label='4') as hist_mtr4
 
 ON counties_5070_lrrgroup_dissolved.lrr_group = hist_mtr4.lrr_group

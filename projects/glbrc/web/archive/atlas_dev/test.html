@@ -1,0 +1,39 @@
+<!DOCTYPE>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Font Awesome With Pseudo-Elements</title>
+<!--  Font Awesome 4.6.3 CDN  -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css">
+  <style>
+  h1 {
+  margin: 25px auto;
+  font-size: 40px;
+  text-align: center;
+  font-family: sans-serif;	
+}
+
+.box {
+  width: 150px;
+  height: 150px;
+  background-color: #CD5C5C;
+  margin: 0 auto;
+  position: relative;
+}
+
+.box::after {
+  content: "\f259";
+  font-family: FontAwesome;
+  font-size: 100px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+  </style>
+</head>
+<body>
+  <h1>Font Awesome with Pseudo-Elements</h1>
+  <div class="box"></div>
+</body>
+</html>

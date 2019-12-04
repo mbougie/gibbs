@@ -34,14 +34,18 @@ def processingCluster(instance, inraster, outraster, reclasslist):
 
 	for key, value in instance['scale'].iteritems():
 
-		nbr = NbrRectangle(value, value, "CELL")
-		outBlockStat = BlockStatistics(outReclass, nbr, "SUM", "DATA")
-		print 'finished block stats.............'
-		outBlockStat.save(outraster)
+		outAggregate = Aggregate(in_raster=outReclass, cell_factor=value, aggregation_type="SUM", extent_handling="EXPAND", ignore_nodata="DATA")
+		print 'finished Aggregate.............'
+		outAggregate.save(outraster)
+
+		# nbr = NbrRectangle(value, value, "CELL")
+		# outBlockStat = BlockStatistics(outReclass, nbr, "SUM", "DATA")
+		# print 'finished block stats.............'
+		# outBlockStat.save(outraster)
 
 		addField(outraster, value)
 
-		gen.buildPyramids_new(outraster, 'NEAREST')
+		# gen.buildPyramids_new(outraster, 'NEAREST')
 
 
 
@@ -62,11 +66,11 @@ def addField(raster, value):
 
 
 def main(instance):
-	inraster=Raster('D:\\projects\\usxp\\deliverables\\{0}\\{0}.gdb\\{0}_bfc'.format(instance['series']))
+	inraster=Raster('I:\\d_drive\\projects\\usxp\\series\\{0}\\{0}.gdb\\{0}_bfc'.format(instance['series']))
 
 	for key, reclasslist in instance['reclass'].iteritems():
 		for scale in instance['scale'].keys():
-			outraster = 'D:\\projects\\usxp\\deliverables\\maps\\x_to_crop\\x_to_crop.gdb\\{0}_{1}_{2}'.format(instance['series'], scale, key)
+			outraster = 'I:\\d_drive\\projects\\usxp\\series\\s35\\deliverables\\x_to_crop\\tif\\{0}_agg_{1}_sum_{2}.tif'.format(instance['series'], scale, key)
 
 			print outraster
 
@@ -83,6 +87,7 @@ def main(instance):
 
 
 instance = {'series':'s35', 'scale':{'3km':100}, 'reclass':{'forest':[[63,1],[141,1],[142,1],[143,1]], 'wetland':[[83,1],[87,1],[190,1],[195,1]], 'grassland':[[37,1],[62,1],[171,1],[176,1],[181,1]], 'shrubland':[[64,1],[65,1],[131,1],[152,1]]} }
+
 print instance
 
 main(instance)

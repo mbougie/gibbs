@@ -1,0 +1,126 @@
+
+    body { margin:0; padding:0;}
+
+    #map { position:absolute; top:0; bottom:0; width:100%; }
+
+	h1, h2, h3, h4, h5, h6 {
+/*	font-family: 'Montserrat', sans-serif;*/
+	/*text-transform: uppercase;*/
+	}
+
+
+
+    .info {
+
+      padding: 6px 8px;
+
+      font: 14px/16px Arial, Helvetica, sans-serif;
+
+      background: #FFF;
+
+      /*background: rgba(255,255,255,0.8);*/
+
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+
+      border-radius: 5px;
+
+    }
+
+    
+
+    .info h4 {
+
+      margin: 0 0 5px;
+    font-weight: 700;
+      color: #777;
+
+    }
+
+.legend {
+  line-height: 18px;
+  color: #555;
+}
+.legend i {
+  width: 18px;
+  height: 18px;
+  float: left;
+  margin-right: 8px;
+  opacity: 0.7;
+}
+
+
+
+.yo{
+  /*background: red !important;*/
+  background-image: url('../images/help.svg') !important;
+  background-size: 70%;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+
+
+
+.info_circle {
+
+  width: 10px;
+  height: 10px;
+  /*background-color: #CD5C5C;*/
+  margin: 0 auto;
+  position: relative;
+}
+
+.info_circle::after  {
+  margin-left: 10px;
+  content: "\f05a";
+  font-family: FontAwesome;
+  font-size: 15px;
+  position: none;
+}
+
+
+
+.download {
+
+  width: 10px;
+  height: 10px;
+  /*background-color: #CD5C5C;*/
+  margin: 0 auto;
+  position: relative;
+}
+
+.download::after  {
+  margin-left: 10px;
+  content: "\f019";
+  font-family: FontAwesome;
+  font-size: 15px;
+  position: none;
+}
+
+
+
+
+
+/*--------modifying layers container css to deal with bootstrap confilict-------------*/
+
+.ac-container{
+  overflow-y: hidden;   /*----remove this because it conflicts with bootstrap */  
+  /*overflow-x: hidden;   ----remove this because it conflicts */  
+}
+
+.ac-container input.menu:checked ~ article.ac-large{
+  overflow-y: hidden;   /*----remove this because it conflicts with bootstrap */
+}
+
+/*--------------------------------------------------------------------------------------*/
+
+.leaflet-credits-control {
+  border: none;
+  background-color: black;
+  color: white;
+}
+
+
+.leaflet-credits-control a {
+  color: white !important;
+}

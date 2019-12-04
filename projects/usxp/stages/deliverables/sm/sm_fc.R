@@ -20,8 +20,8 @@ library(extrafont)
 
 
 # 
-# drv <- dbDriver("PostgreSQL")
-# 
+drv <- dbDriver("PostgreSQL")
+
 con <- dbConnect(drv, dbname = "usxp",
                  host = "144.92.235.105", port = 5432,
                  user = "mbougie", password = "Mend0ta!")
@@ -76,24 +76,32 @@ plotResult<-ggplot(df, aes(x=year, y=acres, group=name, color=name, ordered = TR
   # scale_y_continuous(labels=formatAC) +
   scale_y_continuous(
     labels=formatAC,
-    "Expansion(acres in mil)", 
-    sec.axis = sec_axis(~ . * 1.20, name = "", labels=formatAC)
+    "Expansion (Millions of acres)", 
+    sec.axis = sec_axis(~ ., name = "", labels=formatAC)
   )+
   scale_x_continuous(breaks=c(2009,2010,2011,2012,2013,2014,2015,2016)) +
-  labs(y="Expansion(acres in mil)",x="Years",color="none",caption="NOTE: CONUS conversion values were divided by 10 to maintain scale consistency.")+
-  ggtitle('Selected Break-out Crops') + theme(plot.title = element_text(hjust = 0.5))+
+  labs(x="Years",color="none")+
+  ggtitle('') + theme(plot.title = element_text(hjust = 0.5))+
   theme(strip.text.x = element_text(size = 7, margin = margin(1,0,1,0, "mm")),
         # aspect.ratio=0.5,
         # legend.title=element_blank(),
         # text=element_text(size=16,  family="TT Arial"),
         # legend.position = c(0.07, -0.35), ##this creates 1 to 1 aspect ratio so when export to pdf not stretched
         axis.ticks = element_blank(),
-        axis.text.x = element_text(size=6,angle=90),
-        axis.text.y = element_text(size=6,vjust=0),
+
+        axis.text.x = element_text(size=8, angle=90, margin = margin(t = 5, r = 0, b = 5, l = 0)),
+        axis.text.y.left = element_text(size=8,vjust=0, margin = margin(t = 0, r = 5, b = 0, l = 5)),
+        axis.text.y.right = element_text(size=8,vjust=0, margin = margin(t = 0, r = -5, b = 0, l = 5)),
         panel.grid.minor.x=element_blank(),
         plot.title = element_text(hjust = 0.5),
-        legend.position ="None",
-        plot.caption = element_text(hjust = 0.5))+
+        
+        #### legend stuff ###########
+        # legend.position ="None",
+        # legend.position = c(0.07, -0.35),
+        legend.position = "right",
+        legend.title = element_blank(),
+        legend.key = element_rect(fill = "white")) + 
+  guides(colour = guide_legend(override.aes = list(size=0.75))) + 
   scale_colour_manual(values = jColors)
 
 
@@ -104,4 +112,4 @@ plotResult
 # ###create panel image ######################
 dir = "C:\\Users\\Bougie\\Desktop\\temp\\"
 fileout=paste(dir,"s35_yxc_sm",".png", sep="")
-ggsave(fileout, width = 20, height = 20, dpi = 800)
+ggsave(fileout, width = 34, height = 25, dpi = 500)
