@@ -1,0 +1,1113 @@
+{
+ 
+    "intensification" :{
+        
+       "cc": {
+            "acre": {
+                "dataset": "cc_acre_fips_summary",
+                "lookup":"acre",
+                "bin_params_init": [-1e300,-4000, -2000, -1000, -500, 0, 500, 1000, 2000, 4000, 1e300],
+                "bin_params": { 
+                                "kernel":500,
+                                "coef":2,
+                                "lower":{
+                                        "count":5,
+                                        "inf":"true"
+                                       },
+                                "upper":{
+                                        "count":5,
+                                        "inf":"true"
+                                       }
+                              },
+                "legend_title": "acres per county",
+                "done":"no"                 
+            },
+            "n2o": {
+                "dataset": "cc_n2o_fips_summary",
+                "lookup":"n2o",
+                "bin_params_init": [-1e300,-4000, -2000, -1000, -500, 0, 500, 1000, 2000, 4000, 1e300],
+                "bin_params": { 
+                                "kernel":500,
+                                "coef":2,
+                                "lower":{
+                                        "count":5,
+                                        "inf":"true"
+                                       },
+                                "upper":{
+                                        "count":5,
+                                        "inf":"true"
+                                       }
+                              },
+                "legend_title": "m3 per county",
+                "done":"no"                 
+            },
+            "napp": {
+                "dataset": "cc_napp_fips_summary",
+                "lookup":"napp",
+                "bin_params": { 
+                                "kernel":100,
+                                "coef":2,
+                                "lower":{
+                                        "count":5,
+                                        "inf":"true"
+                                       },
+                                "upper":{
+                                        "count":5,
+                                        "inf":"true"
+                                       }
+                              },
+                "legend_title": "Mg per county",
+                "done":"no"                
+            },
+            "nlch": {
+                "dataset": "cc_nlch_fips_summary",
+                "lookup":"nlch",
+                "bin_params_init": [-400, -200, -100, -50, 0, 50, 100, 200, 400, 1e300],
+                 "bin_params": { 
+                                "kernel":50,
+                                "coef":2,
+                                "lower":{
+                                        "count":4,
+                                        "inf":"false"
+                                       },
+                                "upper":{
+                                        "count":5,
+                                        "inf":"true"
+                                       }
+                              },
+                "legend_title": "Mg per county",
+                "done":"yes"
+            },
+            "phos": {
+                "dataset": "cc_phos_fips_summary",
+                "lookup":"phos",
+                "bin_params_init": [-1e300, -2000, -1000, -500, -250, 0, 250, 500, 1000, 2000, 1e300],
+                "bin_params": { 
+                                "kernel":250,
+                                "coef":2,
+                                "lower":{
+                                        "count":5,
+                                        "inf":"true"
+                                       },
+                                "upper":{
+                                        "count":5,
+                                        "inf":"true"
+                                       }
+                              },
+                "legend_title": "kg per county",
+                "done":"yes"
+            },
+            "sed": {
+                "dataset": "cc_sed_fips_summary",
+                "lookup":"sed",
+                "bin_params": { 
+                                "kernel":100,
+                                "coef":2,
+                                "lower":{
+                                        "count":4,
+                                        "inf":"false"
+                                       },
+                                "upper":{
+                                        "count":5,
+                                        "inf":"true"
+                                       }
+                              },
+                "legend_title": "m3 per county",
+                "done":"no" 
+            }
+        },
+
+
+        "oo": {
+            "acre": {
+                "dataset": "oo_acre_fips_summary",
+                "lookup":"acre",
+                "bin_params_init": [-1e300,-4000, -2000, -1000, -500, 0, 500, 1000, 2000, 4000, 1e300],
+                "bin_params": { 
+                                "kernel":500,
+                                "coef":2,
+                                "lower":{
+                                        "count":5,
+                                        "inf":"true"
+                                       },
+                                "upper":{
+                                        "count":5,
+                                        "inf":"true"
+                                       }
+                              },
+                "legend_title": "acres per county",
+                "done":"no"                 
+            },
+            "n2o": {
+                "dataset": "oo_n2o_fips_summary",
+                "lookup":"n2o",
+                "bin_params_init": [-1e300,-4000, -2000, -1000, -500, 0, 500, 1000, 2000, 4000, 1e300],
+                "bin_params": { 
+                                "kernel":500,
+                                "coef":2,
+                                "lower":{
+                                        "count":5,
+                                        "inf":"true"
+                                       },
+                                "upper":{
+                                        "count":5,
+                                        "inf":"true"
+                                       }
+                              },
+                "legend_title": "m3 per county",
+                "done":"no"                 
+            },
+            "napp": {
+                "dataset": "oo_napp_fips_summary",
+                "lookup":"napp",
+                "bin_params": { 
+                                "kernel":50,
+                                "coef":2,
+                                "lower":{
+                                        "count":5,
+                                        "inf":"true"
+                                       },
+                                "upper":{
+                                        "count":5,
+                                        "inf":"true"
+                                       }
+                              },
+                "legend_title": "m3 per county",
+                "done":"no"                 
+            },
+            "nlch": {
+                "dataset": "oo_nlch_fips_summary",
+                "lookup":"nlch",
+                "bin_params_init": [-1e300, -400, -200, -100, -50, 0, 50, 100, 200, 400],
+                "bin_params": { 
+                                "kernel":50,
+                                "coef":2,
+                                "lower":{
+                                        "count":5,
+                                        "inf":"true"
+                                       },
+                                "upper":{
+                                        "count":4,
+                                        "inf":"false"
+                                       }
+                              },
+                "legend_title": "Mg per county",
+                "done":"yes"                 
+            },
+            "phos": {
+                "dataset": "oo_phos_fips_summary",
+                "lookup":"phos",
+                "bin_params_init": [-1e300, -2000, -1000, -500, -250, 0, 250, 500, 1000, 2000, 1e300],
+                "bin_params": { 
+                                "kernel":250,
+                                "coef":2,
+                                "lower":{
+                                        "count":5,
+                                        "inf":"true"
+                                       },
+                                "upper":{
+                                        "count":5,
+                                        "inf":"true"
+                                       }
+                              },
+                "legend_title": "kg per county",
+                "done":"yes" 
+            },
+             "sed": {
+                "dataset": "oo_sed_fips_summary",
+                "lookup":"sed",
+                "bin_params": { 
+                                "kernel":100,
+                                "coef":2,
+                                "lower":{
+                                        "count":5,
+                                        "inf":"true"
+                                       },
+                                "upper":{
+                                        "count":4,
+                                        "inf":"false"
+                                       }
+                              },
+                "legend_title": "m3 per county",
+                "done":"no" 
+            }
+        },
+
+
+        "co": {
+            "acre": {
+                "dataset": "co_acre_fips_summary",
+                "lookup":"acre",
+                "bin_params": { 
+                                "kernel":1000,
+                                "coef":2,
+                                "lower":{
+                                        "count":5,
+                                        "inf":"true"
+                                       },
+                                "upper":{
+                                        "count":5,
+                                        "inf":"true"
+                                       }
+                              },
+                "legend_title": "acres per county",
+                "done":"no"                 
+            },
+            "n2o": {
+                "dataset": "co_n2o_fips_summary",
+                "lookup":"n2o",
+                "bin_params_init": [-1e300,-4000, -2000, -1000, -500, 0, 500, 1000, 2000, 4000, 1e300],
+                "bin_params": { 
+                                "kernel":500,
+                                "coef":2,
+                                "lower":{
+                                        "count":5,
+                                        "inf":"true"
+                                       },
+                                "upper":{
+                                        "count":5,
+                                        "inf":"true"
+                                       }
+                              },
+                "legend_title": "m3 per county",
+                "done":"no" 
+            },
+            "napp": {
+                "dataset": "co_napp_fips_summary",
+                "lookup":"napp",
+                "bin_params": { 
+                                "kernel":50,
+                                "coef":2,
+                                "lower":{
+                                        "count":5,
+                                        "inf":"true"
+                                       },
+                                "upper":{
+                                        "count":5,
+                                        "inf":"true"
+                                       }
+                              },
+                "legend_title": "m3 per county",
+                "done":"no" 
+            },
+            "nlch": {
+                "dataset": "co_nlch_fips_summary",
+                "lookup":"nlch",
+                "bin_params_init": [-400, -200, -100, -50, 0, 50, 100, 200, 400, 1e300],
+                "bin_params": { 
+                                "kernel":50,
+                                "coef":2,
+                                "lower":{
+                                        "count":4,
+                                        "inf":"false"
+                                       },
+                                "upper":{
+                                        "count":5,
+                                        "inf":"true"
+                                       }
+                              },
+                "legend_title": "Mg per county",
+                "done":"yes" 
+            },
+            "phos": {
+                "dataset": "co_phos_fips_summary",
+                "lookup":"phos",
+                "bin_params_init": [-1e300, -2000, -1000, -500, -250, 0, 250, 500, 1000, 2000, 1e300],
+                "bin_params": { 
+                                "kernel":250,
+                                "coef":2,
+                                "lower":{
+                                        "count":5,
+                                        "inf":"true"
+                                       },
+                                "upper":{
+                                        "count":5,
+                                        "inf":"true"
+                                       }
+                              },
+                "legend_title": "kg per county",
+                "done":"yes" 
+            },
+            "sed": {
+                "dataset": "co_sed_fips_summary",
+                "lookup":"sed",
+                "bin_params": { 
+                                "kernel":100,
+                                "coef":2,
+                                "lower":{
+                                        "count":5,
+                                        "inf":"true"
+                                       },
+                                "upper":{
+                                        "count":5,
+                                        "inf":"true"
+                                       }
+                              },
+                "legend_title": "NO\u2083\u207B (mgN/L)",
+                "done":"no" 
+            }
+        },
+
+
+        "net": {
+            "n2o_initial": {
+                "dataset": "net_n2o_fips_summary",
+                "lookup":"n2o",
+                "bin_params_init": [-8000, -4000, -2000, -1000, -500, 0, 500, 1000, 2000, 4000, 1e300],
+                "legend_title": "N2O (MgCO2e)",
+                "done":"no" 
+            },
+            "n2o": {
+                "dataset": "net_n2o_fips_summary",
+                "lookup":"n2o",
+                "bin_params_init": [-8000, -4000, -2000, -1000, -500, 0, 500, 1000, 2000, 4000, 1e300],
+                "bin_params": { 
+                                "coef":2,
+                                "kernel":500,
+                                "lower":{
+                                        "count":5,
+                                        "inf":"false"
+                                       },
+                                "upper":{
+                                        "count":5,
+                                        "inf":"true"
+                                       }
+                              },
+                "legend_title": "N2O (MgCO2e)",
+                "done":"no" 
+            },
+            "napp": {
+                "dataset": "net_napp_fips_summary",
+                "lookup":"napp",
+                "bin_params_init": [-1000, -500, -250, -125, 0, 125, 250, 500, 1000, 1e300],
+                "bin_params": { 
+                                "coef":2,
+                                "kernel":125,
+                                "lower":{
+                                        "count":4,
+                                        "inf":"false"
+                                       },
+                                "upper":{
+                                        "count":5,
+                                        "inf":"true"
+                                       }
+                              },
+                "legend_title": "Nitrogen (Mg)",
+                "done":"no" 
+            },
+            "nlch": {
+                "dataset": "net_nlch_fips_summary",
+                "lookup":"nlch",
+                "bin_params_init": [-300, -150, -75, 0, 75, 150, 300, 600, 1200],
+                "bin_params": { 
+                                "coef":2,
+                                "kernel":75,
+                                "lower":{
+                                        "count":3,
+                                        "inf":"false"
+                                       },
+                                "upper":{
+                                        "count":5,
+                                        "inf":"false"
+                                       }
+                              },
+                "legend_title": "Nitrate (Mg)",
+                "done":"no" 
+            },
+           "nlch_grouped_legend": {
+                "dataset": "net_nlch_fips_summary",
+                "lookup":"nlch",
+                "bin_params": [-200, -100, -50, 0, 50, 100, 200, 400, 1e300],
+                "legend_title": "Mg per county",
+                "done":"yes" 
+            },
+            "phos": {
+                "dataset": "net_phos_fips_summary",
+                "lookup":"phos",
+                "bin_params_init": [-800, -400, -200, -100, -50, 0, 50, 100, 200, 400, 1e300],
+                "bin_params": { 
+                                "coef":2,
+                                "kernel":50,
+                                "lower":{
+                                        "count":5,
+                                        "inf":"false"
+                                       },
+                                "upper":{
+                                        "count":5,
+                                        "inf":"true"
+                                       }
+                              },
+                "legend_title": "Phosphorus (kg)"
+            },
+            "phos_grouped_legend": {
+                "dataset": "net_phos_fips_summary",
+                "lookup":"phos",
+                "bin_params_init": [-1000, -500, -250, 0, 250, 500, 1000, 2000, 1e300],
+                "legend_title": "kg per county"
+            },
+            "sed": {
+                "dataset": "net_sed_fips_summary",
+                "lookup":"sed",
+                "bin_params_init": [-400, -200, -100, -50, 0, 50, 100, 200, 400, 1e300],
+                "bin_params": { 
+                                "coef":2,
+                                "kernel":50,
+                                "lower":{
+                                        "count":4,
+                                        "inf":"false"
+                                       },
+                                "upper":{
+                                        "count":5,
+                                        "inf":"true"
+                                       }
+                              },
+                "legend_title": " Sediment (Mg)"
+            }
+        },
+
+        "cornTot": {
+            "acres": {
+                "dataset": "cornTot_acre_fips_summary",
+                "lookup":"acre",
+                "bin_params_init": [-16000, -8000, -4000, -2000, -1000, 0, 1000, 2000, 4000, 8000, 1e300],
+                "bin_params": { 
+                                "coef":2,
+                                "kernel":1000,
+                                "lower":{
+                                        "count":5,
+                                        "inf":"false"
+                                       },
+                                "upper":{
+                                        "count":5,
+                                        "inf":"true"
+                                       }
+                              },
+                "legend_title": "Area (ha)"
+            }
+        },
+
+        "mlra": {
+            "ratio_expand_rfs_mlra": {
+                "dataset":"ratio_expand_rfs_mlra",
+                "legend_range": [2,3,4,5,6],
+                "bin_params": [-0.002, 0, 0.002, 0.004, 0.008, 0.01],
+                "legend_labels": ["-0.2", "0.2", "0.4", "0.8", "1"],
+                "legend_title": "% of regional area"
+            },
+
+            "ratio_abandon_rfs_mlra": {
+                "dataset":"ratio_abandon_rfs_mlra",
+                "legend_range": [3,4,5,6,7],
+                "bin_params": [-0.004, -0.002, 0, 0.002, 0.004, 0.008],
+                "legend_labels": ["-0.4", "-0.2", "0.2", "0.4", "0.8"],
+                "legend_title": "% of regional area"
+            }
+        },
+
+        "napp": {
+            "napp_ext": {
+                "dataset":"ext_diff_napp_fips_summary",
+                "lookup":"napp",
+                "legend_range": [1,2,3,4,5,6,7,8],
+                "bin_params": [-1000, -100, -10, 0, 10, 100, 1000, 1000000],
+                "legend_title": "Mg per county"
+            },
+
+            "napp_abd": {
+                "dataset":"abd_diff_napp_fips_summary",
+                "lookup":"napp",
+                "legend_range": [1,2,3,4,5,6,7,8,9],
+                "bin_params": [-1000, -100, -10, -5, 0, 5, 10, 100, 100000000],
+                "legend_title": "Mg per county"
+            }
+        },
+
+        "n2o": {
+
+            "n2o_ext": {
+                "dataset":"ext_diff_n2o_fips_summary",
+                "lookup":"n2o",
+                "legend_range": [1,2,3,4,5,6,7,8],
+                "bin_params": [-10000, -1000, -100, 0, 100, 1000, 10000, 1000000],
+                "legend_title": "Mg of CO2e per county"
+            },
+
+            "n2o_abd": {
+                "dataset":"abd_diff_n2o_fips_summary",
+                "lookup":"n2o",
+                "legend_range": [1,2,3,4,5,6,7,8,9],
+                "bin_params": [-10000, -1000, -100, -10, 0, 10, 100, 1000, 10000],
+                "legend_title": "Mg of CO2e per county"
+            }
+        }
+    },
+
+
+
+
+    "extensification": {
+
+        "area": {
+            "area_region_ext": {
+                "dataset":"area_region_ext",
+                "lookup":"area",
+                "type":"region",
+                "bin_params_init": [-0.25, 0, 0.25, 0.5, 1.0, 2.0],
+                "bin_params": { 
+                                "kernel":0.25,
+                                "coef":2,
+                                "lower":{
+                                        "count":1,
+                                        "inf":"false"
+                                       },
+                                "upper":{
+                                        "count":4,
+                                        "inf":"false"
+                                       }
+                              },
+                "legend_title": "% of regional area"
+            },
+
+            "area_region_abd": {
+                "dataset":"area_region_abd",
+                "lookup":"area",
+                "type":"region",
+                "bin_params_init": [-0.2, -0.1, 0, 0.1, 0.2, 0.4, 0.8],
+                "bin_params": { 
+                                "kernel":0.1,
+                                "coef":2,
+                                "lower":{
+                                        "count":2,
+                                        "inf":"false"
+                                       },
+                                "upper":{
+                                        "count":4,
+                                        "inf":"false"
+                                       }
+                              },
+                "legend_title": "% of regional area"
+            },
+
+            "area_county_ext": {
+                "dataset":"ext_acres_fips_summary",
+                "lookup":"area_county_ext",
+                "type":"county",
+                "bin_params_init": [-1e4, -1e3, -1e2, 10, 0, 10, 1e2, 1e3, 1e4, 1e5],
+                "bin_params": { 
+                                "kernel":10,
+                                "coef":10,
+                                "lower":{
+                                        "count":4,
+                                        "inf":"false"
+                                       },
+                                "upper":{
+                                        "count":5,
+                                        "inf":"false"
+                                       }
+                              },
+                "legend_title": "hectares per county",
+                "inversion_coeff":"1"
+            },
+
+            "area_county_abd": {
+                "dataset":"abd_acres_fips_summary",
+                "lookup":"area_county_abd",
+                "type":"county",
+                "bin_params_init": [-1e4, -1e3, -1e2, 10, 0, 10, 1e2, 1e3, 1e4, 1e5],
+                "bin_params": { 
+                                "kernel":10,
+                                "coef":10,
+                                "lower":{
+                                        "count":4,
+                                        "inf":"false"
+                                       },
+                                "upper":{
+                                        "count":5,
+                                        "inf":"true"
+                                       }
+                              },
+                "legend_title": "hectares per county",
+                "inversion_coeff":"-1"
+            },
+            "area_county_net": {
+                "dataset":"net_acres_fips_summary",
+                "lookup":"area",
+                "type":"county",
+                "bin_params_init": [-1e4, -1e3, -1e2, 0, 1e2, 1e3, 1e4, 1e5],
+                "bin_params": { 
+                                "coef":10,
+                                "kernel":100,
+                                "lower":{
+                                        "count":3,
+                                        "inf":"false"
+                                       },
+                                "upper":{
+                                        "count":4,
+                                        "inf":"false"
+                                       }
+                              },
+                "legend_title": "Area (ha)",
+                "inversion_coeff":"1",
+                "done":"yes"
+            }
+        },
+
+        "agroibis": {
+
+            "AET_ext": {
+                "dataset": "ext_diff_AET_fips_summary",
+                "lookup":"AET",
+                "bin_params": { 
+                                "kernel":1000,
+                                "coef":10,
+                                "lower":{
+                                        "count":5,
+                                        "inf":"false"
+                                       },
+                                "upper":{
+                                        "count":5,
+                                        "inf":"false"
+                                       }
+                              },
+                "legend_title": "m3 per county",
+                "inversion_coeff":"1"
+            },
+            "AET_abd": {
+                "dataset": "abd_diff_AET_fips_summary",
+                "lookup":"AET",
+                "bin_params": { 
+                                "kernel":1000,
+                                "coef":10,
+                                "lower":{
+                                        "count":5,
+                                        "inf":"false"
+                                       },
+                                "upper":{
+                                        "count":5,
+                                        "inf":"false"
+                                       }
+                              },
+
+                "legend_title": "m3 per county",
+                "inversion_coeff":"-1"
+            },
+            "AET_net": {
+                "dataset": "net_diff_AET_fips_summary",
+                "lookup":"AET",
+                "bin_params_km3": [-1e-02, -1e-03, -1e-04, -1e-05, 0, 1e-05, 1e-04, 1e-03, 1e-02],
+                "bin_params_init": [-1e7, -1e6, -1e5, -1e4, 0, 1e4, 1e5, 1e6, 1e7],
+                "bin_params": { 
+                                "coef":10,
+                                "kernel":1e4,
+                                "lower":{
+                                        "count":4,
+                                        "inf":"false"
+                                       },
+                                "upper":{
+                                        "count":4,
+                                        "inf":"false"
+                                       }
+                              },                
+                "legend_title": "Water use (m3)",
+                "inversion_coeff":"1"
+            },
+
+            "Irrig_ext": {
+                "dataset": "ext_diff_Irrig_fips_summary",
+                "lookup":"Irrig",
+                "bin_params": [-1e300,-1e4, -1e3, -1e2, 0, 1e2, 1e3, 1e4, 1e5, 1e300],
+                "legend_title": "m3 per county",
+                "inversion_coeff":"1"
+            },
+            "Irrig_abd": {
+                "dataset": "abd_diff_Irrig_fips_summary",
+                "lookup":"Irrig",
+                "bin_params": [-1e300,-1e4, -1e3, -1e2, 0, 1e2, 1e3, 1e4, 1e5, 1e300],
+                "legend_title": "m3 per county",
+                "inversion_coeff":"-1"
+            },
+            "Irrig_net": {
+                "dataset": "net_diff_Irrig_fips_summary",
+                "lookup":"Irrig",
+                "bin_params": [-1e300, -1e4, -1e3, -1e2, 0, 1e2, 1e3, 1e4, 1e5],
+                "legend_title": "m3 per county",
+                "inversion_coeff":"1"
+            },
+
+            "NLeach_ext": {
+                "dataset": "ext_diff_Nleach_fips_summary",
+                "lookup":"NLeach",
+                "bin_params_init": [-1e2, -10, -1, 0, 1, 10, 1e2, 1e3],
+                "bin_params": { 
+                                "coef":10,
+                                "kernel":1,
+                                "lower":{
+                                        "count":3,
+                                        "inf":"false"
+                                       },
+                                "upper":{
+                                        "count":4,
+                                        "inf":"false"
+                                       }
+                              },
+                "legend_title": "Mg per county",
+                "inversion_coeff":"1"
+            },
+            "NLeach_abd": {
+                "dataset": "abd_diff_Nleach_fips_summary",
+                "lookup":"NLeach",
+                "bin_params_init": [-1e3, -1e2, -10, -1, 0, 1, 10, 1e2, 1e3],
+                "bin_params": { 
+                                "coef":10,
+                                "kernel":1,
+                                "lower":{
+                                        "count":4,
+                                        "inf":"false"
+                                       },
+                                "upper":{
+                                        "count":4,
+                                        "inf":"false"
+                                       }
+                              },
+                "legend_title": "Mg per county",
+                "inversion_coeff":"-1",
+                "done":"yes"
+            },
+            "NLeach_net": {
+                "dataset": "net_diff_Nleach_fips_summary",
+                "lookup":"NLeach",
+                "bin_params_init": [-1e3, -1e2, -10, -1, 0, 1, 10, 1e2, 1e3],
+                "bin_params": { 
+                                "coef":10,
+                                "kernel":1,
+                                "lower":{
+                                        "count":4,
+                                        "inf":"false"
+                                       },
+                                "upper":{
+                                        "count":4,
+                                        "inf":"false"
+                                       }
+                              },                 
+                "legend_title": "Nitrate (Mg)",
+                "inversion_coeff":"1",
+                "done":"yes"
+            },
+
+            "SEDrunoff_ext": {
+                "dataset": "ext_diff_SEDrunoff_fips_summary",
+                "lookup":"SEDrunoff",
+                "bin_params": { 
+                                "kernel":10,
+                                "coef":10,
+                                "lower":{
+                                        "count":3,
+                                        "inf":"false"
+                                       },
+                                "upper":{
+                                        "count":5,
+                                        "inf":"true"
+                                       }
+                              },
+                "legend_title": "Mg per county",
+                "inversion_coeff":"1"
+            },
+            "SEDrunoff_abd": {
+                "dataset": "abd_diff_SEDrunoff_fips_summary",
+                "lookup":"SEDrunoff",
+                "bin_params": { 
+                                "kernel":10,
+                                "coef":10,
+                                "lower":{
+                                        "count":3,
+                                        "inf":"false"
+                                       },
+                                "upper":{
+                                        "count":4,
+                                        "inf":"false"
+                                       }
+                              },
+                "legend_title": "Mg per county",
+                "inversion_coeff":"-1"
+            },
+             "SEDrunoff_net": {
+                "dataset": "net_diff_SEDrunoff_fips_summary",
+                "lookup":"SEDrunoff",
+                "bin_params_init": [-1e4, -1e3, -1e2, -10, -1, 0, 1, 10, 1e2, 1e3, 1e4],
+                "bin_params": { 
+                                "coef":10,
+                                "kernel":1,
+                                "lower":{
+                                        "count":5,
+                                        "inf":"false"
+                                       },
+                                "upper":{
+                                        "count":5,
+                                        "inf":"false"
+                                       }
+                              },                   
+                "legend_title": "Sediment (Mg)",
+                "inversion_coeff":"1",
+                  "done":"ok"
+            },       
+
+            "TPrunoff_ext": {
+                "dataset": "ext_diff_TPrunoff_fips_summary",
+                "lookup":"TPrunoff",
+                "bin_params_init": [-1e4, -1e3, -1e2, -10, 0, 10, 1e2, 1e3, 1e4, 1e300],
+                "bin_params": { 
+                                "kernel":10,
+                                "coef":10,
+                                "lower":{
+                                        "count":4,
+                                        "inf":"false"
+                                       },
+                                "upper":{
+                                        "count":5,
+                                        "inf":"true"
+                                       }
+                              },
+                "inversion_coeff":"1",
+                "legend_title": "kg per county"
+            },
+            "TPrunoff_abd": {
+                "dataset": "abd_diff_TPrunoff_fips_summary",
+                "lookup":"TPrunoff",
+                "bin_params_init": [-1e4, -1e3, -1e2, -10, 0, 10, 1e2, 1e3, 1e4],
+                "bin_params": { 
+                                "kernel":10,
+                                "coef":10,
+                                "lower":{
+                                        "count":4,
+                                        "inf":"false"
+                                       },
+                                "upper":{
+                                        "count":4,
+                                        "inf":"false"
+                                       }
+                              },
+                "inversion_coeff":"-1",
+                "legend_title": "kg per county"
+            },
+            "TPrunoff_net": {
+                "dataset": "net_diff_TPrunoff_fips_summary",
+                "lookup":"TPrunoff",
+                "bin_params_init": [-1e4, -1e3, -1e2, -10, -1, 0, 1, 10, 1e2, 1e3, 1e4],
+                "bin_params": { 
+                                "coef":10,
+                                "kernel":1,
+                                "lower":{
+                                        "count":5,
+                                        "inf":"false"
+                                       },
+                                "upper":{
+                                        "count":5,
+                                        "inf":"false"
+                                       }
+                              },                  
+                "legend_title": "Phosphorus (kg)",
+                "inversion_coeff":"1",
+                "done":"ok"
+            }
+        },
+
+        "carbon": {
+            "carbon_ext": {
+                "dataset":"ext_diff_carbon_fips_summary",
+                "lookup":"carbon",
+                "bin_params_init": [-1e3, -1e2, -10, -1, 0, 1, 10, 1e2, 1e3, 1e4],
+                "bin_params": { 
+                                "kernel":1,
+                                "coef":10,
+                                "lower":{
+                                        "count":4,
+                                        "inf":"false"
+                                       },
+                                "upper":{
+                                        "count":5,
+                                        "inf":"false"
+                                       }
+                              },
+                "legend_title": "Gg of CO2e per county",
+                "inversion_coeff":"1"
+            },
+
+            "carbon_abd": {
+                "dataset":"abd_diff_carbon_fips_summary",
+                "lookup":"carbon",
+                "bin_params_init": [-1e3, -1e2, -10, -1, 0, 1, 10, 1e2, 1e3, 1e4],
+                "bin_params": { 
+                                "kernel":1,
+                                "coef":10,
+                                "lower":{
+                                        "count":4,
+                                        "inf":"false"
+                                       },
+                                "upper":{
+                                        "count":5,
+                                        "inf":"false"
+                                       }
+                              },
+                "legend_title": "Gg of CO2e per county",
+                "inversion_coeff":"-1"
+            },
+            "carbon_net": {
+                "dataset":"net_diff_carbon_fips_summary",
+                "lookup":"carbon",
+                "legend_range": [1,2,3,4,5,6,7,8,9],
+                "bin_params": [-1e3, -1e2, -10, -5, 0, 5, 10, 1e2, 1e300],
+                "legend_title": "Gg of CO2e per county",
+                "inversion_coeff":"1"
+            }
+        },
+
+
+        "ghg": {
+
+            "ghg_v2": {
+                "dataset":"",
+                "bin_params": [-1e1, -1e0, -1e-1, -1e-2, 0, 1e-2, 1e-1, 1e0, 1e1],
+                "legend_title": "Tg per county"
+            },
+            "ghg_ext": {
+                "dataset":"ghg_ext",
+                "bin_params": { 
+                                "kernel":1,
+                                "coef":10,
+                                "lower":{
+                                        "count":4,
+                                        "inf":"false"
+                                       },
+                                "upper":{
+                                        "count":5,
+                                        "inf":"false"
+                                       }
+                              },
+                "legend_title": "Gg per county"
+            },
+            "ghg_abd": {
+                "dataset":"ghg_abd",
+                "bin_params_init": [-1e3, -1e2, -10, 0, 10, 1e2, 1e3, 1e4],
+                "bin_params": { 
+                                "kernel":1,
+                                "coef":10,
+                                "lower":{
+                                        "count":4,
+                                        "inf":"false"
+                                       },
+                                "upper":{
+                                        "count":5,
+                                        "inf":"false"
+                                       }
+                              },
+                "legend_title": "Gg per county"
+            },
+            "ghg_net": {
+                "dataset":"ghg_net",
+                "bin_params_init": [-1e4, -1e3, -1e2, -10, 0, 10, 1e2, 1e3, 1e4],
+                "bin_params": { 
+                                "coef":10,
+                                "kernel":10,
+                                "lower":{
+                                        "count":4,
+                                        "inf":"false"
+                                       },
+                                "upper":{
+                                        "count":4,
+                                        "inf":"false"
+                                       }
+                              },                 
+                "legend_title": "Emissions (Gg CO2e)"
+            }
+        },
+
+        "napp": {
+
+            "napp_ext": {
+                "dataset":"ext_diff_napp_fips_summary",
+                "lookup":"napp",
+                "bin_params": [-1e3, -1e2, -10, 0, 10, 1e2, 1e3, 1e6],
+                "legend_title": "Mg per county"
+            },
+
+            "napp_abd": {
+                "dataset":"abd_diff_napp_fips_summary",
+                "lookup":"napp",
+                "bin_params": [-1e3, -1e2, -10, -5, 0, 5, 10, 1e2, 1e300],
+                "legend_title": "Mg per county"
+            },
+            "napp_net": {
+                "dataset":"net_diff_napp_fips_summary",
+                "lookup":"napp",
+                "bin_params": [-1e3, -1e2, -10, -5, 0, 5, 10, 1e2, 1e300],
+                "legend_title": "Mg per county"
+            }
+        },
+
+        "n2o": {
+
+            "n2o_ext": {
+                "dataset":"ext_diff_n2o_fips_summary",
+                "lookup":"n2o",
+                "bin_params_init": [-1e4, -1e3, -1e2, 10, 0, 10, 1e2, 1e3, 1e4, 1e6],
+                "bin_params": { 
+                                "kernel":10,
+                                "coef":10,
+                                "lower":{
+                                        "count":4,
+                                        "inf":"false"
+                                       },
+                                "upper":{
+                                        "count":5,
+                                        "inf":"false"
+                                       }
+                              },
+                "legend_title": "Mg of CO2e per county",
+                "inversion_coeff":"1"
+            },
+
+            "n2o_abd": {
+                "dataset":"abd_diff_n2o_fips_summary",
+                "lookup":"n2o",
+                "bin_params_init": [-1e4, -1e3, -1e2, -10, 0, 10, 1e2, 1e3, 1e4],
+                "bin_params": { 
+                                "kernel":10,
+                                "coef":10,
+                                "lower":{
+                                        "count":4,
+                                        "inf":"false"
+                                       },
+                                "upper":{
+                                        "count":4,
+                                        "inf":"false"
+                                       }
+                              },
+                "legend_title": "Mg of CO2e per county",
+                "inversion_coeff":"-1"
+            },
+            "n2o_net": {
+                "dataset":"net_diff_n2o_fips_summary",
+                "lookup":"n2o",
+                "bin_params": [-1e4, -1e3, -1e2, -10, 0, 10, 1e2, 1e3, 1e4],
+                "legend_title": "Mg of CO2e per county"
+            }
+        }
+    }
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

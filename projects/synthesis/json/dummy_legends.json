@@ -1,0 +1,41 @@
+{
+    
+      "intensification": {
+
+            "phos": {
+            "gap":0.023,
+            "keywidth":0.058,
+            "keyheight":0.01,
+            "palette":"PRGn",
+            "bin_breaks": [-100000, -2000, -1000, -500, -250, 0, 250, 500, 1000, 2000, 100000],
+            "legend_title": "kg per county"
+            },
+
+            "nlch": {
+            "bin_breaks": [-100000, -400, -200, -100, -50, 0, 50, 100, 200, 400, 100000],
+            "legend_title": "Mg per county"
+            }
+
+
+      }
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

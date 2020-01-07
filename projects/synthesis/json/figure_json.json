@@ -1,0 +1,427 @@
+{
+      "intensification": {
+            "main": {
+                  "gap":0.023,
+                  "keywidth":0.058,
+                  "keyheight":0.058,
+                  "palette":"BrBG",
+
+                  "col1":{
+                        "p1": {
+                              "child": "cornTot",
+                              "grandchild": "acres",
+                              "title":"A"
+                        },
+                        "p2": {
+                              "child": "net",
+                              "grandchild": "n2o",
+                              "title":"C"
+                        },
+                        "p3": {
+                              "child": "net",
+                              "grandchild": "phos",
+                              "title":"E"
+                        }
+
+                  },
+                  "col2":{
+                        "p1": {
+                              "child": "net",
+                              "grandchild": "napp",
+                              "title":"B"
+                        },
+                        "p2": {
+                              "child": "net",
+                              "grandchild": "nlch",
+                              "title":"D"
+                        },
+                        "p3": {
+                              "child": "net",
+                              "grandchild": "sed",
+                              "title":"F"
+                        }
+                  }                       
+            },
+            "sup1": {
+                  "gap":0.023,
+                  "keywidth":0.058,
+                  "keyheight":0.058,
+                  "palette":"BrBG",
+
+                  "col1":{
+                        "p1": {
+                              "child": "cc",
+                              "grandchild": "phos",
+                              "title":"A"
+                        },
+                        "p2": {
+                              "child": "oo",
+                              "grandchild": "phos",
+                              "title":"B"
+                        },
+                        "p3": {
+                              "child": "co",
+                              "grandchild": "phos",
+                              "title":"C"
+                        }
+                  },
+                  "col2":{
+                       "p1": {
+                              "child": "cc",
+                              "grandchild": "nlch",
+                              "title":"A"
+                        },
+                        "p2": {
+                              "child": "oo",
+                              "grandchild": "nlch",
+                              "title":"B"
+                        },
+                        "p3": {
+                              "child": "co",
+                              "grandchild": "nlch",
+                              "title":"C"
+                        }
+                  }
+            },
+            "sup2": {
+                  "gap":0.023,
+                  "keywidth":0.058,
+                  "keyheight":0.058,
+                  "palette":"BrBG",
+
+                  "col1":{
+                       "p1": {
+                              "child": "cc",
+                              "grandchild": "n2o",
+                              "title":"A"
+                        },
+                        "p2": {
+                              "child": "oo",
+                              "grandchild": "n2o",
+                              "title":"B"
+                        },
+                        "p3": {
+                              "child": "co",
+                              "grandchild": "n2o",
+                              "title":"C"
+                        }
+                  },
+                  "col2":{
+                       "p1": {
+                              "child": "cc",
+                              "grandchild": "napp",
+                              "title":"A"
+                        },
+                        "p2": {
+                              "child": "oo",
+                              "grandchild": "napp",
+                              "title":"B"
+                        },
+                        "p3": {
+                              "child": "co",
+                              "grandchild": "napp",
+                              "title":"C"
+                        }
+                  }
+            },
+            "sup3": {
+                  "gap":0.023,
+                  "keywidth":0.058,
+                  "keyheight":0.058,
+                  "palette":"BrBG",
+
+                  "col1":{
+                       "p1": {
+                              "child": "cc",
+                              "grandchild": "acre",
+                              "title":"A"
+                        },
+                        "p2": {
+                              "child": "oo",
+                              "grandchild": "acre",
+                              "title":"B"
+                        },
+                        "p3": {
+                              "child": "co",
+                              "grandchild": "acre",
+                              "title":"C"
+                        }
+                  },
+                  "col2":{
+                       "p1": {
+                              "child": "cc",
+                              "grandchild": "sed",
+                              "title":"A"
+                        },
+                        "p2": {
+                              "child": "oo",
+                              "grandchild": "sed",
+                              "title":"B"
+                        },
+                        "p3": {
+                              "child": "co",
+                              "grandchild": "sed",
+                              "title":"C"
+                        }
+                  }                           
+            },
+            "sup1_4panels": {
+                  "gap":0.025,
+                  "keywidth":0.06,
+                  "keyheight":0.06,
+                  "palette":"BrBG",
+                  "columns":{
+                        "col1":{
+                              "args":{
+                                    "bin_breaks": [-100000, -2000, -1000, -500, -250, 0, 250, 500, 1000, 2000, 100000],
+                                    "legend_title": "kg per county"
+                              },
+                              "panels":{
+                                    "p1": {
+                                          "child": "net",
+                                          "grandchild": "phos",
+                                          "title":"A)"
+                                    },
+                                    "p2": {
+                                          "child": "net",
+                                          "grandchild": "phos",
+                                          "title":"C)"
+                                    },
+                                    "p3": {
+                                          "child": "net",
+                                          "grandchild": "phos",
+                                          "title":"E)"
+                                    },
+                                    "p4": {
+                                          "child": "net",
+                                          "grandchild": "phos",
+                                          "title":"G)"
+                                    }
+                              }     
+                        },
+
+                        "col2":{
+                              "args":{
+                                    "bin_breaks": [-100000, -400, -200, -100, -50, 0, 50, 100, 200, 400, 100000],
+                                    "legend_title": "Mg per county"
+                              },
+                              "panels":{
+                                    "p1": {
+                                          "child": "net",
+                                          "grandchild": "nlch",
+                                          "title":"B)"
+                                    },
+                                     "p2": {
+                                          "child": "net",
+                                          "grandchild": "nlch",
+                                          "title":"D)"
+                                    },
+                                     "p3": {
+                                          "child": "net",
+                                          "grandchild": "nlch",
+                                          "title":"F)"
+                                    },
+                                    "p4": {
+                                          "child": "net",
+                                          "grandchild": "nlch",
+                                          "title":"H)"
+                                    }
+                              }     
+                        }
+                  }                   
+            }
+      },
+      "extensification": {
+            "main": {
+                  "gap":0.023,
+                  "keywidth":0.058,
+                  "keyheight":0.058,
+                  "palette":"PRGn",
+
+                  "col1":{
+                        "p1": {
+                              "child": "area",
+                              "grandchild": "area_county_net",
+                              "title":"A"
+                        },
+                        "p2": {
+                              "child": "agroibis",
+                              "grandchild": "AET_net",
+                              "title":"C"
+                        },
+                        "p3": {
+                              "child": "agroibis",
+                              "grandchild": "TPrunoff_net",
+                              "title":"E"
+                        }
+                  },
+                  "col2":{
+                        "p1": {
+                              "child": "ghg",
+                              "grandchild": "ghg_net",
+                              "title":"B"
+                        },
+                        "p2": {
+                              "child": "agroibis",
+                              "grandchild": "NLeach_net",
+                              "title":"D"
+                        },
+                        "p3": {
+                              "child": "agroibis",
+                              "grandchild": "SEDrunoff_net",
+                              "title":"F"
+                        }
+
+
+                  }                       
+            },
+            "sup1": {
+                  "gap":0.023,
+                  "keywidth":0.058,
+                  "keyheight":0.058,
+                  "palette":"PRGn",
+
+                  "col1":{
+                        "p1": {
+                              "child": "agroibis",
+                              "grandchild": "NLeach_ext",
+                              "title":"A"
+                        },
+                        "p2": {
+                              "child": "agroibis",
+                              "grandchild": "SEDrunoff_ext",
+                              "title":"C"
+                        },
+                        "p3": {
+                              "child": "agroibis",
+                              "grandchild": "TPrunoff_ext",
+                              "title":"E"
+                        }
+                  },
+                  "col2":{
+                        "p1": {
+                              "child": "agroibis",
+                              "grandchild": "NLeach_abd",
+                              "title":"B"
+                        },
+                        "p2": {
+                              "child": "agroibis",
+                              "grandchild": "SEDrunoff_abd",
+                              "title":"D"
+                        },
+                   
+                        "p3": {
+                              "child": "agroibis",
+                              "grandchild": "TPrunoff_abd",
+                              "title":"F"
+                        }
+                  }                       
+            },
+            "sup2": {
+                  "gap":0.023,
+                  "keywidth":0.058,
+                  "keyheight":0.058,
+                  "palette":"PRGn",
+
+                  "col1":{
+                        "p1": {
+                              "child": "carbon",
+                              "grandchild": "carbon_ext",
+                              "title":"A"
+                        },
+                        "p2": {
+                              "child": "n2o",
+                              "grandchild": "n2o_ext",
+                              "title":"C"
+                        },
+                        "p3": {
+                              "child": "ghg",
+                              "grandchild": "ghg_ext",
+                              "title":"E"
+                        }
+                  },
+                  "col2":{
+                        "p1": {
+                              "child": "carbon",
+                              "grandchild": "carbon_abd",
+                              "title":"B"
+                        },
+                        "p2": {
+                              "child": "n2o",
+                              "grandchild": "n2o_abd",
+                              "title":"D"
+                        },
+                   
+                        "p3": {
+                              "child": "ghg",
+                              "grandchild": "ghg_abd",
+                              "title":"F"
+                        }
+                  }                       
+            },
+            "sup3": {
+                  "gap":0.023,
+                  "keywidth":0.058,
+                  "keyheight":0.058,
+                  "palette":"PRGn",
+
+                  "col1":{
+                        "p1": {
+                              "child": "area",
+                              "grandchild": "area_region_ext",
+                              "title":"A"
+                        },
+                        "p2": {
+                              "child": "area",
+                              "grandchild": "area_county_ext",
+                              "title":"C"
+                        },
+                        "p3": {
+                              "child": "agroibis",
+                              "grandchild": "AET_ext",
+                              "title":"E"
+                        }
+                  },
+                  "col2":{
+                        "p1": {
+                              "child": "area",
+                              "grandchild": "area_region_abd",
+                              "title":"B"
+                        },
+                        "p2": {
+                              "child": "area",
+                              "grandchild": "area_county_abd",
+                              "title":"D"
+                        },
+                   
+                        "p3": {
+                              "child": "agroibis",
+                              "grandchild": "AET_abd",
+                              "title":"F"
+                        }
+                  }                       
+            }
+      }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

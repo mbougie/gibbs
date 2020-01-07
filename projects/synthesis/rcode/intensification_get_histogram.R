@@ -26,8 +26,8 @@ rm(list = ls(all.names = TRUE)) #will clear all objects includes hidden objects.
 ###define parameters of the object you want to map ###################
 ######################################################################
 parent = 'intensification'
-child = 'cc'
-grandchild = 'sed'
+child = 'net'
+grandchild = 'n2o'
 
 
 
@@ -183,20 +183,87 @@ temp <- mapa@data
 hist(temp$current_field, 100)
 
 ###get descriptive stats
-summary(temp$current_field)
+yo <- summary(temp$current_field)
+print(yo)
+min_test = min(temp$current_field)
+max_test = max(temp$current_field)
+q_1 = quantile(temp$current_field, 0.25)
+q_2 = quantile(temp$current_field, 0.50)
+q_3 = quantile(temp$current_field, 0.75)
+
 
 ###get histogram
 hist(temp$current_field, 100)
 
 
-breaks = obj$bin_breaks
+breaks_coef = obj$bin_params$coef
+breaks_lower_count = obj$bin_params$lower$count
+breaks_coef = obj$bin_params$coef
+kernel = obj$bin_params$kernel
+
+
+createScaledVector <- function(kernel, count, inf, upper_lower) {
+  i = 1
+  temp_vector <- c(kernel)
+  while(i < count){
+    print('-----temp_vector----------')
+    print(temp_vector)
+    x = temp_vector[i] * obj$bin_params$coef
+    print('--------------x--------------')
+    print(x)
+    print('--------------i--------------')
+    print(i)
+    if((i == (count-1)) & (inf=='true') & (upper_lower==-1) ){
+      temp_vector <- c(temp_vector, -1e300)
+    }
+    else if((i == (count-1)) & (inf=='true') & (upper_lower==1) ){
+      temp_vector <- c(temp_vector, 1e300)
+    }
+    else{
+      temp_vector <- c(temp_vector, x)
+    }
+    i = i + 1
+  }
+  return(temp_vector)
+}
+
+vector_low = createScaledVector((-1*kernel), obj$bin_params$lower$count, obj$bin_params$lower$inf, upper_lower=-1)
+vector_high = createScaledVector((1*kernel), obj$bin_params$upper$count, obj$bin_params$upper$inf, upper_lower=1)
+
+bin_breaks <-c(sort(vector_low), c(0), vector_high)
+print(bin_breaks)
+
+# ##### arguments for the labels #########################
+# # replace lower infinity
+# labels = replace(obj$bin_breaks, obj$bin_breaks==-1e+300, paste(2*(nth(obj$bin_breaks, 2)), "+", sep=""))
+# print(labels)
+# # replace upper infinity
+# labels = replace(labels, labels==1e+300, paste(2*(nth(obj$bin_breaks, -2)), "+", sep=""))
+# print(labels)
+# 
+
+
+
+###get the number of labels
+number_of_labels = length(labels)
+print('---------number_of_labels-----------')
+print(number_of_labels)
+
+
+
+
+print(labels2)
+
+
+
+
 # breaks = breaks * -1
 # print(breaks)
-labels = as.character(obj$bin_breaks)
+labels = as.character(bin_breaks)
 # labels = as.character(obj$bin_breaks[obj$bin_breaks != 0])
 print(labels)
 
-temp$bins = cut(temp$current_field, breaks= obj$bin_breaks)
+temp$bins = cut(temp$current_field, breaks= bin_breaks)
 table(temp$bins)
 
 

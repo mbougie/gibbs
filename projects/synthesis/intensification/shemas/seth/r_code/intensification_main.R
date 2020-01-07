@@ -27,17 +27,11 @@ library(gridExtra) #load Grid
 rootpath = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\synthesis\\intensification\\shemas\\seth'
 
 ##### link to scripts #####################################################
-source(paste(rootpath, 'r_code\\intensification_maps_seth_v2.R', sep='\\'))
-source(paste(rootpath, 'r_code\\graphics_dummy_legend.R', sep='\\'))
+source(paste(rootpath, 'r_code\\intensification_maps_current_4panels.R', sep='\\'))
 
 ###### link to json files #################################################
 json_file = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\synthesis\\intensification\\shemas\\seth\\json\\synthesis_master.json'
 jsondata <- fromJSON(file=json_file)
-
-json_legend_file = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\synthesis\\intensification\\shemas\\seth\\json\\dummy_legends.json'
-json_dummy <- fromJSON(file=json_legend_file)
-
-
 
 user <- "mbougie"
 host <- '144.92.235.105'
@@ -61,6 +55,7 @@ jsondata <- fromJSON(file=json_file)
 ### Main query that all the datasets will reference #####################################################
 getquery <- function(parent){
   if(parent == 'intensification'){
+    print('inside postgres intensification function')
     query_ext <- 'SELECT
     "dataset".fips,
     "dataset".mean,
@@ -76,18 +71,21 @@ getquery <- function(parent){
     
     print(query_ext)
     return(query_ext)
+    
+    
   }else if(parent == 'extensification'){
+    print('inside postgres extensification function')
     query_ext <- 'SELECT
-    "dataset".fips,
+    "dataset".atlas_stco as fips,
     "dataset".mean,
     ("dataset".mean * conversion_table.conv_factor)  as current_field,
     \'lookup\' as dataset,
     geom
     FROM
-    intensification_11_20_2019."dataset"
+    extensification_seth."dataset"
     INNER JOIN spatial.counties
-    ON "dataset".fips = counties.fips
-    INNER JOIN misc.conversion_table ON \'lookup\' = conversion_table.intensification'
+    ON "dataset".atlas_stco = counties.fips
+    INNER JOIN misc.conversion_table ON \'lookup\' = conversion_table.extensification'
     
     
     print(query_ext)
@@ -99,59 +97,26 @@ getquery <- function(parent){
 
 
 
-
-
-
-# 
-# ### Main query that all the datasets will reference #####################################################
-# query_ext <- 'SELECT
-#               "dataset".fips,
-#               "dataset".mean,
-#               ("dataset".mean * conversion_table.conv_factor)  as current_field,
-#               \'lookup\' as dataset,
-#               geom
-#               FROM
-#               intensification_11_20_2019."dataset"
-#               INNER JOIN spatial.counties
-#               ON "dataset".fips = counties.fips
-#               INNER JOIN misc.conversion_table ON \'lookup\' = conversion_table.intensification'
-# 
-# 
-# print(query_ext)
-# 
-
-
 ###########################################################################################
 ######--------cc---------- ###########################################################################################################
 ###########################################################################################
 
-parent = 'intensification'
-child = 'cc'
-grandchild = 'phos'
-
-
-# ############# CC #############################################
-# ### ext #####
-# query_specific <- gsub("dataset",jsondata$cc$phos$dataset,query_ext)
-# query_specific <- gsub("lookup",jsondata$cc$phos$lookup,query_specific)
+# parent = 'extensification'
+# child = 'agroibis'
+# grandchild = 'TPrunoff_ext'
+# 
+# 
+# 
+# 
+# query_specific <- gsub("dataset",jsondata[[parent]][[child]][[grandchild]]$dataset,getquery(parent))
+# query_specific <- gsub("lookup",jsondata[[parent]][[child]][[grandchild]]$lookup,query_specific)
 # 
 # print(query_specific)
 # 
-# jsondata$cc$phos$df <- get_postgis_query(con_synthesis,
-#                                                   query_specific,
-#                                                   geom_name = "geom")
-
-
-
-query_specific <- gsub("dataset",jsondata[[parent]][[child]][[grandchild]]$dataset,getquery(parent))
-query_specific <- gsub("lookup",jsondata[[parent]][[child]][[grandchild]]$lookup,query_specific)
-
-print(query_specific)
-
-jsondata[[parent]][[child]][[grandchild]]$df <- get_postgis_query(con_synthesis,
-                                                                  query_specific,
-                                                                  geom_name = "geom")################################################################
-
+# jsondata[[parent]][[child]][[grandchild]]$df <- get_postgis_query(con_synthesis,
+#                                                                   query_specific,
+#                                                                   geom_name = "geom")################################################################
+# 
 
 
 
@@ -160,30 +125,20 @@ jsondata[[parent]][[child]][[grandchild]]$df <- get_postgis_query(con_synthesis,
 ###########################################################################################
 ######--------oo---------- ###########################################################################################################
 ###########################################################################################
-parent = 'intensification'
-child = 'oo'
-grandchild = 'phos'
-
-
-# ### ext #####
-# query_specific <- gsub("dataset",jsondata$oo$phos$dataset,query_ext)
-# query_specific <- gsub("lookup",jsondata$oo$phos$lookup,query_specific)
+# parent = 'extensification'
+# child = 'agroibis'
+# grandchild = 'TPrunoff_abd'
+# 
+# 
+# 
+# query_specific <- gsub("dataset",jsondata[[parent]][[child]][[grandchild]]$dataset,getquery(parent))
+# query_specific <- gsub("lookup",jsondata[[parent]][[child]][[grandchild]]$lookup,query_specific)
 # 
 # print(query_specific)
 # 
-# jsondata$oo$phos$df <- get_postgis_query(con_synthesis,
-#                                                   query_specific,
-#                                                   geom_name = "geom")
-
-
-query_specific <- gsub("dataset",jsondata[[parent]][[child]][[grandchild]]$dataset,getquery(parent))
-query_specific <- gsub("lookup",jsondata[[parent]][[child]][[grandchild]]$lookup,query_specific)
-
-print(query_specific)
-
-jsondata[[parent]][[child]][[grandchild]]$df <- get_postgis_query(con_synthesis,
-                                                                  query_specific,
-                                                                  geom_name = "geom")
+# jsondata[[parent]][[child]][[grandchild]]$df <- get_postgis_query(con_synthesis,
+#                                                                   query_specific,
+#                                                                   geom_name = "geom")
 ################################################################
 
 
@@ -191,29 +146,21 @@ jsondata[[parent]][[child]][[grandchild]]$df <- get_postgis_query(con_synthesis,
 ###########################################################################################
 ######--------oo---------- ###########################################################################################################
 ###########################################################################################
-parent = 'intensification'
-child = 'co'
-grandchild = 'phos'
-
-# ### ext #####
-# query_specific <- gsub("dataset",jsondata$co$phos$dataset,query_ext)
-# query_specific <- gsub("lookup",jsondata$co$phos$lookup,query_specific)
+# parent = 'extensification'
+# child = 'agroibis'
+# grandchild = 'NLeach_ext'
+# 
+# 
+# 
+# 
+# query_specific <- gsub("dataset",jsondata[[parent]][[child]][[grandchild]]$dataset,getquery(parent))
+# query_specific <- gsub("lookup",jsondata[[parent]][[child]][[grandchild]]$lookup,query_specific)
 # 
 # print(query_specific)
 # 
-# jsondata$co$phos$df <- get_postgis_query(con_synthesis,
-#                                                   query_specific,
-#                                                   geom_name = "geom")
-
-
-query_specific <- gsub("dataset",jsondata[[parent]][[child]][[grandchild]]$dataset,getquery(parent))
-query_specific <- gsub("lookup",jsondata[[parent]][[child]][[grandchild]]$lookup,query_specific)
-
-print(query_specific)
-
-jsondata[[parent]][[child]][[grandchild]]$df <- get_postgis_query(con_synthesis,
-                                                                  query_specific,
-                                                                  geom_name = "geom")
+# jsondata[[parent]][[child]][[grandchild]]$df <- get_postgis_query(con_synthesis,
+#                                                                   query_specific,
+#                                                                   geom_name = "geom")
 
 
 
@@ -223,28 +170,20 @@ jsondata[[parent]][[child]][[grandchild]]$df <- get_postgis_query(con_synthesis,
 ###########################################################################################
 ######--------net---------- ###########################################################################################################
 ###########################################################################################
-parent = 'intensification'
-child = 'net'
-grandchild = 'phos_grouped_legend'
-
-### ext #####
-# query_specific <- gsub("dataset",jsondata$net$phos_grouped_legend$dataset,query_ext)
-# query_specific <- gsub("lookup",jsondata$net$phos_grouped_legend$lookup,query_specific)
+# parent = 'extensification'
+# child = 'agroibis'
+# grandchild = 'NLeach_abd'
+# 
+# 
+# 
+# query_specific <- gsub("dataset",jsondata[[parent]][[child]][[grandchild]]$dataset,getquery(parent))
+# query_specific <- gsub("lookup",jsondata[[parent]][[child]][[grandchild]]$lookup,query_specific)
 # 
 # print(query_specific)
 # 
-# jsondata$net$phos_grouped_legend$df <- get_postgis_query(con_synthesis,
-#                                                   query_specific,
-#                                                   geom_name = "geom")
-
-query_specific <- gsub("dataset",jsondata[[parent]][[child]][[grandchild]]$dataset,getquery(parent))
-query_specific <- gsub("lookup",jsondata[[parent]][[child]][[grandchild]]$lookup,query_specific)
-
-print(query_specific)
-
-jsondata[[parent]][[child]][[grandchild]]$df <- get_postgis_query(con_synthesis,
-                                                                  query_specific,
-                                                                  geom_name = "geom")
+# jsondata[[parent]][[child]][[grandchild]]$df <- get_postgis_query(con_synthesis,
+#                                                                   query_specific,
+#                                                                   geom_name = "geom")
 
 
 
@@ -259,33 +198,24 @@ jsondata[[parent]][[child]][[grandchild]]$df <- get_postgis_query(con_synthesis,
 ######--------cc---------- ###########################################################################################################
 ###########################################################################################
 
-parent = 'intensification'
-child = 'cc'
-grandchild = 'nlch'
-
-
-# ############# CC #############################################
-# ### ext #####
-# query_specific <- gsub("dataset",jsondata$cc$phos$dataset,query_ext)
-# query_specific <- gsub("lookup",jsondata$cc$phos$lookup,query_specific)
+# parent = 'intensification'
+# child = 'cc'
+# grandchild = 'nlch'
+# 
+# 
+# 
+# 
+# 
+# 
+# query_specific <- gsub("dataset",jsondata[[parent]][[child]][[grandchild]]$dataset,getquery(parent))
+# query_specific <- gsub("lookup",jsondata[[parent]][[child]][[grandchild]]$lookup,query_specific)
 # 
 # print(query_specific)
 # 
-# jsondata$cc$phos$df <- get_postgis_query(con_synthesis,
-#                                                   query_specific,
-#                                                   geom_name = "geom")
-
-
-
-query_specific <- gsub("dataset",jsondata[[parent]][[child]][[grandchild]]$dataset,getquery(parent))
-query_specific <- gsub("lookup",jsondata[[parent]][[child]][[grandchild]]$lookup,query_specific)
-
-print(query_specific)
-
-jsondata[[parent]][[child]][[grandchild]]$df <- get_postgis_query(con_synthesis,
-                                                                  query_specific,
-                                                                  geom_name = "geom")################################################################
-
+# jsondata[[parent]][[child]][[grandchild]]$df <- get_postgis_query(con_synthesis,
+#                                                                   query_specific,
+#                                                                   geom_name = "geom")################################################################
+# 
 
 
 
@@ -294,30 +224,22 @@ jsondata[[parent]][[child]][[grandchild]]$df <- get_postgis_query(con_synthesis,
 ###########################################################################################
 ######--------oo---------- ###########################################################################################################
 ###########################################################################################
-parent = 'intensification'
-child = 'oo'
-grandchild = 'nlch'
-
-
-# ### ext #####
-# query_specific <- gsub("dataset",jsondata$oo$phos$dataset,query_ext)
-# query_specific <- gsub("lookup",jsondata$oo$phos$lookup,query_specific)
+# parent = 'intensification'
+# child = 'oo'
+# grandchild = 'nlch'
+# 
+# 
+# 
+# 
+# 
+# query_specific <- gsub("dataset",jsondata[[parent]][[child]][[grandchild]]$dataset,getquery(parent))
+# query_specific <- gsub("lookup",jsondata[[parent]][[child]][[grandchild]]$lookup,query_specific)
 # 
 # print(query_specific)
 # 
-# jsondata$oo$phos$df <- get_postgis_query(con_synthesis,
-#                                                   query_specific,
-#                                                   geom_name = "geom")
-
-
-query_specific <- gsub("dataset",jsondata[[parent]][[child]][[grandchild]]$dataset,getquery(parent))
-query_specific <- gsub("lookup",jsondata[[parent]][[child]][[grandchild]]$lookup,query_specific)
-
-print(query_specific)
-
-jsondata[[parent]][[child]][[grandchild]]$df <- get_postgis_query(con_synthesis,
-                                                                  query_specific,
-                                                                  geom_name = "geom")
+# jsondata[[parent]][[child]][[grandchild]]$df <- get_postgis_query(con_synthesis,
+#                                                                   query_specific,
+#                                                                   geom_name = "geom")
 ################################################################
 
 
@@ -325,29 +247,21 @@ jsondata[[parent]][[child]][[grandchild]]$df <- get_postgis_query(con_synthesis,
 ###########################################################################################
 ######--------oo---------- ###########################################################################################################
 ###########################################################################################
-parent = 'intensification'
-child = 'co'
-grandchild = 'nlch'
-
-# ### ext #####
-# query_specific <- gsub("dataset",jsondata$co$phos$dataset,query_ext)
-# query_specific <- gsub("lookup",jsondata$co$phos$lookup,query_specific)
+# parent = 'intensification'
+# child = 'co'
+# grandchild = 'nlch'
+# 
+# 
+# 
+# 
+# query_specific <- gsub("dataset",jsondata[[parent]][[child]][[grandchild]]$dataset,getquery(parent))
+# query_specific <- gsub("lookup",jsondata[[parent]][[child]][[grandchild]]$lookup,query_specific)
 # 
 # print(query_specific)
 # 
-# jsondata$co$phos$df <- get_postgis_query(con_synthesis,
-#                                                   query_specific,
-#                                                   geom_name = "geom")
-
-
-query_specific <- gsub("dataset",jsondata[[parent]][[child]][[grandchild]]$dataset,getquery(parent))
-query_specific <- gsub("lookup",jsondata[[parent]][[child]][[grandchild]]$lookup,query_specific)
-
-print(query_specific)
-
-jsondata[[parent]][[child]][[grandchild]]$df <- get_postgis_query(con_synthesis,
-                                                                  query_specific,
-                                                                  geom_name = "geom")
+# jsondata[[parent]][[child]][[grandchild]]$df <- get_postgis_query(con_synthesis,
+#                                                                   query_specific,
+#                                                                   geom_name = "geom")
 
 
 
@@ -357,46 +271,39 @@ jsondata[[parent]][[child]][[grandchild]]$df <- get_postgis_query(con_synthesis,
 ###########################################################################################
 ######--------net---------- ###########################################################################################################
 ###########################################################################################
-parent = 'intensification'
-child = 'net'
-grandchild = 'nlch_grouped_legend'
-
-### ext #####
-# query_specific <- gsub("dataset",jsondata$net$phos_grouped_legend$dataset,query_ext)
-# query_specific <- gsub("lookup",jsondata$net$phos_grouped_legend$lookup,query_specific)
+# parent = 'intensification'
+# child = 'net'
+# grandchild = 'nlch_grouped_legend'
+# 
+# 
+# 
+# query_specific <- gsub("dataset",jsondata[[parent]][[child]][[grandchild]]$dataset,getquery(parent))
+# query_specific <- gsub("lookup",jsondata[[parent]][[child]][[grandchild]]$lookup,query_specific)
 # 
 # print(query_specific)
 # 
-# jsondata$net$phos_grouped_legend$df <- get_postgis_query(con_synthesis,
-#                                                   query_specific,
-#                                                   geom_name = "geom")
-
-query_specific <- gsub("dataset",jsondata[[parent]][[child]][[grandchild]]$dataset,getquery(parent))
-query_specific <- gsub("lookup",jsondata[[parent]][[child]][[grandchild]]$lookup,query_specific)
-
-print(query_specific)
-
-jsondata[[parent]][[child]][[grandchild]]$df <- get_postgis_query(con_synthesis,
-                                                                  query_specific,
-                                                                  geom_name = "geom")
+# jsondata[[parent]][[child]][[grandchild]]$df <- get_postgis_query(con_synthesis,
+#                                                                   query_specific,
+#                                                                   geom_name = "geom")
 
 
-######################################################################################################
-############  get ggplot objects #####################################################################
-######################################################################################################
-
-getggplotObject <- function(obj_vector){
-  
-  ###declare the empty list that will hold all the ggplot objects
-  ggplot_object_list <- list()
-  
-  for (obj in obj_vector){
-    ggplot_object = createMap(obj)
-    ggplot_object_list <- append(ggplot_object_list, list(ggplot_object))
-  }
-  return(ggplot_object_list)
-  
-}
+# ######################################################################################################
+# ############  get ggplot objects #####################################################################
+# ######################################################################################################
+# 
+# getggplotObject <- function(obj_vector){
+#   
+#   ###declare the empty list that will hold all the ggplot objects
+#   ggplot_object_list <- list()
+#   
+#   for (obj in obj_vector){
+#     ggplot_object = createMap(obj)
+#     ggplot_object_list <- append(ggplot_object_list, list(ggplot_object))
+#   }
+#   return(ggplot_object_list)
+#   
+# }
+# 
 
 
 
@@ -406,22 +313,6 @@ getggplotObject <- function(obj_vector){
 
 
 
-######################################################################################################
-############  get group legend #####################################################################
-######################################################################################################
-
-getggplotObject_map <- function(obj_vector){
-  
-  ###declare the empty list that will hold all the ggplot objects
-  ggplot_object_list <- list()
-  
-  for (obj in obj_vector){
-    ggplot_object = createDummy(obj)
-    ggplot_object_list <- append(ggplot_object_list, list(ggplot_object))
-  }
-  return(ggplot_object_list)
-  
-}
  
 
 
@@ -430,45 +321,28 @@ getggplotObject_map <- function(obj_vector){
 ###########################################################################################
 rm(runMain)
 ########### main code ########################################################
-runMain <- function(arg1, arg2){
+runMain <- function(obj){
   
-  rm(p1_1, p1_2, p1_3, p1_4, p2_1, p2_2, p2_3, p2_4)
-  source(paste(rootpath, 'r_code\\intensification_maps_seth_v2.R', sep='\\'))
+  # rm(p1_1, p1_2, p1_3, p1_4, p2_1, p2_2, p2_3, p2_4)
+  source(paste(rootpath, 'r_code\\intensification_maps_current_4panels.R', sep='\\'))
   
   p1_1 = createMap(jsondata$intensification$cc[[arg1]])
   p1_2 = createMap(jsondata$intensification$oo[[arg1]])
-  p1_3 = createMap(jsondata$intensification$co[[arg1]])
-  p1_4 = createMap(jsondata$intensification$net[[paste(arg1, "grouped_legend", sep="_")]])
   
   
   p2_1 = createMap(jsondata$intensification$cc[[arg2]])
   p2_2 = createMap(jsondata$intensification$oo[[arg2]])
-  p2_3 = createMap(jsondata$intensification$co[[arg2]])
-  p2_4 = createMap(jsondata$intensification$net[[paste(arg2, "grouped_legend", sep="_")]])
-  
-  
-  rm(dummy_legend1, dummy_legend2)
-  source(paste(rootpath, 'r_code\\graphics_dummy_legend.R', sep='\\'))
-  
-  ####create legend object
-  dummy_legend1 <- createDummy(json_dummy$intensification[[arg1]])
-  dummy_legend2 <- createDummy(json_dummy$intensification[[arg2]])
   
   
   lay <- rbind(c(1,1,1,1,1,1,1),
                c(1,1,1,1,1,1,1),
                c(2,2,2,2,2,2,2),
-               c(2,2,2,2,2,2,2),
-               c(3,3,3,3,3,3,3),
-               c(3,3,3,3,3,3,3),
-               c(4,4,4,4,4,4,4),
-               c(4,4,4,4,4,4,4),
-               c(5,5,5,5,5,5,5))
+               c(2,2,2,2,2,2,2))
   
   
   rm(col1, col2)
-  col1 <- arrangeGrob(p1_1, p1_2, p1_3, p1_4, dummy_legend1, layout_matrix = lay)
-  col2 <- arrangeGrob(p2_1, p2_2, p2_3, p2_4, dummy_legend2, layout_matrix = lay)
+  col1 <- arrangeGrob(p1_1, p1_2, layout_matrix = lay)
+  col2 <- arrangeGrob(p2_1, p2_2, layout_matrix = lay)
   
   plot_grid(col1,col2, ncol = 2, rel_heights = c(1, .1))
   fileout = 'H:\\new_data_8_18_19\\d_drive\\synthesis\\s35\\intensification\\schemas\\seth\\graphics\\test.png'
@@ -478,7 +352,52 @@ runMain <- function(arg1, arg2){
 
 
 
-runMain('phos', 'nlch')
+createObject <- function(parent, child, grandchild){
+
+  query_specific <- gsub("dataset",jsondata[[parent]][[child]][[grandchild]]$dataset,getquery(parent))
+  query_specific <- gsub("lookup",jsondata[[parent]][[child]][[grandchild]]$lookup,query_specific)
+  
+  print(query_specific)
+  
+  jsondata[[parent]][[child]][[grandchild]]$df <- get_postgis_query(con_synthesis,
+                                                                    query_specific,
+                                                                    geom_name = "geom")################################################################
+  
+}
+
+
+
+
+
+runMain_test <- function(obj){
+  parent = 'extensification'
+  
+  lay <- rbind(c(1,1,1,1,1,1,1),
+               c(1,1,1,1,1,1,1),
+               c(2,2,2,2,2,2,2),
+               c(2,2,2,2,2,2,2))
+  
+  for(i in obj$col1){
+    print(i)
+    createObject(parent=parent, child=i$child, i$grandchild)
+  }
+  
+
+  
+}
+
+
+
+
+
+
+
+
+###### link to json files #################################################
+json_file = 'C:\\Users\\Bougie\\Desktop\\Gibbs\\scripts\\projects\\synthesis\\intensification\\shemas\\seth\\json\\figure_json.json'
+figure_obj<- fromJSON(file=json_file)
+runMain_test(figure_obj$extensification$figure$test)
+
 
 
 

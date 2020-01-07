@@ -121,7 +121,7 @@ jsondata$area$area_region_abd$df <- get_postgis_query(con_synthesis,
                                                   query_specific,
                                                   geom_name = "geom")
 
-
+yo <- jsondata$area$area_region_abd$df
 ############# county #############################################
 ### ext #####
 query_specific <- gsub("dataset",jsondata$area$area_county_ext$dataset,query_ext)

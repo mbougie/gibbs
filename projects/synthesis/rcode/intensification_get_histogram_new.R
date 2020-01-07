@@ -182,22 +182,73 @@ mapa <- obj$df
 temp <- mapa@data
 hist(temp$current_field, 100)
 
-###get descriptive stats
-summary(temp$current_field)
+group_legends <- list()
+x = obj$bin_breaks
+x <- head(x,-1)
+x <- x[-c(1)]
+print(x)
+print(obj$bin_breaks)
+temp$bins = cut(temp$current_field, breaks= obj$bin_breaks)
+temp_table = table(temp$bins)
+print(temp_table)
 
-###get histogram
-hist(temp$current_field, 100)
+
+temp_split <- split(temp, cut(temp$current_field, 5))
+yo <- bin(temp, nbins = 5, labels = NULL, method = c("length", "content",
+                                               "clusters"), na.omit = TRUE)
+
+summary_stats = summary(temp$current_field)
+print(summary_stats)
+print(quantile(temp$current_field, 0.25))
+print(quantile(temp$current_field, 0.5))
+print(quantile(temp$current_field, 0.75))
+
+ggplot(data=temp, aes(temp$current_field)) + 
+  geom_histogram() + 
+  labs(x = 'units', y = "number of counties")
 
 
-breaks = obj$bin_breaks
-# breaks = breaks * -1
-# print(breaks)
-labels = as.character(obj$bin_breaks)
-# labels = as.character(obj$bin_breaks[obj$bin_breaks != 0])
-print(labels)
+
+
+
+plotAllLayers<-function(temp){
+  p<-ggplot(data=temp, aes(temp$current_field)) + 
+    geom_histogram() +
+    labs(x = 'units', y = "number of counties")
+  for(i in x){
+    if(i<0){p<-p+geom_vline(xintercept=i, color = "cyan", size=1.25)}
+    else{p<-p+geom_vline(xintercept=i, color = "red", size=1.25) +
+    geom_text(aes(x=i, label=i, y=20), colour="blue", angle=90, text=element_text(size=11))}
+  }
+  return(p)
+}
+
+p = plotAllLayers(temp)
 
 temp$bins = cut(temp$current_field, breaks= obj$bin_breaks)
-table(temp$bins)
+temp_table = table(temp$bins)
+print(temp_table)
+
+# print(yo)
+# 
+# group_legends[['hi']] <- summary(temp$current_field)
+
+# ###get descriptive stats
+# summary(temp$current_field)
+# 
+# ###get histogram
+# hist(temp$current_field, 100)
+# 
+# 
+# breaks = obj$bin_breaks
+# # breaks = breaks * -1
+# # print(breaks)
+# labels = as.character(obj$bin_breaks)
+# # labels = as.character(obj$bin_breaks[obj$bin_breaks != 0])
+# print(labels)
+# 
+# temp$bins = cut(temp$current_field, breaks= obj$bin_breaks)
+# table(temp$bins)
 
 
 
